@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>dropbox</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="soical" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="social" sketch:type="MSArtboardGroup" transform="translate(-473.000000, -638.000000)">
+            <g id="slices" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)"></g>
+            <g id="square-flat" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)" fill="#4186CD">
+                <path d="M302.995937,500 L357.004063,500 C358.658673,500 360,501.33731 360,502.995937 L360,557.004063 C360,558.658673 358.66269,560 357.004063,560 L302.995937,560 C301.341327,560 300,558.66269 300,557.004063 L300,502.995937 C300,501.341327 301.33731,500 302.995937,500 Z" id="square-54" sketch:type="MSShapeGroup"></path>
+            </g>
+            <g id="icon" sketch:type="MSLayerGroup" transform="translate(182.000000, 150.000000)" fill="#FFFFFF">
+                <path d="M321.417692,508.473086 L327.947308,503 L338.307692,509.455235 L331.771538,514.858224 L321.417692,508.473086 Z M337.821154,521.033457 L331.840769,515.911249 L322.120746,521.616333 L327.964909,526.239464 L337.821154,521.033457 Z M310.158846,515.911249 L304.179231,521.033457 L314.097487,526.380737 L319.957567,521.471116 L310.158846,515.911249 Z M310.625526,529.590294 L321.031269,534.880211 L331.407997,529.590294 L331.407997,527.194852 L327.733492,528.737305 L321.031269,523.326116 L314.208759,528.927453 L310.625526,527.194852 L310.625526,529.590294 Z M320.583077,508.473086 L314.053462,503 L303.692308,509.455235 L310.229231,514.858224 L320.583077,508.473086 L320.583077,508.473086 Z" id="dropbox" sketch:type="MSShapeGroup"></path>
+            </g>
+        </g>
+    </g>
+</svg>

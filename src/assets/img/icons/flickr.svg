@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>flickr</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="soical" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="social" sketch:type="MSArtboardGroup" transform="translate(-273.000000, -238.000000)">
+            <g id="slices" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)"></g>
+            <g id="square-flat" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)" fill="#424242">
+                <path d="M102.995937,100 L157.004063,100 C158.658673,100 160,101.33731 160,102.995937 L160,157.004063 C160,158.658673 158.66269,160 157.004063,160 L102.995937,160 C101.341327,160 100,158.66269 100,157.004063 L100,102.995937 C100,101.341327 101.33731,100 102.995937,100 Z" id="square-12" sketch:type="MSShapeGroup"></path>
+            </g>
+            <g id="icon" sketch:type="MSLayerGroup" transform="translate(182.000000, 150.000000)" fill="#FFFFFF">
+                <path d="M111.769231,124.923077 C115.592741,124.923077 118.692308,121.82351 118.692308,118 C118.692308,114.17649 115.592741,111.076923 111.769231,111.076923 C107.945721,111.076923 104.846154,114.17649 104.846154,118 C104.846154,121.82351 107.945721,124.923077 111.769231,124.923077 Z M130.230769,124.923077 C134.054279,124.923077 137.153846,121.82351 137.153846,118 C137.153846,114.17649 134.054279,111.076923 130.230769,111.076923 C126.407259,111.076923 123.307692,114.17649 123.307692,118 C123.307692,121.82351 126.407259,124.923077 130.230769,124.923077 Z" id="flickr" sketch:type="MSShapeGroup"></path>
+            </g>
+        </g>
+    </g>
+</svg>

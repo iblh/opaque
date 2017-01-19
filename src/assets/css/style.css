@@ -1,0 +1,241 @@
+@charset "UTF-8";
+/* CSS Document */
+
+.weather_card{
+  width: 100%;
+  height: 0;
+  transition: .5s ease-in-out;
+}
+
+.weather_card_active{
+  height: 370px;
+  transition: .7s ease-in-out
+}
+
+.weather_console{
+  height: 40px;
+  line-height: 40px;
+  font-size: 16px;
+  padding-left: 20px;
+}
+
+.weather_more{
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.weather_list{
+  list-style: none;
+  text-align: center;
+  font-size: 14px;
+  padding: 0;
+  color: #fff;
+  width: 50%;
+  float: left;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: .7s ease-in-out;
+}
+
+.weather_list_active{
+  transition: .7s ease-in-out;
+  opacity: 1;
+}
+
+#weather_more_today{
+  width: 100%;
+  padding-bottom: 20px;
+}
+#weather_more_today .weather_list-date,
+#weather_more_today .weather_list-weather{
+  font-size: 18px;
+}
+
+#weather_more_today .weather_list-temp{
+  font-size: 30px;
+  margin: 0;
+}
+
+.weather_more li:nth-child(2),
+.weather_more li:nth-child(3){
+  border-bottom: 1px solid #24a7ed;
+}
+
+.weather_more li:nth-child(2),
+.weather_more li:nth-child(4) {
+    border-right: 1px solid #24a7ed;
+}
+
+.header{
+  margin: 0;
+  transition: .7s;
+  line-height: normal;
+}
+
+.now_city{
+  margin: 0;
+}
+
+.weather_entry{
+  margin: 0;
+}
+
+.weather_more_icon{
+  margin: 0;
+}
+
+.search_switch{
+  margin: 0;
+  text-align: center;
+  width: 40px;
+  height: 36px;
+  background-color: #fff;
+  color: rgba(0,0,0,.87);
+  text-overflow: clip;
+  overflow: hidden;
+}
+
+.search_switch_active{
+  width: 0;
+  height: 56px;
+}
+
+#search_engine{
+  width: 100px;
+}
+
+.seachbar{
+  margin-bottom: 10px;
+  transition: .7s;
+}
+
+.seachbar_active{
+  padding: 0;
+  margin-top: -56px;
+  transition: .7s;
+  z-index: 2000;
+}
+
+.searchbar_form{
+  width: calc(100% - 40px);
+  margin: 0;
+}
+
+.searchbar_form_active{
+  width: 100%;
+}
+
+.seachbar_input{
+  padding: 0;
+  height: 36px;
+  /*background-color: #e9f3fc;*/
+  background-color: #fff;
+  color: #000;
+  border: 0;
+}
+
+.searchbar_input_active{
+  padding: 0 16px;
+  height: 56px;
+}
+
+.overlay{
+  background-color: #fff;
+  transition: 1.2s;
+  z-index: -1000;
+}
+
+.overlay_active{
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  position: absolute;
+  transition: 1.2s;
+  z-index: 1000;
+}
+
+.card_wrap{
+  padding: 0 10px;
+}
+
+.card_wrap .mdui-card{
+  margin-bottom: 20px;
+}
+
+.site{
+  width: 70px;
+  display: inline-block;
+  height: 90px;
+  text-align: center;
+  margin: 0 2px;
+}
+
+.edit{
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 10px;
+  height: 30px;
+  line-height: 30px;
+  color: #7D7D7D;
+  font-size: 11px;
+}
+
+.new_site{
+  height: 0;
+  width: 100%;
+  margin: 0 0px 0 -8px;
+  transition: .5s;
+  padding: 0 8px;
+}
+
+.site-title{
+  display: block;
+  width: 96%;
+  height: 25px;
+  color: #090909;
+  line-height: 25px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.new_site_active{
+  height: 300px;
+}
+
+.card-header{
+  height: 50px;
+}
+
+.add-site-icon{
+  display: block;
+  padding: 18px;
+}
+
+.iconHidden{
+  display: none;
+}
+
+.new-site-info {
+  padding-left: 10px;
+}
+
+.todo_input_wrap{
+  width: calc(100% - 36px);
+  float: left;
+  margin: 0;
+  padding-top: 0;
+}
+
+.todo-sub-list{
+  background-color: #ebebeb;
+}
+
+.addtodo_button{
+  position: absolute;
+  right: 20px;
+  margin-top: 10px;
+}

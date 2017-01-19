@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>stackoverflow</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="soical" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="social" sketch:type="MSArtboardGroup" transform="translate(-973.000000, -438.000000)">
+            <g id="slices" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)"></g>
+            <g id="square-flat" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)" fill="#CE6F2D">
+                <path d="M802.995937,300 L857.004063,300 C858.658673,300 860,301.33731 860,302.995937 L860,357.004063 C860,358.658673 858.66269,360 857.004063,360 L802.995937,360 C801.341327,360 800,358.66269 800,357.004063 L800,302.995937 C800,301.341327 801.33731,300 802.995937,300 Z" id="square-39" sketch:type="MSShapeGroup"></path>
+            </g>
+            <g id="icon" sketch:type="MSLayerGroup" transform="translate(182.000000, 150.000000)" fill="#FFFFFF">
+                <path d="M827.934218,320.012758 L812.552382,316.846154 L811.769231,320.129843 L829.446713,323.769231 L830.096746,321.046843 L830.963976,321.461538 L832.538462,317.997229 L815.651408,309.923077 L814.076923,313.386431 L827.934218,320.012758 L827.934218,320.012758 Z M834.846154,321.461538 L834.846154,331.846154 L807.153846,331.846154 L807.153846,321.461538 L810.615385,321.461538 L810.615385,328.384615 L831.384615,328.384615 L831.384615,321.461538 L834.846154,321.461538 Z M811.769231,323.769231 L830.230769,323.769231 L830.230769,327.230769 L811.769231,327.230769 L811.769231,323.769231 Z M834.846154,314.962841 L832.542622,318 L817.538462,306.348945 L819.204645,304.153846 L820.924729,304.153846 L834.846154,314.962841 Z" id="stackoverflow" sketch:type="MSShapeGroup"></path>
+            </g>
+        </g>
+    </g>
+</svg>

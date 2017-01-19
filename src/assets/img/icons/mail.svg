@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>mail</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="soical" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="social" sketch:type="MSArtboardGroup" transform="translate(-873.000000, -638.000000)">
+            <g id="slices" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)"></g>
+            <g id="square-flat" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)" fill="#3498DB">
+                <path d="M702.995937,500 L757.004063,500 C758.658673,500 760,501.33731 760,502.995937 L760,557.004063 C760,558.658673 758.66269,560 757.004063,560 L702.995937,560 C701.341327,560 700,558.66269 700,557.004063 L700,502.995937 C700,501.341327 701.33731,500 702.995937,500 Z" id="square-58" sketch:type="MSShapeGroup"></path>
+            </g>
+            <g id="icon" sketch:type="MSLayerGroup" transform="translate(182.000000, 150.000000)" fill="#FFFFFF">
+                <path d="M721,521.461538 L738.307692,506.461538 L703.692308,506.461538 L721,521.461538 Z M716.325177,519.801054 L721,523.63824 L725.601581,519.801054 L738.307692,530.692308 L703.692308,530.692308 L716.325177,519.801054 Z M702.538462,529.538462 L702.538462,507.615385 L715.230769,518.576923 L702.538462,529.538462 Z M739.461538,529.538462 L739.461538,507.615385 L726.769231,518.576923 L739.461538,529.538462 Z" id="mail" sketch:type="MSShapeGroup"></path>
+            </g>
+        </g>
+    </g>
+</svg>

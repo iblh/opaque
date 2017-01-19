@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12072) - http://www.bohemiancoding.com/sketch -->
+    <title>instapaper</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="soical" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="social" sketch:type="MSArtboardGroup" transform="translate(-373.000000, -438.000000)">
+            <g id="slices" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)"></g>
+            <g id="square-flat" sketch:type="MSLayerGroup" transform="translate(173.000000, 138.000000)" fill="#7F8C8D">
+                <path d="M202.995937,300 L257.004063,300 C258.658673,300 260,301.33731 260,302.995937 L260,357.004063 C260,358.658673 258.66269,360 257.004063,360 L202.995937,360 C201.341327,360 200,358.66269 200,357.004063 L200,302.995937 C200,301.341327 201.33731,300 202.995937,300 Z" id="square-33" sketch:type="MSShapeGroup"></path>
+            </g>
+            <g id="icon" sketch:type="MSLayerGroup" transform="translate(182.000000, 150.000000)" fill="#FFFFFF">
+                <path d="M214.076923,333 L214.076923,331.383477 C214.531963,331.35312 218.683152,331.200073 218.683152,328.409828 L218.683152,307.658907 C218.683152,304.794997 214.56567,304.64688 214.076923,304.616523 L214.076923,303 L227.923077,303 L227.923077,304.616523 C227.419874,304.631142 223.325299,304.768376 223.3461,307.444038 C223.366901,310.1197 223.325299,307.586021 223.325299,307.658907 L223.325299,328.409828 C223.325299,331.226694 227.366917,331.368298 227.923077,331.383477 L227.923077,333 L214.076923,333 Z" id="instapaper" sketch:type="MSShapeGroup"></path>
+            </g>
+        </g>
+    </g>
+</svg>
