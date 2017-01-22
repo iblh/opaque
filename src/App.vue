@@ -1,18 +1,4 @@
 <template>
-  <!-- # 顶部 info card -->
-  <!-- ## Card1 -->
-  <!-- - [x] 天气 -->
-  <!-- TODO - [ ] 天气切换 -->
-  <!-- - [x]日历（几月几日） -->
-  <!-- - [x] Todo list -->
-
-	<!-- # 搜索栏 -->
-	<!-- - [x] 一言（Hikoto，lwl12 源比较推荐，当然也可以自己造轮子） -->
-	<!-- - [x] 搜索（要求可切换谷歌、必应和360的好搜） -->
-	<!-- # 导航书签 -->
-	<!-- - [x] 导航书签（有方形图标的也有横栏的） -->
-  <!-- TODO 补全站点列表 -->
-  <!-- TODO - [ ]子组件化 -->
 
 <div id="app mdui-container">
   <!-- Weather card -->
@@ -82,13 +68,13 @@
 
 	<!-- Search bar -->
 	<div
-    class="seachbar mdui-color-blue mdui-col-xs-12 mdui-toolbar"
-    v-bind:class="{seachbar_active: isSearch}"
+    class="searchbar mdui-toolbar mdui-color-blue mdui-col-xs-12"
+    v-bind:class="{searchbar_active: isSearch}"
   >
 		<!-- <input
 			v-on:click="toSearch"
 			v-bind:class="{searchbar_input_active: isSearch}"
-			class="mdui-textfield-input seachbar_input"
+			class="mdui-textfield-input searchbar_input"
 			type="text"
 			placeholder="搜索"
 		/> -->
@@ -125,7 +111,7 @@
       <input
         v-on:click="toSearch"
         v-bind:class="{searchbar_input_active: isSearch}"
-        class="mdui-textfield-input seachbar_input"
+        class="mdui-textfield-input searchbar_input"
         type="text"
         name="q"
         autocomplete="off"
@@ -143,7 +129,7 @@
       <input
         v-on:click="toSearch"
         v-bind:class="{searchbar_input_active: isSearch}"
-        class="mdui-textfield-input seachbar_input"
+        class="mdui-textfield-input searchbar_input"
         type="text"
         name="q"
         autocomplete="off"
@@ -161,13 +147,18 @@
       <input
         v-on:click="toSearch"
         v-bind:class="{searchbar_input_active: isSearch}"
-        class="mdui-textfield-input seachbar_input"
+        class="mdui-textfield-input searchbar_input"
         type="text"
         name="wd"
         autocomplete="off"
         placeholder="Search"
       >
     </form>
+
+    <!-- Search button -->
+    <div class="search-button">
+      <img src="./assets/img/search/search.svg" width="36px" height="36px"/>
+    </div>
 	</div>
 
   <!-- Overlay -->
@@ -176,7 +167,7 @@
 	<!-- Sites card -->
 	<div class="card_wrap">
 		<!-- MDUI card -->
-		<div class="mdui-card mdui-col-xs-12 mdui-shadow-0">
+		<div class="mdui-card mdui-col-xs-12 mdui-col-md-10 mdui-col-offset-md-1 mdui-col-lg-6 mdui-col-offset-lg-1 mdui-shadow-0 sites-card ">
 			<!-- Card title -->
 			<div class="mdui-card-header card-header">
 				网站
@@ -206,7 +197,7 @@
 				<li class="site" v-on:click="showAddpanel">
 					<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: hasAddPanel}">add</i>
 					<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: !hasAddPanel}">close</i>
-					<div class="site-title">追加</div>
+					<div class="site-title">添加</div>
 				</li>
 			</ul>
 
@@ -236,7 +227,7 @@
   <!-- Todo card -->
   <div class="card_wrap">
     <!-- MDUI card -->
-		<div class="mdui-card mdui-col-xs-12 mdui-shadow-0">
+		<div class="mdui-card mdui-col-xs-12 mdui-col-md-5 mdui-col-offset-md-1 mdui-col-lg-3 mdui-shadow-0 todos-card">
       <!-- Card title -->
 			<div class="mdui-card-header card-header">
 				TODO
@@ -252,8 +243,8 @@
               <input type="checkbox" v-bind:checked="todo.isFinished" v-on:click="toggleFinished(todo, index)"/>
               <i class="mdui-checkbox-icon"></i>
             </label>
-            <div class="mdui-list-item-content" v-if="todo.isFinished == true"><del>{{ todo.label }}</del></div>
-            <div class="mdui-list-item-content" v-else>{{ todo.label }}</div>
+            <div class="mdui-list-item-content todo-item" v-if="todo.isFinished == true"><del>{{ todo.label }}</del></div>
+            <div class="mdui-list-item-content todo-item" v-else>{{ todo.label }}</div>
             <i class="mdui-collapse-item-arrow mdui-icon material-icons" v-on:click="removeTodo(todo, index)" style="font-size: 19px;">close</i>
           </div>
           <ul class="mdui-collapse-item-body mdui-list mdui-list-dense">
@@ -309,7 +300,7 @@ $(document).ready(function() {
 
   // 一言
   // var aword=$.ajax({url:"https://api.lwl12.com/hitokoto/main/get", async:false});
-  // $(".seachbar_input").attr("placeholder", aword.responseText);
+  // $(".searchbar_input").attr("placeholder", aword.responseText);
 
   // Weather
   // var cityid = 101020100;
@@ -340,6 +331,17 @@ $(document).ready(function() {
       $(".weather_list-weather").eq(i).html(weather[i]);
       $(".weather_list-temp").eq(i).html(temp[i]);
   }
+
+  // -------------------------------
+  $(".site").mouseenter(function(){
+    $(this).find("img").attr("class", "mdui-shadow-3");
+  });
+  $(".site").mouseleave(function(){
+    $(this).find("img").attr("class", "mdui-shadow-0");
+  });
+  $( ".search-button" ).click(function() {
+    $( ".searchbar_form" ).submit();
+  });
 })
 
 // init first visit
@@ -347,7 +349,7 @@ if (!Store.getCookie('visited')) {
   if(Store.fetch_site().length == 0){
     Store.save_site([
       {
-  			"url": "https://github.com",
+  			"url": "https://github.com/",
   			"title": "Github",
   			"icon": require('./assets/img/icons/github.svg')
   		}, {
@@ -355,15 +357,15 @@ if (!Store.getCookie('visited')) {
   			"title": "Steam",
   			"icon": require('./assets/img/icons/steam.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.wikipedia.org/",
   			"title": "Wikipedia",
   			"icon": require('./assets/img/icons/wikipedia.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.reddit.com/",
   			"title": "Reddit",
   			"icon": require('./assets/img/icons/reddit.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.flickr.com/",
   			"title": "Flickr",
   			"icon": require('./assets/img/icons/flickr.svg')
   		}, {
@@ -371,65 +373,77 @@ if (!Store.getCookie('visited')) {
   			"title": "500px",
   			"icon": require('./assets/img/icons/500.svg')
   		}, {
-  			"url": "",
+  			"url": "http://digg.com/",
   			"title": "Digg",
   			"icon": require('./assets/img/icons/digg.svg')
   		}, {
-  			"url": "https://tumblr.com",
+  			"url": "https://tumblr.com/",
   			"title": "Tumblr",
   			"icon": require('./assets/img/icons/tumblr.svg')
   		}, {
-  			"url": "https://facebook.com",
+  			"url": "https://facebook.com/",
   			"title": "Facebook",
   			"icon": require('./assets/img/icons/facebook.svg')
   		}, {
-  			"url": "https://twitter.com",
+  			"url": "https://twitter.com/",
   			"title": "Twitter",
   			"icon": require('./assets/img/icons/twitter.svg')
   		}, {
-  			"url": "https://zhihu.com",
+  			"url": "https://zhihu.com/",
   			"title": "知乎",
   			"icon": require('./assets/img/icons/zhihu.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.dropbox.com/",
   			"title": "Dropbox",
   			"icon": require('./assets/img/icons/dropbox.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.behance.net/",
   			"title": "Behance",
   			"icon": require('./assets/img/icons/behance.svg')
   		}, {
-  			"url": "",
+  			"url": "https://plus.google.com/",
   			"title": "Google+",
   			"icon": require('./assets/img/icons/google_plus.svg')
   		}, {
-  			"url": "https://quora.com",
+  			"url": "https://quora.com/",
   			"title": "Quora",
   			"icon": require('./assets/img/icons/quora.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.pinterest.com/",
   			"title": "Pinterest",
   			"icon": require('./assets/img/icons/pinterest.svg')
   		}, {
-  			"url": "",
+  			"url": "https://getpocket.com/",
   			"title": "Pocket",
   			"icon": require('./assets/img/icons/pocket.svg')
   		}, {
-  			"url": "",
+  			"url": "https://dribbble.com/",
   			"title": "Dribbble",
   			"icon": require('./assets/img/icons/dribbble.svg')
   		}, {
-  			"url": "",
-  			"title": "Stackoverflow",
+  			"url": "http://stackoverflow.com/",
+  			"title": "Stack Overflow",
   			"icon": require('./assets/img/icons/stackoverflow.svg')
   		}, {
-  			"url": "",
+  			"url": "https://www.amazon.com/",
   			"title": "Amazon",
   			"icon": require('./assets/img/icons/amazon.svg')
+  		}, {
+  			"url": "https://taobao.com/",
+  			"title": "淘宝",
+  			"icon": require('./assets/img/icons/taobao.svg')
+  		}, {
+  			"url": "http://weibo.com/",
+  			"title": "微博",
+  			"icon": require('./assets/img/icons/weibo.svg')
   		}, {
   			"url": "http://coolapk.com/",
   			"title": "酷安",
   			"icon": require('./assets/img/icons/coolapk.svg')
+  		}, {
+  			"url": "http://douban.com/",
+  			"title": "豆瓣",
+  			"icon": require('./assets/img/icons/douban.svg')
   		}
   	])
   }
@@ -567,18 +581,5 @@ export default {
 	-moz-osx-font-smoothing: grayscale;
 	color: #2c3e50;
 	margin-top: 60px;
-}
-
-.remove {
-	display: none;
-	position: absolute;
-	background-color: rgba(255, 255, 255, 0.7);
-	border: none;
-	padding: 16px;
-	margin-left: 8px;
-}
-
-.remove_active {
-	display: block;
 }
 </style>
