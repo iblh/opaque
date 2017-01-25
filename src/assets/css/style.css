@@ -1,31 +1,32 @@
 @charset "UTF-8";
+
 /* CSS Document */
 
-.weather_card{
+.weather_card {
   width: 100%;
   height: 0;
   transition: .5s ease-in-out;
 }
 
-.weather_card_active{
+.weather_card_active {
   height: 370px;
   transition: .7s ease-in-out
 }
 
-.weather_console{
+.weather_console {
   height: 40px;
   line-height: 40px;
   font-size: 16px;
   padding-left: 20px;
 }
 
-.weather_more{
+.weather_more {
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
-.weather_list{
+.weather_list {
   list-style: none;
   text-align: center;
   font-size: 14px;
@@ -38,95 +39,93 @@
   transition: .7s ease-in-out;
 }
 
-.weather_list_active{
+.weather_list_active {
   transition: .7s ease-in-out;
   opacity: 1;
 }
 
-#weather_more_today{
+#weather_more_today {
   width: 100%;
   padding-bottom: 20px;
 }
-#weather_more_today .weather_list-date,
-#weather_more_today .weather_list-weather{
+
+#weather_more_today .weather_list-date, #weather_more_today .weather_list-weather {
   font-size: 18px;
 }
 
-#weather_more_today .weather_list-temp{
+#weather_more_today .weather_list-temp {
   font-size: 30px;
   margin: 0;
 }
 
-.weather_more li:nth-child(2),
-.weather_more li:nth-child(3){
+.weather_more li:nth-child(2), .weather_more li:nth-child(3) {
   border-bottom: 1px solid #24a7ed;
 }
 
-.weather_more li:nth-child(2),
-.weather_more li:nth-child(4) {
-    border-right: 1px solid #24a7ed;
+.weather_more li:nth-child(2), .weather_more li:nth-child(4) {
+  border-right: 1px solid #24a7ed;
 }
 
-.header{
+.header {
   margin: 0;
   transition: .7s;
   line-height: normal;
 }
 
-.now_city{
+.now_city {
   margin: 0;
 }
 
-.weather_entry{
+.weather_entry {
   margin: 0;
 }
 
-.weather_more_icon{
+.weather_more_icon {
   margin: 0;
 }
 
-.search_switch{
+.search_switch {
   margin: 0;
   text-align: center;
   width: 40px;
   height: 36px;
   background-color: #fff;
-  color: rgba(0,0,0,.87);
+  color: rgba(0, 0, 0, .87);
   text-overflow: clip;
   overflow: hidden;
 }
 
-.search_switch_active{
+.search_switch_active {
   width: 0;
   height: 56px;
 }
 
-#search_engine{
+#search_engine {
   width: 100px;
 }
 
-.searchbar{
+.searchbar {
   margin-bottom: 10px;
   transition: .7s;
 }
 
-.searchbar_active{
+.searchbar_active {
   padding: 0;
   margin-top: -56px;
   transition: .7s;
   z-index: 2000;
 }
 
-.searchbar_form{
+.searchbar_form {
   width: calc(100% - 40px);
   margin: 0;
 }
 
-.searchbar_form_active{
+.searchbar_form_active {
   width: 100%;
 }
 
-.searchbar_input{
+.searchbar_input {
   padding: 0;
   height: 36px;
   /*background-color: #e9f3fc;*/
@@ -135,16 +134,16 @@
   border: 0;
 }
 
-.searchbar_input_active{
+.searchbar_input_active {
   padding: 0 16px;
   height: 56px;
 }
 
-.search-button{
+.search-button {
   display: none;
 }
 
-.overlay{
+.overlay {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -155,7 +154,7 @@
   visibility: hidden;
 }
 
-.overlay_active{
+.overlay_active {
   position: absolute;
   transition: .5s;
   opacity: .66;
@@ -163,19 +162,15 @@
   visibility: visible;
 }
 
-.card_wrap{
+.sites-card, .todos-card {
   padding: 0 10px;
 }
 
-.card_wrap .mdui-card{
-  margin-bottom: 20px;
-}
-
-.sites-card{
+.sites-card {
   transition: .5s;
 }
 
-.site{
+.site {
   width: 70px;
   display: inline-block;
   height: 90px;
@@ -183,7 +178,7 @@
   margin: 0 2px;
 }
 
-.edit{
+.edit {
   display: block;
   position: absolute;
   top: 0;
@@ -194,7 +189,7 @@
   font-size: 11px;
 }
 
-.new_site{
+.new_site {
   height: 0;
   width: 100%;
   margin: 0 0px 0 -8px;
@@ -202,7 +197,7 @@
   padding: 0 8px;
 }
 
-.site-title{
+.site-title {
   display: block;
   width: 96%;
   height: 25px;
@@ -214,33 +209,33 @@
   text-overflow: ellipsis;
 }
 
-.new_site_active{
+.new_site_active {
   height: 300px;
 }
 
 .remove {
-	display: none;
-	position: absolute;
-	background-color: rgba(255, 255, 255, 0.7);
-	border: none;
-	padding: 16px;
-	margin-left: 8px;
+  display: none;
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: none;
+  padding: 16px;
+  margin-left: 7px;
 }
 
 .remove_active {
-	display: block;
+  display: block;
 }
 
-.card-header{
+.card-header {
   height: 50px;
 }
 
-.add-site-icon{
+.add-site-icon {
   display: block;
   padding: 18px;
 }
 
-.iconHidden{
+.iconHidden {
   display: none;
 }
 
@@ -248,101 +243,156 @@
   padding-left: 10px;
 }
 
-.todo_input_wrap{
+.todo_input_wrap {
   width: calc(100% - 36px);
   float: left;
   margin: 0;
   padding-top: 0;
 }
 
-.todo_input_wrap input{
+.todo_input_wrap input {
   padding-left: 16px;
 }
 
-.todo-sub-list{
+.todo-sub-list {
   background-color: #ebebeb;
 }
 
-.todo-item{
+.todo-item {
   overflow: hidden;
   word-wrap: break-word;
 }
 
-.addtodo_button{
+.addtodo_button {
   position: absolute;
   right: 20px;
   margin-top: 10px;
 }
 
-@media screen and (max-width: 800px){
-
+.card-wrap {
+  display: inline-block;
+  min-height: 500px;
+  margin-bottom: 100px;
 }
 
-@media screen and (min-width: 800px){
-  .searchbar{
-    background-color: #fff !important;
-  }
-  .sites-card,
-  .todos-card{
-    box-shadow: 0 3px 1px -2px rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
-  }
+.footer {
+  padding-top: 60px;
+  padding-bottom: 60px;
+  background: #1f1915;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 300;
+  text-align: center;
+}
 
-  .site{
+.footer .social-buttons {
+  padding: 0;
+  display: flex;
+  margin: 20px 0;
+  justify-content: center;
+}
+
+.footer li {
+  list-style: none;
+  margin: 0 20px;
+}
+
+.footer .copyright {
+  margin-top: 30px;
+}
+
+.footer a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 800px) {}
+
+@media screen and (min-width: 768px) {
+  .weather_card{
+    position: absolute;
+    width: 40%;
+    right: 0;
+    top: 56px;
+    z-index: 3000;
+    display: none;
+  }
+  .weather_card_active{
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 5px 8px 0 rgba(0,0,0,.14), 0 0 18px 0 rgba(0,0,0,.12);
+    display: block;
+  }
+  .searchbar {
+    background-color: #fff !important;
+    padding-left: 20%;
+    padding-right: 20%;
+  }
+  .searchbar_active {
+    margin-top: 0;
+    padding-left: 15%;
+    padding-right: 15%;
+  }
+  .sites-card, .todos-card {
+    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, .2), 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12);
+  }
+  .site {
     margin: 0 10px;
   }
-
-  .site img{
+  .site img {
     transition: .3s;
   }
-
-  .searchbar{
-    box-shadow: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12);
+  .searchbar {
+    box-shadow: 0 3px 3px -2px rgba(0, 0, 0, .2), 0 3px 4px 0 rgba(0, 0, 0, .14), 0 1px 8px 0 rgba(0, 0, 0, .12);
     margin-bottom: 40px;
   }
-
-  .searchbar_active{
-    margin-top: 0;
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .search_switch_active{
+  .search_switch_active {
     width: 40px;
     height: 36px;
   }
-
-  .searchbar_input{
+  .searchbar_input {
     height: 56px;
     line-height: 56px;
   }
-
-  .searchbar_input_active{
+  .searchbar_input_active {
     padding: 0;
     height: 56px;
     line-height: 56px;
   }
-
-  .searchbar_form{
+  .searchbar_form {
     width: calc(100% - 80px);
   }
-
-  .searchbar_form_active{
+  .searchbar_form_active {
     width: calc(100% - 80px);
   }
-
-  .search-button{
+  .search-button {
     display: block;
     width: 40px;
     height: 36px;
     text-align: center;
     cursor: pointer;
   }
-
-  .card_wrap .mdui-card{
+  .sites-card, .todos-card {
     margin-bottom: 40px;
   }
-
-  .overlay_active{
+  .overlay_active {
     opacity: .2;
+  }
+}
+
+@media screen and (min-width: 1100px) {
+  .weather_card{
+    width: 35%;
+  }
+}
+@media screen and (min-width: 1400px) {
+  .weather_card{
+    width: 30%;
+  }
+}
+@media screen and (min-width: 1600px) {
+  .weather_card{
+    width: 25%;
   }
 }

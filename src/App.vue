@@ -56,7 +56,7 @@
 
 	<!-- Header -->
 	<div class="header mdui-color-blue mdui-col-xs-12 mdui-toolbar">
-		<div>Viosey</div>
+		<div>O.</div>
 		<div class="mdui-toolbar-spacer"></div>
 		<div class="weather_entry" v-on:click="showWeather">
 			<p class="now_city"></p>
@@ -164,76 +164,72 @@
   <!-- Overlay -->
   <div class="overlay" v-on:click="closeSearch" v-bind:class="{overlay_active: isSearch}"></div>
 
-	<!-- Sites card -->
-	<div class="card_wrap">
-		<!-- MDUI card -->
-		<div class="mdui-card mdui-col-xs-12 mdui-col-md-10 mdui-col-offset-md-1 mdui-col-lg-6 mdui-col-offset-lg-1 mdui-shadow-0 sites-card ">
-			<!-- Card title -->
-			<div class="mdui-card-header card-header">
-				网站
-				<div v-on:click="editSites" class="edit">{{editOrComplete}}</div>
-			</div>
+  <div class="card-wrap">
+  	<!-- MDUI card -->
+  	<div class="mdui-card mdui-col-xs-12 mdui-col-md-10 mdui-col-offset-md-1 mdui-col-lg-6 mdui-col-offset-lg-1 mdui-shadow-0 sites-card ">
+  		<!-- Card title -->
+  		<div class="mdui-card-header card-header">
+  			网站
+  			<div v-on:click="editSites" class="edit">{{editOrComplete}}</div>
+  		</div>
 
-			<div class="mdui-divider"></div>
+  		<div class="mdui-divider"></div>
 
-			<!-- Sites list -->
-			<ul class="mdui-list">
-				<li v-for="(site, index) in sites" class="site">
-					<button
-						class="remove"
-						v-bind:class="{remove_active: canRemove}"
-						v-on:click="removeSite(index)"
-					>
-						<i class="mdui-icon material-icons">close</i>
-					</button>
-					<a v-bind:href="site.url" target="_blank">
-						<!-- <div><img v-bind:src="site.icon" width="55px" height="55px" /></div> -->
-						<div>
-							<img v-bind:src="site.icon" width="55px" height="55px" />
-						</div>
-						<div class="site-title">{{ site.title}}</div>
-					</a>
-				</li>
-				<li class="site" v-on:click="showAddpanel">
-					<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: hasAddPanel}">add</i>
-					<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: !hasAddPanel}">close</i>
-					<div class="site-title">添加</div>
-				</li>
-			</ul>
+  		<!-- Sites list -->
+  		<ul class="mdui-list">
+  			<li v-for="(site, index) in sites" class="site">
+  				<button
+  					class="remove"
+  					v-bind:class="{remove_active: canRemove}"
+  					v-on:click="removeSite(index)"
+  				>
+  					<i class="mdui-icon material-icons">close</i>
+  				</button>
+  				<a v-bind:href="site.url" target="_blank">
+  					<!-- <div><img v-bind:src="site.icon" width="55px" height="55px" /></div> -->
+  					<div>
+  						<img v-bind:src="site.icon" width="55px" height="55px" />
+  					</div>
+  					<div class="site-title">{{ site.title}}</div>
+  				</a>
+  			</li>
+  			<li class="site" v-on:click="showAddpanel">
+  				<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: hasAddPanel}">add</i>
+  				<i class="mdui-icon material-icons add-site-icon" v-bind:class="{iconHidden: !hasAddPanel}">close</i>
+  				<div class="site-title">添加</div>
+  			</li>
+  		</ul>
 
-			<!-- New site panel -->
-			<div
-				class="new_site mdui-color-blue-grey-50"
-				v-bind:class="{new_site_active: hasAddPanel}"
-			>
-				<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
-					<label class="mdui-textfield-label">网站地址</label>
-					<input class="mdui-textfield-input" type="url" v-model="newSiteurl" />
-				</div>
-				<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
-					<label class="mdui-textfield-label">网站名称</label>
-					<input class="mdui-textfield-input" type="text" v-model="newSitetitle" />
-				</div>
-				<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
-					<label class="mdui-textfield-label">网站图标地址</label>
-					<input class="mdui-textfield-input" type="text" v-model="newSiteicon" />
-				</div>
-				<button class="addtodo_button mdui-btn mdui-btn-raised mdui-color-theme-accent mdui-ripple" v-on:click="addSite">添加</button>
-			</div>
+  		<!-- New site panel -->
+  		<div
+  			class="new_site mdui-color-blue-grey-50"
+  			v-bind:class="{new_site_active: hasAddPanel}"
+  		>
+  			<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
+  				<label class="mdui-textfield-label">网站地址</label>
+  				<input class="mdui-textfield-input" type="url" v-model="newSiteurl" />
+  			</div>
+  			<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
+  				<label class="mdui-textfield-label">网站名称</label>
+  				<input class="mdui-textfield-input" type="text" v-model="newSitetitle" />
+  			</div>
+  			<div class="new-site-info mdui-textfield mdui-textfield-floating-label">
+  				<label class="mdui-textfield-label">网站图标地址</label>
+  				<input class="mdui-textfield-input" type="text" v-model="newSiteicon" />
+  			</div>
+  			<button class="addtodo_button mdui-btn mdui-btn-raised mdui-color-theme-accent mdui-ripple" v-on:click="addSite">添加</button>
+  		</div>
 
-		</div>
-	</div>
+  	</div>
 
-  <!-- Todo card -->
-  <div class="card_wrap">
     <!-- MDUI card -->
-		<div class="mdui-card mdui-col-xs-12 mdui-col-md-5 mdui-col-offset-md-1 mdui-col-lg-3 mdui-shadow-0 todos-card">
+  	<div class="mdui-card mdui-col-xs-12 mdui-col-md-5 mdui-col-offset-md-1 mdui-col-lg-3 mdui-shadow-0 todos-card">
       <!-- Card title -->
-			<div class="mdui-card-header card-header">
-				TODO
-			</div>
+  		<div class="mdui-card-header card-header">
+  			TODO
+  		</div>
 
-			<div class="mdui-divider"></div>
+  		<div class="mdui-divider"></div>
 
       <ul class="mdui-list">
 
@@ -266,6 +262,19 @@
     </div>
   </div>
 
+  <!-- Footer -->
+  <div class="footer mdui-card mdui-col-xs-12">
+      <ul class="social-buttons">
+        <li><a href="https://github.com/viosey" target="_blank"><img src="./assets/img/footer/github.svg" alt="" width="24px" height="24px;"></a></li>
+        <li><a href="http://weibo.com/viosey" target="_blank"><img src="./assets/img/footer/weibo.svg" alt="" width="24px" height="24px;"></i></a></li>
+        <li><a href="https://gitter.im/pagekit/pagekit" target="_blank"><img src="./assets/img/footer/about.svg" alt="" width="24px" height="24px;"></i></a></li>
+      </ul>
+
+      <p class="copyright">
+        Made by <a href="https://viosey.com" target="_blank">Viosey</a>
+      </p>
+  </div>
+
 </div>
 </template>
 
@@ -279,7 +288,7 @@ $(document).ready(function() {
     Store.setCookie("cityid", $(".area").val(), 365);
   });
   // City select
-  $.cxSelect.defaults.url = "https://qiniu.viosey.com/cityid.json";
+  $.cxSelect.defaults.url = "https://qiniu.viosey.com/cityid.min.json";
   $("#cities").cxSelect({
     selects : ["province", "city", "area"],
     nodata : "none",
@@ -506,7 +515,7 @@ export default {
 			this.sites.push({
 				url: this.newSiteurl,
 				title: this.newSitetitle,
-				icon: this.newSiteicon
+				icon: (this.newSiteicon ? this.newSiteicon : require('./assets/img/icons/default.svg'))
 			})
 			this.newSiteurl = ''
 			this.newSitetitle = ''
