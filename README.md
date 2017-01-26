@@ -22,8 +22,8 @@ Faster and pure
 
 ## 关于
 
-GitHub：https://github.com/viosey/O.
+GitHub：https://github.com/viosey/O
 
 意见反馈：
-- https://github.com/viosey/O./issues
+- https://github.com/viosey/O/issues
 - [hiviosey@gmail.com](mailto:hiviosey@gmail.com)
