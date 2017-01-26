@@ -1,18 +1,29 @@
-# maps
+# O.
 
-> A Vue.js project
+> Homepage for your browser
 
-## Build Setup
+`O.` 是一个客制化上网首页
 
-``` bash
-# install dependencies
-npm install
+基于 Material Design & Vue.js
 
-# serve with hot reload at localhost:8080
-npm run dev
+集成搜索，网站，天气，TODO
 
-# build for production with minification
-npm run build
-```
+Faster and pure
 
-For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+## 功能   
+
+>搜索：Google + Bing + 百度
+
+>网站：可自定义网站列表
+
+>天气：全国城市 + 4 天预测
+
+>TODO: 简单的 Todo 列表
+
+## 关于
+
+GitHub：https://github.com/viosey/O.
+
+意见反馈：
+- https://github.com/viosey/O./issues
+- [hiviosey@gmail.com](mailto:hiviosey@gmail.com)

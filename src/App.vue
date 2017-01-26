@@ -252,7 +252,7 @@
 
       <div>
         <div class="mdui-textfield todo_input_wrap">
-          <input v-model="newTodo" v-on:keyup.enter="addTodo" class="mdui-textfield-input" type="text" placeholder="Add TODO"/>
+          <input v-model="newTodo" v-on:keyup.enter="addTodo" class="mdui-textfield-input" type="text" placeholder="Add Todo"/>
         </div>
         <button class="mdui-btn mdui-btn-icon mdui-ripple add_todo_button" v-on:click="addTodo">
           <i class="mdui-icon material-icons mdui-list-item-icon">send</i>
@@ -545,7 +545,7 @@ export default {
         onButtonClick: function(){
           _this.todos.push({
             label: todo.label,
-            isFinished: false
+            isFinished: todo.isFinished
           })
         }
       });
