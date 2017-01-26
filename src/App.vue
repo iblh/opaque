@@ -265,9 +265,9 @@
   <!-- Footer -->
   <div class="footer mdui-card mdui-col-xs-12">
       <ul class="social-buttons">
-        <li><a href="https://github.com/viosey" target="_blank"><img src="./assets/img/footer/github.svg" alt="" width="24px" height="24px;"></a></li>
+        <li><a href="https://github.com/viosey/O." target="_blank"><img src="./assets/img/footer/github.svg" alt="" width="24px" height="24px;"></a></li>
         <li><a href="http://weibo.com/viosey" target="_blank"><img src="./assets/img/footer/weibo.svg" alt="" width="24px" height="24px;"></i></a></li>
-        <li><a href="https://gitter.im/pagekit/pagekit" target="_blank"><img src="./assets/img/footer/about.svg" alt="" width="24px" height="24px;"></i></a></li>
+        <li><a href="https://blog.viosey.com/2017/01/26/Hello-O/" target="_blank"><img src="./assets/img/footer/about.svg" alt="" width="24px" height="24px;"></i></a></li>
       </ul>
 
       <p class="copyright">
