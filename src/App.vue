@@ -188,7 +188,7 @@
   				<a v-bind:href="site.url" target="_blank">
   					<!-- <div><img v-bind:src="site.icon" width="55px" height="55px" /></div> -->
   					<div>
-  						<img v-bind:src="site.icon" width="55px" height="55px" />
+  						<img v-bind:src="site.icon" width="55px" height="55px" v-bind:class="{remove_active: canRemove}"/>
   					</div>
   					<div class="site-title">{{ site.title}}</div>
   				</a>
@@ -341,13 +341,6 @@ $(document).ready(function() {
       $(".weather_list-temp").eq(i).html(temp[i]);
   }
 
-  // -------------------------------
-  $(".site").mouseenter(function(){
-    $(this).find("img").attr("class", "mdui-shadow-3");
-  });
-  $(".site").mouseleave(function(){
-    $(this).find("img").attr("class", "mdui-shadow-0");
-  });
   $( ".search-button" ).click(function() {
     $( ".searchbar_form" ).submit();
   });
