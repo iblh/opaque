@@ -22,7 +22,10 @@ Faster and pure
 
 ## 关于
 
-GitHub：https://github.com/viosey/O
+**为何叫做 O？**
+- O 在 leet 中即为 0，从**零**开始
+- **O**rigin
+- All in **O**ne
 
 意见反馈：
 - https://github.com/viosey/O/issues
