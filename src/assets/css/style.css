@@ -358,6 +358,9 @@ img.remove_active:hover{
 @media screen and (max-width: 800px) {}
 
 @media screen and (min-width: 768px) {
+  body{
+    background-color: #fafafa;
+  }
   .weather_entry{
     cursor: pointer;
   }
