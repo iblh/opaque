@@ -1,5 +1,22 @@
 @charset "UTF-8";
 
+*{
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-touch-callout: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+button:focus,
+input[type="button"],
+select,textarea,
+input[type="submit"],
+input[type="text"]{
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
+}
+
 /* 定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸 */
 ::-webkit-scrollbar
 {
@@ -251,15 +268,23 @@
   display: none;
   position: absolute;
   border: none;
-  padding: 15.5px;
+  padding: 15px;
   margin-left: 8px;
   cursor: pointer;
   border-radius: 3px;
   background: none;
+  transition: .3s;
+}
+.remove i{
+  font-size: 23px;
 }
 
 .remove_active {
   display: block;
+  z-index: 100;
+}
+.remove_active:hover{
+  box-shadow: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12);
 }
 
 img.remove_active{

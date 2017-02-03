@@ -186,7 +186,6 @@
   					<i class="mdui-icon material-icons">close</i>
   				</button>
   				<a v-bind:href="site.url" target="_blank">
-  					<!-- <div><img v-bind:src="site.icon" width="55px" height="55px" /></div> -->
   					<div>
   						<img v-bind:src="site.icon" width="55px" height="55px" v-bind:class="{remove_active: canRemove}"/>
   					</div>
