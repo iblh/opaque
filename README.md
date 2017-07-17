@@ -13,12 +13,22 @@ Faster and pure
 ## 功能   
 
 >搜索：Google + Bing + 百度
+网站：可自定义网站列表
+天气：全国城市 + 4 天预测
+TODO: 简单的 Todo 列表
 
->网站：可自定义网站列表
+## 使用
 
->天气：全国城市 + 4 天预测
+```
+# install dependencies
+npm install
 
->TODO: 简单的 Todo 列表
+# serve with hot reload at localhost:8080
+npm run dev
+
+# build for production with minification
+npm run build
+```
 
 ## 关于
 
@@ -29,4 +39,4 @@ Faster and pure
 
 意见反馈：
 - https://github.com/viosey/O/issues
-- [hiviosey@gmail.com](mailto:hiviosey@gmail.com)
+- [i@viosey.com](mailto:i@viosey.com)
