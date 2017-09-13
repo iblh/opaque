@@ -4,22 +4,8 @@
   <!-- Weather card -->
   <div class="weather_card mdui-color-blue" v-bind:class="{weather_card_active: hasWeather}">
 
-    <div class="mdui-dialog" id="cities">
-      <div class="mdui-dialog-title">选择城市</div>
-      <div class="mdui-dialog-content">
-        <select class="province"></select>
-        <select class="city" disabled="disabled"></select>
-        <select class="area" disabled="disabled"></select><br /><br />
-        (设置城市后请刷新)
-      </div>
-      <div class="mdui-dialog-actions">
-        <button class="mdui-btn mdui-ripple" mdui-dialog-cancel>取消</button>
-        <button class="setCity mdui-btn mdui-ripple" mdui-dialog-confirm>确定</button>
-      </div>
-    </div>
-
     <div class="weather_console">
-      <div class="city_edit" mdui-dialog="{target: '#cities'}">
+      <div class="city_edit" mdui-dialog="{target: '#cities'}" v-on:click="toggleWeather">
   			<span class="now_city_edit"></span>
         <i class="mdui-icon material-icons" style="font-size: 16px">edit</i>
       </div>
@@ -54,11 +40,25 @@
     </ul>
   </div>
 
+  <div class="mdui-dialog" id="cities">
+    <div class="mdui-dialog-title">选择城市</div>
+    <div class="mdui-dialog-content">
+      <select class="province"></select>
+      <select class="city" disabled="disabled"></select>
+      <select class="area" disabled="disabled"></select><br /><br />
+      (设置城市后请刷新)
+    </div>
+    <div class="mdui-dialog-actions">
+      <button class="mdui-btn mdui-ripple" mdui-dialog-cancel>取消</button>
+      <button class="setCity mdui-btn mdui-ripple" mdui-dialog-confirm>确定</button>
+    </div>
+  </div>
+
 	<!-- Header -->
 	<div class="header mdui-color-blue mdui-col-xs-12 mdui-toolbar">
-		<div>O.</div>
+		<div>Opage</div>
 		<div class="mdui-toolbar-spacer"></div>
-		<div class="weather_entry" v-on:click="showWeather">
+		<div class="weather_entry" v-on:click="toggleWeather">
 			<p class="now_city"></p>
 			<span class="now_temp"></span>
 		</div>
@@ -225,7 +225,7 @@
   	<div class="mdui-card mdui-col-xs-12 mdui-col-md-5 mdui-col-offset-md-1 mdui-col-lg-3 mdui-shadow-0 todos-card">
       <!-- Card title -->
   		<div class="mdui-card-header card-header">
-  			TODO
+  			待办事项
   		</div>
 
   		<div class="mdui-divider"></div>
@@ -265,12 +265,11 @@
   <div class="footer mdui-card mdui-col-xs-12">
       <ul class="social-buttons">
         <li><a href="https://github.com/viosey/O" target="_blank"><img src="./assets/img/footer/github.svg" alt="" width="24px" height="24px;"></a></li>
-        <li><a href="http://weibo.com/viosey" target="_blank"><img src="./assets/img/footer/weibo.svg" alt="" width="24px" height="24px;"></i></a></li>
-        <li><a href="https://blog.viosey.com/2017/01/26/Hello-O/" target="_blank"><img src="./assets/img/footer/about.svg" alt="" width="24px" height="24px;"></i></a></li>
+        <li><a href="https://viosey.com/" target="_blank"><img src="./assets/img/footer/about.svg" alt="" width="24px" height="24px;"></i></a></li>
       </ul>
 
       <p class="copyright">
-        Made by <a href="https://viosey.com" target="_blank">Viosey</a>
+        © 2017 <a href="https://viosey.com" target="_blank">viosey</a>
       </p>
   </div>
 
@@ -545,28 +544,28 @@ export default {
     toggleFinished: function (todo, index) {
       todo.isFinished = !todo.isFinished
     },
-		toSearch: function(){
+		toSearch: function() {
       if(this.isSearch == false){
   			this.isSearch = true
       }
 		},
-    closeSearch: function(){
+    closeSearch: function() {
       if(this.isSearch == true){
   			this.isSearch = false
       }
     },
-    showWeather: function(){
+    toggleWeather: function() {
       this.hasWeather = !this.hasWeather
     },
-    useGoogle: function(){
+    useGoogle: function() {
       this.searchEngine = 'google';
       Store.setCookie("se", "google", 30);
     },
-    useBing: function(){
+    useBing: function() {
       this.searchEngine = 'bing';
       Store.setCookie("se", "bing", 30);
     },
-    useBaidu: function(){
+    useBaidu: function() {
       this.searchEngine = 'baidu';
       Store.setCookie("se", "baidu", 30);
     }

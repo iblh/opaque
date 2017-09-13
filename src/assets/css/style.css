@@ -1,21 +1,17 @@
 @charset "UTF-8";
 
+body {
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica Neue,
+    Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei;
+}
+
 *{
   -webkit-tap-highlight-color: rgba(0,0,0,0);
   -webkit-touch-callout: none;
   -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
 }
-button,
-button:focus,
-input[type="button"],
-select,textarea,
-input[type="submit"],
-input[type="text"]{
-  -webkit-appearance: none;
-  border: 0;
-  outline: 0;
-}
+
 
 /* 定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸 */
 ::-webkit-scrollbar
@@ -71,6 +67,10 @@ input[type="text"]{
   overflow: hidden;
 }
 
+#cities select{
+  font-size: 16px;
+}
+
 .weather_list {
   list-style: none;
   text-align: center;
@@ -110,6 +110,8 @@ input[type="text"]{
 .weather_more li:nth-child(2), .weather_more li:nth-child(4) {
   border-right: 1px solid #24a7ed;
 }
+
+
 
 .header {
   margin: 0;
@@ -209,7 +211,7 @@ input[type="text"]{
 }
 
 .sites-card, .todos-card {
-  padding: 0 10px;
+  /* padding: 0 10px; */
 }
 
 .sites-card {
@@ -230,13 +232,9 @@ input[type="text"]{
 
 .edit {
   display: block;
-  position: absolute;
-  top: 0;
-  right: 10px;
-  height: 30px;
-  line-height: 30px;
+  float: right;
   color: #7D7D7D;
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -351,7 +349,6 @@ img.remove_active:hover{
   padding-bottom: 30px;
   background: #1f1915;
   color: rgba(255, 255, 255, 0.75);
-  font-weight: 300;
   text-align: center;
 }
 
@@ -384,7 +381,7 @@ img.remove_active:hover{
 
 @media screen and (min-width: 768px) {
   body{
-    background-color: #fafafa;
+    background-color: #f8f8f9;
   }
   .weather_entry{
     cursor: pointer;
@@ -439,9 +436,11 @@ img.remove_active:hover{
     transition: .3s;
   }
   .new_site{
-    transition: 0s;
+    transition: height .3s, opacity 0s;
+    opacity: 0;
   }
   .new_site_active{
+    opacity: 1;
     height: 180px;
     display: flex;
     flex-wrap: wrap;

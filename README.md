@@ -1,14 +1,14 @@
-# O.
+# Opage
 
 > Homepage for your browser
 
-`O.` 是一个客制化上网首页
+`Opage` 是一个客制化上网首页
 
 基于 Material Design & Vue.js
 
 集成搜索，网站，天气，TODO
 
-Faster and pure
+Faster & Pure
 
 ## 功能   
 
@@ -19,7 +19,7 @@ Faster and pure
 
 ## 使用
 
-```
+```bash
 # install dependencies
 npm install
 
