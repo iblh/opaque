@@ -1,0 +1,72 @@
+:root {
+    --color-dark: #2c3333;
+    --color-primary: #5f7161;
+    --color-accent: #464e2e;
+    --color-background: #d0c9c0;
+}
+
+.App {
+    display: flex;
+}
+
+.logo {
+    padding-top: 20px;
+    font-size: 1rem;
+    cursor: default;
+}
+
+.link {
+    color: #b318f0;
+}
+
+.sidebar {
+    padding:0  40px;
+    display: flex;
+    flex-direction: column;
+    font-size: calc(10px + 2vmin);
+}
+.sidebar .search {
+    margin-top: 100px;
+    padding: 2px 0;
+    color: var(--color-accent);
+    margin-bottom: 20px;
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid var(--color-accent);
+    transition: all 0.2s;
+}
+.sidebar .search:focus {
+    outline: none;
+} /*# sourceMappingURL=App.module.css.map */
+
+.dashboard {
+    padding: 100px 0 40px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.column {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.card {
+    padding: 0 0 40px;
+    /* float: left; */
+}
+
+.card_title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+.card_item {
+    padding: 10px 0;
+}
+
