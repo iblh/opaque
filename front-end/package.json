@@ -15,6 +15,7 @@
     "vite-plugin-solid": "^2.3.0"
   },
   "dependencies": {
+    "muuri": "^0.9.5",
     "solid-js": "^1.4.7"
   }
 }

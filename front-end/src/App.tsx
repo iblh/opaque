@@ -119,12 +119,63 @@ const App: Component = () => {
 
     return (
         <div class={styles.App}>
-            <div class={styles.sidebar}>
+            <header class={styles.header}>
                 <div class={styles.logo}>OPAQUE</div>
-                <input type="text" placeholder="Search" class={styles.search} />
-            </div>
-            <div class={`${styles.dashboard} dashboard`}>
-                {/* <div class={styles.card}>
+            </header>
+            <main class={styles.main}>
+                <div class={styles.sidebar}>
+                    <input type="text" placeholder="" class={styles.search} />
+                    <div class={styles.weather}>
+                        {/* <div class={styles.weather_item}>
+                            <div>
+                                Chicago / Partly cloudy / 77°F / 48% / ↙15mph
+                            </div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>
+                                18:49:58 / SUNRISE 05:53:46 / SUNSET 19:57:13
+                            </div>
+                        </div> */}
+                        <div class={styles.weather_item}>
+                            <div>Chicago</div>
+                            <div>Partly cloudy</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Temperature</div>
+                            <div>77°F</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Humidity</div>
+                            <div>48%</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Wind</div>
+                            <div>↙15mph</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Now</div>
+                            <div>18:49:58</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Sunrise</div>
+                            <div>05:53:46</div>
+                        </div>
+                        <div class={styles.weather_item}>
+                            <div>Sunset</div>
+                            <div>19:57:13</div>
+                        </div>
+                    </div>
+                    <div class={styles.performance}>
+                        <div class={styles.perf_item}>
+                            <div>CPU / 33% / 30 °C</div>
+                        </div>
+                        <div class={styles.perf_item}>
+                            <div>MEM / 30% / 11.8 GB</div>
+                        </div>
+                    </div>
+                </div>
+                <div class={`${styles.dashboard} dashboard`}>
+                    {/* <div class={styles.card}>
                     <div class={styles.card_title}>Home</div>
                     <div class={styles.card_content}>
                         <div class={styles.card_item}>Home Assistant</div>
@@ -133,37 +184,26 @@ const App: Component = () => {
                     </div>
                 </div> */}
 
-                <Index each={Array.from(Array(columns()).keys())}>
-                    {(column) => (
-                        <div class={styles.column}>
-                            <Index each={entries()}>
-                                {(entry, j) => (
-                                    <Show when={entry().order % columns() == column()}>
-                                        <div class={styles.card}>
-                                            <div class={styles.card_title}>
-                                                {entry().category}
+                    <Index each={entries()}>
+                        {(entry, j) => (
+                            <div class={styles.card}>
+                                <div class={styles.card_title}>
+                                    {entry().category}
+                                </div>
+                                <div class={styles.card_content}>
+                                    <Index each={entry().apps}>
+                                        {(app) => (
+                                            <div class={styles.card_item}>
+                                                {app().name}
                                             </div>
-                                            <div class={styles.card_content}>
-                                                <Index each={entry().apps}>
-                                                    {(app) => (
-                                                        <div
-                                                            class={
-                                                                styles.card_item
-                                                            }
-                                                        >
-                                                            {app().name}
-                                                        </div>
-                                                    )}
-                                                </Index>
-                                            </div>
-                                        </div>
-                                    </Show>
-                                )}
-                            </Index>
-                        </div>
-                    )}
-                </Index>
-            </div>
+                                        )}
+                                    </Index>
+                                </div>
+                            </div>
+                        )}
+                    </Index>
+                </div>
+            </main>
         </div>
     );
 };

@@ -1,17 +1,18 @@
-:root {
-    --color-dark: #2c3333;
-    --color-primary: #5f7161;
-    --color-accent: #464e2e;
-    --color-background: #d0c9c0;
+input {
+    font-size: 16px;
+    line-height: 2;
+    padding: 0;
 }
 
 .App {
-    display: flex;
+    /* display: flex; */
 }
 
-.logo {
-    padding-top: 20px;
+.header {
+    padding: 20px 40px 0;
     font-size: 1rem;
+}
+.header .logo {
     cursor: default;
 }
 
@@ -19,32 +20,53 @@
     color: #b318f0;
 }
 
+.main {
+    display: flex;
+    flex-direction: row;
+}
+
 .sidebar {
-    padding:0  40px;
+    padding: 0 80px 0 40px;
     display: flex;
     flex-direction: column;
-    font-size: calc(10px + 2vmin);
+    font-size: 1rem;
 }
 .sidebar .search {
-    margin-top: 100px;
-    padding: 2px 0;
+    margin: 100px 0 20px;
+    padding-left: 16px;
+    height: var(--height-l);
     color: var(--color-accent);
-    margin-bottom: 20px;
     background-color: transparent;
     border: none;
     border-bottom: 2px solid var(--color-accent);
-    transition: all 0.2s;
+    transition: 0.2s ease-in-out;
 }
 .sidebar .search:focus {
     outline: none;
-} /*# sourceMappingURL=App.module.css.map */
+    background-color: var(--color-dark);
+    color: var(--color-background);
+}
 
-.dashboard {
-    padding: 100px 0 40px;
-    width: 100%;
+.sidebar .performance,
+.sidebar .weather {
+    font-size: 14px;
+    margin-top: 60px;
+}
+
+.sidebar .performance .perf_item,
+.sidebar .weather .weather_item {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.dashboard {
+    margin: calc(100px + var(--height-l) + 6px) 0 40px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .column {
@@ -55,8 +77,7 @@
 }
 
 .card {
-    padding: 0 0 40px;
-    /* float: left; */
+    padding: 0 0 30px;
 }
 
 .card_title {
@@ -64,9 +85,38 @@
     font-weight: bold;
     color: var(--color-accent);
     text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 .card_item {
-    padding: 10px 0;
+    padding-bottom: 20px;
 }
 
+@media (min-width: 430px) {
+    .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 670px) {
+    .dashboard {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1000px) {
+    .dashboard {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .dashboard {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1400px) {
+    .dashboard {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
