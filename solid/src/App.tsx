@@ -1,10 +1,32 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import './App.css';
+import type { Component } from 'solid-js';
+import {
+    createSignal,
+    createEffect,
+    For,
+    Show,
+    Index,
+    onMount,
+} from 'solid-js';
 
-function App() {
-    const [count, setCount] = useState(0);
-    const [entries, setEntries] = useState([
+import logo from './logo.svg';
+import styles from './App.module.css';
+
+const Sortable = (props) => {
+    const sortable = createSortable(props.item);
+    return (
+        <div
+            use:sortable
+            class={styles.sortable}
+            classList={{ opacity_25: sortable.isActiveDraggable }}
+        >
+            {props.item}
+        </div>
+    );
+};
+
+const App: Component = () => {
+
+    const [entries, setEntries] = createSignal([
         {
             category: 'Productivity',
             apps: [
@@ -81,86 +103,125 @@ function App() {
         },
     ]);
 
+    onMount(async () => {
+        const cards = document
+            .getElementsByClassName('dashboard')[0]
+            .getElementsByClassName('card');
+    });
+
+    const [items, setItems] = createSignal([1, 2, 3, 4, 5, 6, 7, 8]);
+    const [activeItem, setActiveItem] = createSignal(null);
+    const ids = () => items();
+
+    const onDragStart = ({ draggable }) => setActiveItem(draggable.id);
+
+    const onDragEnd = ({ draggable, droppable }) => {
+        if (draggable && droppable) {
+            const currentItems = ids();
+            const fromIndex = currentItems.indexOf(draggable.id);
+            const toIndex = currentItems.indexOf(droppable.id);
+            if (fromIndex !== toIndex) {
+                const updatedItems = currentItems.slice();
+                updatedItems.splice(
+                    toIndex,
+                    0,
+                    ...updatedItems.splice(fromIndex, 1)
+                );
+                setItems(updatedItems);
+            }
+        }
+        setActiveItem(null);
+    };
+
     return (
-        <div className="App">
-            <header className="header">
-                <div className="logo">OPAQUE</div>
+        <div class={styles.App}>
+            <header class={styles.header}>
+                <div class={styles.logo}>OPAQUE</div>
             </header>
-            <main className="main">
-                <div className="sidebar">
-                    <input type="text" placeholder="" className="search" />
-                    <div className="weather">
-                        {/* <div className="weather_item">
+            <main class={styles.main}>
+                <div class={styles.sidebar}>
+                    <input type="text" placeholder="" class={styles.search} />
+                    <div class={styles.weather}>
+                        {/* <div class={styles.weather_item}>
                             <div>
                                 Chicago / Partly cloudy / 77°F / 48% / ↙15mph
                             </div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>
                                 18:49:58 / SUNRISE 05:53:46 / SUNSET 19:57:13
                             </div>
                         </div> */}
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Chicago</div>
                             <div>Partly cloudy</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Temperature</div>
                             <div>77°F</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Humidity</div>
                             <div>48%</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Wind</div>
                             <div>↙15mph</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Now</div>
                             <div>18:49:58</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Sunrise</div>
                             <div>05:53:46</div>
                         </div>
-                        <div className="weather_item">
+                        <div class={styles.weather_item}>
                             <div>Sunset</div>
                             <div>19:57:13</div>
                         </div>
                     </div>
-                    <div className="performance">
-                        <div className="perf_item">
+                    <div class={styles.performance}>
+                        <div class={styles.perf_item}>
                             <div>CPU / 33% / 30 °C</div>
                         </div>
-                        <div className="perf_item">
+                        <div class={styles.perf_item}>
                             <div>MEM / 30% / 11.8 GB</div>
                         </div>
                     </div>
                 </div>
-                <div className="dashboard">
-                    {/* <div className={styles.card}>
-                    <div className={styles.card_title}>Home</div>
-                    <div className={styles.card_content}>
-                        <div className={styles.card_item}>Home Assistant</div>
-                        <div className={styles.card_item}>Grafana</div>
-                        <div className={styles.card_item}>Prometheus</div>
+                <div class={`${styles.dashboard} dashboard`}>
+                    {/* <div class={styles.card}>
+                    <div class={styles.card_title}>Home</div>
+                    <div class={styles.card_content}>
+                        <div class={styles.card_item}>Home Assistant</div>
+                        <div class={styles.card_item}>Grafana</div>
+                        <div class={styles.card_item}>Prometheus</div>
                     </div>
                 </div> */}
-                    {entries.map((entry, idx) => (
-                        <div className="card">
-                            <div className="card_title">{entry.category}</div>
-                            <div className="card_content">
-                                {entry.apps.map((app, idx) => (
-                                    <div className="card_item">{app.name}</div>
-                                ))}
+
+                    <Index each={entries()}>
+                        {(entry, j) => (
+                            <div class={`${styles.card} card`}>
+                                <div class={styles.card_title}>
+                                    {entry().category}
+                                </div>
+                                <div class={styles.card_content}>
+                                    <Index each={entry().apps}>
+                                        {(app) => (
+                                            <div class={styles.card_item}>
+                                                {app().name}
+                                            </div>
+                                        )}
+                                    </Index>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )}
+                    </Index>
                 </div>
             </main>
         </div>
     );
-}
+};
 
 export default App;

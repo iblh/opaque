@@ -22,7 +22,7 @@ input {
 
 .main {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 }
 
 .sidebar {
@@ -119,4 +119,17 @@ input {
     .dashboard {
         grid-template-columns: repeat(6, 1fr);
     }
+}
+
+.sortgrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 20px;
+}
+
+.sortable {
+    padding: 10px 50px;
+    border: 1px solid #000;
+    background: #def6f3;
+    transition: 0.15s cubic-bezier(0.4, 0, 1, 1);
 }
