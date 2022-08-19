@@ -16,7 +16,7 @@
     --color-dark: #2c3333;
     --color-primary: #5f7161;
     --color-accent: #464e2e;
-    --color-background: #d0c9c0;
+    --color-background: #fefbf6;
     --height-s: 10px;
     --height-m: 16px;
     --height-l: 42px;
@@ -45,10 +45,10 @@ a:hover {
 
 body {
     margin: 0;
-    display: flex;
-    min-width: 320px;
+    padding: 0;
+    /* min-width: 320px; */
     min-height: 100vh;
-    /* background-color: #d0c9c0; */
+    background-color: #d0c9c0;
     background-color: #fefbf6;
     color: var(--color-dark);
 }
