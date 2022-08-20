@@ -67,12 +67,18 @@ input {
     margin: calc(100px + var(--height-l)) 0 40px;
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 10px;
     grid-auto-rows: 1fr;
 }
 
 .card {
     padding: 10px 10px 30px;
+    height: calc(100% - 40px);
+}
+
+.card.edit_mode {
+    box-shadow: rgb(0 0 0 / 18%) 0px 2px 4px;
+    cursor: move;
 }
 
 .card_title {

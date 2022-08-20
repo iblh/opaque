@@ -1,5 +1,0 @@
-[
-    "{'category':'Productivity','apps':[{'name':'NextCloud','url':'https://nextcloud.com'},{'name':'Bitwarden','url':'https://bitwarden.com'},{'name':'Todoist','url':'https://todoist.com'},{'name':'Lounge','url':'https://lounge.com'}],'order':0}",
-    "{'category':'Linux','apps':[{'name':'ArchLinux','url':'https://archlinux.org'},{'name':'Ubuntu','url':'https://ubuntu.com'},{'name':'Debian','url':'https://debian.com'},{'name':'KaliLinux','url':'https://kalilinux.org'},{'name':'RedHat','url':'https://redhat.com'},{'name':'Fedora','url':'https://fedora.com'}],'order':1}",
-    "{'category':'Development','apps':[{'name':'GitHub','url':'https://github.com'},{'name':'GitLab','url':'https://gitlab.com'},{'name':'JupyterNotebook','url':'https://jupyter.org'},{'name':'Snibox','url':'https://snibox.com'}],'order':5}"
-]

@@ -1,76 +1,48 @@
-[
-    {
-        "category": "Productivity",
-        "apps": [
-            { "name": "NextCloud", "url": "https://nextcloud.com" },
-            { "name": "Bitwarden", "url": "https://bitwarden.com" },
-            { "name": "Todoist", "url": "https://todoist.com" },
-            { "name": "Lounge", "url": "https://lounge.com" }
-        ],
-        "order": 0
-    },
-    {
-        "category": "Linux",
-        "apps": [
-            { "name": "Arch Linux", "url": "https://archlinux.org" },
-            { "name": "Ubuntu", "url": "https://ubuntu.com" },
-            { "name": "Debian", "url": "https://debian.com" },
-            { "name": "Kali Linux", "url": "https://kalilinux.org" },
-            { "name": "RedHat", "url": "https://redhat.com" },
-            { "name": "Fedora", "url": "https://fedora.com" }
-        ],
-        "order": 1
-    },
-    {
-        "category": "Development",
-        "apps": [
-            { "name": "GitHub", "url": "https://github.com" },
-            { "name": "GitLab", "url": "https://gitlab.com" },
-            { "name": "Jupyter Notebook", "url": "https://jupyter.org" },
-            { "name": "Snibox", "url": "https://snibox.com" }
-        ],
-        "order": 5
-    },
-    {
-        "category": "Design",
-        "apps": [
-            { "name": "Dribbbble", "url": "https://dribbble.com" },
-            { "name": "Behance", "url": "https://ubuntu.com" },
-            { "name": "Pinterest", "url": "https://debian.com" },
-            { "name": "Adobe Illustrator", "url": "https://kalilinux.org" },
-            { "name": "Adobe Photoshop", "url": "https://redhat.com" },
-            { "name": "Fedora", "url": "https://fedora.com" }
-        ],
-        "order": 6
-    },
-    {
-        "category": "Media",
-        "apps": [
-            { "name": "PLEX", "url": "https://plex.tv" },
-            { "name": "FreshRSS", "url": "https://freshrss.org" },
-            { "name": "Feedly", "url": "https://feedly.com" },
-            { "name": "Photoview", "url": "https://photoview.com" }
-        ],
-        "order": 2
-    },
-    {
-        "category": "Networking",
-        "apps": [
-            { "name": "NetData", "url": "https://netdata.cloud" },
-            { "name": "Docker", "url": "https://docker.com" },
-            { "name": "PiHole", "url": "https://PiHole.net" },
-            { "name": "Photoview", "url": "https://photoview.com" }
-        ],
-        "order": 3
-    },
-    {
-        "category": "Life Style",
-        "apps": [
-            { "name": "Coffee", "url": "https://netdata.cloud" },
-            { "name": "Tea", "url": "https://docker.com" },
-            { "name": "Cocktail", "url": "https://PiHole.net" },
-            { "name": "Yelp", "url": "https://photoview.com" }
-        ],
-        "order": 4
-    }
-]
+{
+    "Productivity": [
+        { "name": "NextCloud", "url": "https://nextcloud.com" },
+        { "name": "Bitwarden", "url": "https://bitwarden.com" },
+        { "name": "Todoist", "url": "https://todoist.com" },
+        { "name": "Lounge", "url": "https://lounge.com" }
+    ],
+    "Linux": [
+        { "name": "Arch Linux", "url": "https://archlinux.org" },
+        { "name": "Ubuntu", "url": "https://ubuntu.com" },
+        { "name": "Debian", "url": "https://debian.com" },
+        { "name": "Kali Linux", "url": "https://kalilinux.org" },
+        { "name": "RedHat", "url": "https://redhat.com" },
+        { "name": "Fedora", "url": "https://fedora.com" }
+    ],
+    "Development": [
+        { "name": "GitHub", "url": "https://github.com" },
+        { "name": "GitLab", "url": "https://gitlab.com" },
+        { "name": "Jupyter Notebook", "url": "https://jupyter.org" },
+        { "name": "Snibox", "url": "https://snibox.com" }
+    ],
+    "Design": [
+        { "name": "Dribbbble", "url": "https://dribbble.com" },
+        { "name": "Behance", "url": "https://ubuntu.com" },
+        { "name": "Pinterest", "url": "https://debian.com" },
+        { "name": "Adobe Illustrator", "url": "https://kalilinux.org" },
+        { "name": "Adobe Photoshop", "url": "https://redhat.com" },
+        { "name": "Fedora", "url": "https://fedora.com" }
+    ],
+    "Media": [
+        { "name": "PLEX", "url": "https://plex.tv" },
+        { "name": "FreshRSS", "url": "https://freshrss.org" },
+        { "name": "Feedly", "url": "https://feedly.com" },
+        { "name": "Photoview", "url": "https://photoview.com" }
+    ],
+    "Networking": [
+        { "name": "NetData", "url": "https://netdata.cloud" },
+        { "name": "Docker", "url": "https://docker.com" },
+        { "name": "PiHole", "url": "https://PiHole.net" },
+        { "name": "Photoview", "url": "https://photoview.com" }
+    ],
+    "Life Style": [
+        { "name": "Coffee", "url": "https://netdata.cloud" },
+        { "name": "Tea", "url": "https://docker.com" },
+        { "name": "Cocktail", "url": "https://PiHole.net" },
+        { "name": "Yelp", "url": "https://photoview.com" }
+    ]
+}

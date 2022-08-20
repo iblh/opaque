@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import entries from './entries2.json';
+import entries from './entries.json';
 
 type Props = {
     cat: string;
@@ -15,7 +15,7 @@ export const Card = forwardRef<Ref, Props>(
         };
 
         return (
-            <div ref={ref} {...props} style={inlineStyles} className="card">
+            <div ref={ref} {...props} style={inlineStyles} className="card edit_mode">
                 <div className="card_title">{cat}</div>
                 <div className="card_content">
                     {entries[cat as keyof typeof entries].map((app, idx) => (
