@@ -64,14 +64,15 @@ input {
 }
 
 .dashboard {
-    margin: calc(100px + var(--height-l) + 6px) 0 40px;
+    margin: calc(100px + var(--height-l)) 0 40px;
     width: 100%;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 1fr;
 }
 
 .card {
-    padding: 0 0 30px;
+    padding: 10px 10px 30px;
 }
 
 .card_title {

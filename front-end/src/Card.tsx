@@ -1,21 +1,30 @@
 import React, { forwardRef } from 'react';
+import entries from './entries2.json';
 
-export const Card = forwardRef(({ entry, idx, style, ...props }, ref) => {
-    const inlineStyles = {
-        ...style,
-    };
+type Props = {
+    cat: string;
+    idx: number;
+    style: any;
+};
+type Ref = HTMLButtonElement;
 
-    let _entry = JSON.parse(entry.replace(/'/g, '"'));
-    return (
-        <div ref={ref} {...props} style={inlineStyles} className="card">
-            <div className="card_title">{_entry.category}</div>
-            <div className="card_content">
-                {_entry.apps.map((app: any) => (
-                    <div className="card_item" key={app.name}>
-                        {app.name}
-                    </div>
-                ))}
+export const Card = forwardRef<Ref, Props>(
+    ({ cat, idx, style, ...props }, ref) => {
+        const inlineStyles = {
+            ...style,
+        };
+
+        return (
+            <div ref={ref} {...props} style={inlineStyles} className="card">
+                <div className="card_title">{cat}</div>
+                <div className="card_content">
+                    {entries[cat as keyof typeof entries].map((app, idx) => (
+                        <div className="card_item" key={app.name}>
+                            {app.name}
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
-    );
-});
+        );
+    }
+);
