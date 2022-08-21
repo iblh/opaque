@@ -1,6 +1,6 @@
 :root {
-    font-size: 14px;
-    line-height: 24px;
+    font-size: 20px;
+    /* line-height: 24px; */
     font-weight: 400;
 
     color-scheme: light dark;
@@ -15,6 +15,7 @@
     --color-primary: #5f7161;
     --color-accent: #464e2e;
     --color-background: #fefbf6;
+    --color-white: #fff;
     --height-s: 10px;
     --height-m: 16px;
     --height-l: 42px;
@@ -22,7 +23,6 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
         'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
         'Helvetica Neue', sans-serif;
-    font-size: 14px;
     font-family: 'Roboto Mono', monospace;
     font-family: 'Lato', sans-serif;
     font-family: 'Noto Sans', sans-serif;
@@ -47,7 +47,7 @@ body {
     /* min-width: 320px; */
     min-height: 100vh;
     background-color: #d0c9c0;
-    background-color: #fefbf6;
+    background-color: var(--color-white);
     color: var(--color-dark);
 }
 
@@ -68,6 +68,12 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
+}
+
+input {
+    font-size: 20px;
+    line-height: 2;
+    padding: 0;
 }
 
 /* @media (prefers-color-scheme: light) {

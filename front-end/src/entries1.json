@@ -1,0 +1,9 @@
+{
+    "Productivity": ["NextCloud", "Bitwarden", "Todoist", "Lounge"],
+    "Development": ["GitHub", "GitLab", "Jupyter Notebook", "Snibox"],
+    "Design": ["Dribbbble", "Behance", "Pinterest", "Adobe Illustrator"],
+    "Linux": ["Arch Linux", "Ubuntu", "Debian"],
+    "Media": ["PLEX", "FreshRSS", "Feedly"],
+    "Networking": ["NetData", "Docker", "PiHole", "Photoview"],
+    "Life Style": ["Coffee", "Tea"]
+}

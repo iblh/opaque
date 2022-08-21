@@ -171,10 +171,11 @@ function App() {
                                         style={{
                                             backgroundColor:
                                                 'var(--color-background)',
-                                            boxShadow:
-                                                'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-                                            boxShadow:
-                                                'rgba(17, 17, 26, 0.1) 0px 1px 0px, rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 48px',
+                                            // border: '1px solid var(--color-dark)',
+                                            // boxShadow:
+                                            //     'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                                            // boxShadow:
+                                            //     'rgba(17, 17, 26, 0.1) 0px 1px 0px, rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 48px',
                                         }}
                                         idx={cats.indexOf(activeId)}
                                     />
