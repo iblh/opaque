@@ -8,7 +8,7 @@ async function jwt_verify({ jwt_token }) {
         const decoded = jwt.verify(jwt_token, JWT_SECRET);
         return decoded;
     } catch (e) {
-        return e;
+        return { error: 'invalid token' };
     }
 }
 
@@ -19,7 +19,7 @@ async function jwt_sign(payload, expires_in) {
         });
         return token;
     } catch (e) {
-        return e;
+        return { error: 'signing error' };
     }
 }
 

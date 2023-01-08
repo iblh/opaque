@@ -2,16 +2,28 @@
 import { json } from '@sveltejs/kit';
 
 import { getDb } from '$lib/db';
+import { jwt_verify } from '$lib/hooks/auth';
 
 // import { appConfig } from "$lib/config.js";
 
-export async function GET() {
+/** @type {import('./$types').RequestHandler} */
+export async function GET({ request }) {
     const db = await getDb();
 
-    // query the database
-    const dashboard = await db.collection('dashboard').find().toArray();
-    let temp_content = dashboard[0].content;
+    // get Authorization header
+    const { headers } = request;
+    const authorization = headers.get('Authorization');
+    const jwt_token = authorization.split(' ')[1];
 
-    // return Response with status: 200 and body: { bookmarks }
-    return json({ temp_content }, { status: 200 });
+    const decoded = await jwt_verify({ jwt_token });
+
+    if (decoded.error) {
+        return json({ error: 'invalid token' }, { status: 401 });
+    } else {
+        const username = decoded.username;
+        // find dashboard by username
+        const dashboard = await db.collection('dashboard').findOne({ username });
+        const content = dashboard.content;
+        return json({ content }, { status: 200 });
+    }
 }

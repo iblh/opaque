@@ -4,7 +4,7 @@
     /** @type {import('./$types').PageData} */
     export let data;
 
-    console.log('dashboard data: ', data);
+    console.log(data);
 </script>
 
 <svelte:head>
@@ -18,13 +18,32 @@
 
     <!-- <Counter /> -->
 </div>
-<!-- <div id="dashboard">
-    {#each data.dashboard.temp_content as item}
-        <div class="section">{item.root}</div>
+<div id="dashboard">
+    {#each data.dashboard.content as item}
+        <div class="section">
+            <div class="sec-title">{item.root}</div>
+
+            <!-- if root is bookmarks, loop -->
+            {#if item.root === 'bookmarks'}
+                {#each item.branches as branch}
+                    <div class="branch">{branch.name}</div>
+                {/each}
+            {/if}
+
+            {#if item.root === 'applications'}
+                {#each item.branches as branch}
+                    <div class="branch">{branch.name}</div>
+                {/each}
+            {/if}
+
+            {#if item.root === 'servers'}
+                {#each item.leaves as leaf}
+                    <div class="leaf">{leaf.name}</div>
+                {/each}
+            {/if}
+        </div>
     {/each}
-
-
-</div> -->
+</div>
 
 <style>
     #nav {
@@ -36,5 +55,11 @@
         height: 30px;
         border-bottom: 1px solid #ccc;
         padding: 0 10px;
+    }
+
+    .section {
+        display: flex;
+        flex-direction: row;
+        margin: 10px 0;
     }
 </style>

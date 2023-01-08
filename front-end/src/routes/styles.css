@@ -80,13 +80,6 @@ button {
 button:focus:not(:focus-visible) {
     outline: none;
 }
-
-@media (min-width: 720px) {
-    h1 {
-        font-size: 2.4rem;
-    }
-}
-
 .visually-hidden {
     border: 0;
     clip: rect(0 0 0 0);
@@ -97,4 +90,36 @@ button:focus:not(:focus-visible) {
     position: absolute;
     width: 1px;
     white-space: nowrap;
+}
+
+main {
+    width: 100%;
+}
+
+@media (max-width: 1280px) {
+    main {
+        width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.4rem;
+    }
+
+    main {
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        width: 90%;
+    }
+}
+
+@media (min-width: 1201px) {
+    .Container {
+        padding: 50px 250px;
+    }
 }

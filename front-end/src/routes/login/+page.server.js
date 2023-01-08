@@ -1,7 +1,14 @@
 // @ts-nocheck
+import { redirect } from '@sveltejs/kit';
+import { jwt_verify } from '$lib/hooks/auth';
+
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
-    const user = cookies.get('jwt_token');
-    console.log('cookies:', user);
-    return { user };
+    const jwt_token = cookies.get('jwt_token');
+    const decoded = await jwt_verify({ jwt_token });
+
+    // already logged in
+    if (decoded.username) {
+        throw redirect(307, '/');
+    }
 }
