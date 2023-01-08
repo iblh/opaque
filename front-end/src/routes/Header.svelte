@@ -26,5 +26,6 @@
     header {
         display: flex;
         justify-content: space-between;
+        padding: 28px;
     }
 </style>

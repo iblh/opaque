@@ -1,50 +1,40 @@
 <script>
     import Counter from './Counter.svelte';
+
+    /** @type {import('./$types').PageData} */
+    export let data;
+
+    console.log('dashboard data: ', data);
 </script>
 
 <svelte:head>
     <title>OPAQUE</title>
-    <meta name="description" content="Svelte demo app" />
+    <meta name="description" content="OPAQUE" />
 </svelte:head>
 
-<section>
-    <h1>
-        to your new<br />SvelteKit app
-    </h1>
-
-    <h2>
-        try editing <strong>src/routes/+page.svelte</strong>
-    </h2>
+<div id="nav">
+    <!-- search -->
+    <input id="search" type="text" placeholder="search" />
 
     <!-- <Counter /> -->
-</section>
+</div>
+<!-- <div id="dashboard">
+    {#each data.dashboard.temp_content as item}
+        <div class="section">{item.root}</div>
+    {/each}
+
+
+</div> -->
 
 <style>
-    section {
+    #nav {
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        flex: 0.6;
     }
-
-    h1 {
+    #search {
+        all: unset;
         width: 100%;
-    }
-
-    .welcome {
-        display: block;
-        position: relative;
-        width: 100%;
-        height: 0;
-        padding: 0 0 calc(100% * 495 / 2048) 0;
-    }
-
-    .welcome img {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        display: block;
+        height: 30px;
+        border-bottom: 1px solid #ccc;
+        padding: 0 10px;
     }
 </style>

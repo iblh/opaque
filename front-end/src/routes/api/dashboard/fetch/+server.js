@@ -9,8 +9,9 @@ export async function GET() {
     const db = await getDb();
 
     // query the database
-    const bookmarks = await db.collection('bookmarks').find().toArray();
+    const dashboard = await db.collection('dashboard').find().toArray();
+    let temp_content = dashboard[0].content;
 
     // return Response with status: 200 and body: { bookmarks }
-    return json({ bookmarks }, { status: 200 });
+    return json({ temp_content }, { status: 200 });
 }

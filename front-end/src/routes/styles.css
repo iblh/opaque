@@ -7,8 +7,8 @@
     --color-bg-0: #fffef2;
     --color-bg-1: hsl(209, 36%, 86%);
     --color-bg-2: hsl(224, 44%, 95%);
-    --color-theme-1: #ff3e00;
-    --color-theme-2: #4075a6;
+    --color-accent-1: #ff3e00;
+    --color-accent-2: #4075a6;
     --color-text: #333;
     --column-width: 42rem;
     --column-margin-top: 4rem;
@@ -34,7 +34,7 @@ p {
 }
 
 a {
-    color: var(--color-theme-1);
+    color: var(--color-accent-1);
     text-decoration: none;
 }
 
