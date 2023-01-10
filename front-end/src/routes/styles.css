@@ -7,8 +7,11 @@
     --color-bg-0: #fffef2;
     --color-bg-1: hsl(209, 36%, 86%);
     --color-bg-2: hsl(224, 44%, 95%);
-    --color-accent-1: #ff3e00;
-    --color-accent-2: #4075a6;
+    --color-primary: #464e2e;
+    --color-accent-1: #464e2e;
+    --color-accent-2: #5f7161;
+    --color-accent-3: #acb992;
+    --color-beige: #efead8;
     --color-text: #333;
     --column-width: 42rem;
     --column-margin-top: 4rem;
@@ -80,46 +83,17 @@ button {
 button:focus:not(:focus-visible) {
     outline: none;
 }
-.visually-hidden {
-    border: 0;
-    clip: rect(0 0 0 0);
-    height: auto;
-    margin: 0;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
-    white-space: nowrap;
+
+.noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
 }
 
-main {
-    width: 100%;
-}
-
-@media (max-width: 1280px) {
-    main {
-        width: 90%;
-    }
-}
-
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2.4rem;
-    }
-
-    main {
-        width: 90%;
-    }
-}
-
-@media (max-width: 480px) {
-    main {
-        width: 90%;
-    }
-}
-
-@media (min-width: 1201px) {
-    .Container {
-        padding: 50px 250px;
-    }
+.cursor-pointer {
+    cursor: pointer;
 }

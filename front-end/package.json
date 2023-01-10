@@ -21,6 +21,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@mdi/js": "^7.1.96",
 		"bcrypt": "^5.1.0",
 		"jsonwebtoken": "^9.0.0",
 		"mongodb": "^4.13.0"

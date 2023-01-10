@@ -21,8 +21,7 @@ export async function load({ fetch, params, cookies }) {
     });
 
     const dashboard = await res.json();
-
     return {
-        dashboard,
+        dashboard
     };
 }

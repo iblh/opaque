@@ -23,25 +23,43 @@
     }
 
     main {
-        flex: 1;
         display: flex;
         flex-direction: column;
-        max-width: 1440px;
+        width: 100vw;
         margin: 0 auto;
+        padding: 0 28px;
+        box-sizing: border-box;
     }
 
     footer {
         font-size: 12px;
         display: flex;
+        flex: 1;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 12px;
+        justify-content: flex-end;
+        align-items: flex-end;
+        padding: 28px;
     }
 
-    @media (min-width: 480px) {
-        footer {
-            padding: 12px 0;
+    @media (max-width: 1280px) {
+        main {
+            width: 90%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 2.4rem;
+        }
+
+        main {
+            width: 90%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        main {
+            width: 90%;
         }
     }
 </style>

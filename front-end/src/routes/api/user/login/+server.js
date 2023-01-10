@@ -27,7 +27,7 @@ export async function POST({ request }) {
 
     const payload = { username: user.username };
 
-    const jwt_token = await jwt_sign(payload, '1d');
+    const jwt_token = await jwt_sign(payload, expires_in);
 
     // return Response with status: 200 and body: { bookmarks }
     return json({ jwt_token }, { status: 200 });
