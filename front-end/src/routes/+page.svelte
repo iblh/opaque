@@ -32,37 +32,6 @@
     <button id="logout" on:click={handleLogout}>logout</button>
 </div>
 <div id="dashboard">
-    <!-- {#each data.dashboard.content as item}
-        <div class="branches">
-            {#if item.root === 'bookmarks'}
-                {#each item.branches as branch}
-                    <div class="branch">
-                        <div class="branch-name">{branch.name}</div>
-                        {#each branch.leaves as leaf}
-                            <div class="leaf">{leaf.name}</div>
-                        {/each}
-                    </div>
-                {/each}
-            {/if}
-
-            {#if item.root === 'applications'}
-                {#each item.branches as branch}
-                    <div class="branch">
-                        <div class="branch-name">{branch.name}</div>
-                        {#each branch.leaves as leaf}
-                            <div class="leaf">{leaf.name}</div>
-                        {/each}
-                    </div>
-                {/each}
-            {/if}
-
-            {#if item.root === 'servers'}
-                {#each item.leaves as leaf}
-                    <div class="branch">{leaf.name}</div>
-                {/each}
-            {/if}
-        </div>
-    {/each} -->
     {#each data.dashboard.content as item}
         <div class="tree">
             <div class="root">{item.root}</div>
@@ -71,11 +40,15 @@
                 {#if item.root === 'bookmarks'}
                     {#each item.branches as branch}
                         <div class="branch">
-                            <div class="twig">{branch.name}</div>
+                            <div class="branch-name">{branch.name}</div>
                             {#each branch.leaves as leaf}
                                 <div class="leaf">
-                                    <span class="mdi mdi-cube" />
-                                    {leaf.name}
+                                    <div class="leaf-icon">
+                                        {@html leaf.icon}
+                                    </div>
+                                    <div class="leaf-name">
+                                        {leaf.name}
+                                    </div>
                                 </div>
                             {/each}
                         </div>
@@ -85,18 +58,35 @@
                 {#if item.root === 'applications'}
                     {#each item.branches as branch}
                         <div class="branch">
-                            <div class="twig">{branch.name}</div>
+                            <div class="branch-name">{branch.name}</div>
                             {#each branch.leaves as leaf}
-                                <div class="leaf">{leaf.name}</div>
+                                <div class="leaf">
+                                    <div class="leaf-icon">
+                                        {@html leaf.icon}
+                                    </div>
+                                    <div class="leaf-name">
+                                        {leaf.name}
+                                    </div>
+                                </div>
                             {/each}
                         </div>
                     {/each}
                 {/if}
 
                 {#if item.root === 'servers'}
-                    {#each item.leaves as leaf}
-                        <div class="branch">
-                            <div class="twig">{leaf.name}</div>
+                    {#each item.twigs as twig}
+                        <div class="twig">
+                            <div class="twig-icon">
+                                {@html twig.icon}
+                            </div>
+                            <div class="twig-name">
+                                {twig.name}
+
+                                <div class="twig-url">
+                                    <!-- remove protocol -->
+                                    {twig.url.replace(/(^\w+:|^)\/\//, '')}
+                                </div>
+                            </div>
                         </div>
                     {/each}
                 {/if}
@@ -134,7 +124,6 @@
 
     #dashboard {
         display: flex;
-        box-sizing: border-box;
         flex-direction: column;
         padding: 28px 0;
     }
@@ -162,19 +151,63 @@
     .trunk {
         width: calc(100% - 200px);
         max-width: 1440px;
-        padding: 0 20px;
+        padding: 0 35px;
         display: grid;
-        box-sizing: border-box;
         grid-template-columns: repeat(4, 1fr);
     }
 
     .branch {
+        padding: 0 14px;
         margin-bottom: 42px;
     }
 
-    .twig {
+    .branch-name {
         font-weight: bold;
         color: #333;
         margin-bottom: 21px;
+    }
+
+    .leaf {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .leaf .leaf-icon {
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .leaf .leaf-name {
+        margin-left: 6px;
+    }
+
+    .twig {
+        padding: 0 14px;
+        margin-bottom: 42px;
+        display: flex;
+    }
+
+    .twig .twig-icon {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .twig .twig-name {
+        margin-left: 14px;
+    }
+
+    .twig .twig-url {
+        font-size: 14px;
+        color: #aaa;
+        margin-top: 2px;
     }
 </style>

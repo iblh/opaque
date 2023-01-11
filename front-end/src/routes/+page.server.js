@@ -3,6 +3,7 @@
 // it so that it gets served as a static asset in production
 import { redirect } from '@sveltejs/kit';
 import { jwt_verify } from '$lib/hooks/auth';
+// import MDI from '@mdi/js';
 
 export const prerender = true;
 
@@ -13,15 +14,21 @@ export async function load({ fetch, params, cookies }) {
         throw redirect(307, '/login');
     }
 
-    const res = await fetch(`/api/dashboard/fetch`, {
+    const res = await fetch(`/api/dashboard/get`, {
         method: 'GET',
         headers: {
             Authorization: `Bearer ${jwt_token}`,
         },
     });
 
+    // let iconPath = MDI['mdiGithub'];
+    // console.log(iconPath);
+    
+
     const dashboard = await res.json();
+
+
     return {
-        dashboard
+        dashboard,
     };
 }
