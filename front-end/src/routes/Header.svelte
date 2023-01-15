@@ -5,27 +5,30 @@
 </script>
 
 <header>
-    <div id="logo">
+    {#if $page.url.pathname === '/login'}
         <!-- <img src={logo} alt="logo" /> -->
-        OPAQUE
-    </div>
-
-    <!-- <nav>
-        <ul>
-            <li aria-current={$page.url.pathname === '/' ? 'page' : undefined}>
-                <a href="/">Home</a>
-            </li>
-            <li aria-current={$page.url.pathname === '/about' ? 'page' : undefined}>
-                <a href="/about">About</a>
-            </li>
-        </ul>
-    </nav> -->
+        <div id="logo">OPAGUE</div>
+    {/if}
+    {#if $page.url.pathname == '/'}
+        <nav>
+            <!-- search -->
+            <input id="search" type="text" placeholder="opague" autocomplete="off" />
+        </nav>
+    {/if}
 </header>
 
 <style>
     header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         padding: 28px;
+    }
+
+    #search {
+        all: unset;
+        height: 30px;
+        border-bottom: 1px solid #ccc;
+        width: 200px;
     }
 </style>

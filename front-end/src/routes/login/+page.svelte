@@ -56,7 +56,7 @@
 </script>
 
 <svelte:head>
-    <title>login | OPAQUE</title>
+    <title>login | OPAGUE</title>
     <meta name="description" content="OPAQUE" />
 </svelte:head>
 

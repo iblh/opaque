@@ -1,36 +1,19 @@
 <script>
     import { mdiAccount } from '@mdi/js';
-    // import Counter from './Counter.svelte';
+    import logo from '$lib/images/favicon-32x32.png';
     // console.log(mdiAccount);
-
-    import { goto } from '$app/navigation';
 
     /** @type {import('./$types').PageData} */
     export let data;
 
     console.log(data);
-
-    // handleLogout
-    export async function handleLogout() {
-        document.cookie = `jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-        goto('/login');
-    }
 </script>
 
 <svelte:head>
-    <title>OPAQUE</title>
+    <title>OPAGUE</title>
     <meta name="description" content="OPAQUE" />
 </svelte:head>
 
-<div id="nav">
-    <!-- search -->
-    <input id="search" type="text" placeholder="search" />
-
-    <!-- <Counter /> -->
-
-    <!-- logout -->
-    <button id="logout" on:click={handleLogout}>logout</button>
-</div>
 <div id="dashboard">
     {#each data.dashboard.content as item}
         <div class="tree">
@@ -43,10 +26,10 @@
                             <div class="branch-name">{branch.name}</div>
                             {#each branch.leaves as leaf}
                                 <div class="leaf">
-                                    <div class="leaf-icon">
+                                    <div class="leaf-bm-icon">
                                         {@html leaf.icon}
                                     </div>
-                                    <div class="leaf-name">
+                                    <div class="leaf-bm-name">
                                         {leaf.name}
                                     </div>
                                 </div>
@@ -60,12 +43,18 @@
                         <div class="branch">
                             <div class="branch-name">{branch.name}</div>
                             {#each branch.leaves as leaf}
-                                <div class="leaf">
-                                    <div class="leaf-icon">
+                                <div class="leaf ">
+                                    <div class="leaf-app-icon">
                                         {@html leaf.icon}
                                     </div>
-                                    <div class="leaf-name">
-                                        {leaf.name}
+                                    <div class="leaf-app-info">
+                                        <div class="leaf-app-name">
+                                            {leaf.name}
+                                        </div>
+                                        <div class="leaf-app-url">
+                                            <!-- remove protocol -->
+                                            {leaf.url.replace(/(^\w+:|^)\/\//, '')}
+                                        </div>
                                     </div>
                                 </div>
                             {/each}
@@ -79,8 +68,10 @@
                             <div class="twig-icon">
                                 {@html twig.icon}
                             </div>
-                            <div class="twig-name">
-                                {twig.name}
+                            <div class="twig-info">
+                                <div class="twig-name">
+                                    {twig.name}
+                                </div>
 
                                 <div class="twig-url">
                                     <!-- remove protocol -->
@@ -98,30 +89,6 @@
 </div>
 
 <style>
-    #nav {
-        display: flex;
-        justify-content: space-between;
-        padding: 28px 0;
-    }
-
-    #logout {
-        all: unset;
-        cursor: pointer;
-        color: #ccc;
-    }
-
-    #logout:hover {
-        color: #666;
-        text-decoration: underline;
-    }
-
-    #search {
-        all: unset;
-        height: 30px;
-        border-bottom: 1px solid #ccc;
-        width: 200px;
-    }
-
     #dashboard {
         display: flex;
         flex-direction: column;
@@ -158,6 +125,7 @@
 
     .branch {
         padding: 0 14px;
+        margin: 0 7px;
         margin-bottom: 42px;
     }
 
@@ -172,10 +140,9 @@
         align-items: center;
         margin-bottom: 10px;
         cursor: pointer;
-        font-size: 14px;
     }
 
-    .leaf .leaf-icon {
+    .leaf .leaf-bm-icon {
         width: 18px;
         height: 18px;
         display: flex;
@@ -183,12 +150,36 @@
         justify-content: center;
     }
 
-    .leaf .leaf-name {
+    .leaf .leaf-bm-name {
+        font-size: 14px;
         margin-left: 6px;
+    }
+
+    .leaf .leaf-app-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .leaf .leaf-app-info {
+        margin-left: 12px;
+    }
+
+    .leaf .leaf-app-name {
+        font-size: 14px;
+    }
+
+    .leaf .leaf-app-url {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: 2px;
     }
 
     .twig {
         padding: 0 14px;
+        margin: 0 7px;
         margin-bottom: 42px;
         display: flex;
     }
@@ -201,8 +192,12 @@
         justify-content: center;
     }
 
+    .twig .twig-info {
+        margin-left: 13px;
+    }
+
     .twig .twig-name {
-        margin-left: 14px;
+        font-weight: bold;
     }
 
     .twig .twig-url {
@@ -210,4 +205,35 @@
         color: #aaa;
         margin-top: 2px;
     }
+
+    .pruning-branch {
+        cursor: crosshair;
+        box-shadow: 0px 0px 10px 0px #efead8;
+    }
+
+    .pruning-branch .branch-name {
+        cursor: pointer;
+    }
+
+    .shaking-leaves:hover {
+        /* text-decoration: underline; */
+        /* position: relative; */
+    }
+    /* .shaking-leaves::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        transform: scaleX(0);
+        height: 2px;
+        bottom: -2px;
+        left: 0;
+        background-color: var(--color-accent-2);
+        transform-origin: bottom right;
+        transition: transform 0.25s ease-out;
+    }
+
+    .shaking-leaves:hover::after {
+        transform: scaleX(1);
+        transform-origin: bottom left;
+    } */
 </style>

@@ -1,5 +1,6 @@
 <script>
     import Header from './Header.svelte';
+    import Footer from './Footer.svelte';
     import './styles.css';
 </script>
 
@@ -10,9 +11,7 @@
         <slot />
     </main>
 
-    <footer>
-        <p>© OPAQUE</p>
-    </footer>
+    <Footer />
 </div>
 
 <style>
@@ -27,17 +26,8 @@
         flex-direction: column;
         width: 100vw;
         margin: 0 auto;
+        margin-top: 5vh;
         padding: 0 28px;
-    }
-
-    footer {
-        font-size: 12px;
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        justify-content: flex-end;
-        align-items: flex-end;
-        padding: 28px;
     }
 
     @media (max-width: 1920px) {

@@ -41,7 +41,7 @@ p {
 }
 
 a {
-    color: var(--color-accent-1);
+    color: var(--color-accent-2);
     text-decoration: none;
 }
 
@@ -100,4 +100,11 @@ button:focus:not(:focus-visible) {
 
 .cursor-pointer {
     cursor: pointer;
+}
+
+
+.leaf svg,
+.twig svg {
+    width: 100% !important;
+    height: 100% !important;
 }
