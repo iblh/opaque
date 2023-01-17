@@ -25,6 +25,6 @@
 		"bcrypt": "^5.1.0",
 		"jsonwebtoken": "^9.0.0",
 		"mongodb": "^4.13.0",
-		"muuri": "^0.9.5"
+		"svelte-dnd-action": "^0.9.22"
 	}
 }
