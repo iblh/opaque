@@ -124,6 +124,7 @@
         width: 16px;
         margin: 0;
         margin-right: 10px;
+        cursor: pointer;
     }
 
     #login-form input[type='checkbox']::after {
@@ -133,6 +134,7 @@
         height: 100%;
         border: 1px solid var(--color-accent-2);
         background-color: var(--color-bg-0);
+        box-shadow: inset 0px 0px 0px 2px var(--color-bg-0);
         visibility: visible;
     }
 

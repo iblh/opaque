@@ -8,6 +8,15 @@
     import { dndzone } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
+    import { StoreSettings } from '$lib/stores.js';
+    let settings;
+    let dragDisabled;
+
+    StoreSettings.subscribe((value) => {
+        settings = value;
+        dragDisabled = !value.show;
+    });
+
     function handleDndConsiderColumns(e) {
         branches = e.detail.items;
     }
@@ -31,7 +40,7 @@
 
 <div
     class="trunk"
-    use:dndzone={{ items: branches, flipDurationMs, type: 'columns' }}
+    use:dndzone={{ items: branches, flipDurationMs, type: 'columns', dragDisabled }}
     on:consider={handleDndConsiderColumns}
     on:finalize={handleDndFinalizeColumns}
 >
@@ -40,7 +49,7 @@
             <div class="branch-name">{branch.name}</div>
             <div
                 class="branch-leaves"
-                use:dndzone={{ items: branch.leaves, flipDurationMs }}
+                use:dndzone={{ items: branch.leaves, flipDurationMs, dragDisabled }}
                 on:consider={(e) => handleDndConsiderCards(branch.id, e)}
                 on:finalize={(e) => handleDndFinalizeCards(branch.id, e)}
             >

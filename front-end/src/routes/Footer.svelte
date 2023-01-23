@@ -1,18 +1,26 @@
 <script>
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
+    import { StoreSettings } from '$lib/stores.js';
 
     // handleLogout
     export async function handleLogout() {
         document.cookie = `jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
         goto('/login');
     }
+
+    // handleSettings
+    export async function handleSettings() {
+        StoreSettings.set({ show: true });
+    }
+    
+    // TODO: show "save", "cancel" when settings.show == true
 </script>
 
 <footer>
     <!-- logout -->
     {#if $page.url.pathname == '/'}
-        <button id="settings">settings</button>
+        <button id="settings" on:click={handleSettings}>settings</button>
         <button id="logout" on:click={handleLogout}>logout</button>
     {/if}
     <p id="copyright">© OPAGUE</p>

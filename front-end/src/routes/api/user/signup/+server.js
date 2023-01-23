@@ -19,7 +19,7 @@ export async function POST({ request }) {
     // hash the password
     const hash = await bcrypt.hash(password, 10);
 
-    // TODO: add the user to the database
+    // TODO: add the user to the database, finish the signup process
     
     // return Response with status: 200 and body: { bookmarks }
     return json({ success: "success" }, { status: 200 });
