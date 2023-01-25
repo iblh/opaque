@@ -1,7 +1,14 @@
 <script>
+    // @ts-nocheck
+
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
     import { StoreSettings } from '$lib/stores.js';
+
+    let settings;
+    StoreSettings.subscribe((value) => {
+        settings = value;
+    });
 
     // handleLogout
     export async function handleLogout() {
@@ -9,19 +16,30 @@
         goto('/login');
     }
 
-    // handleSettings
-    export async function handleSettings() {
+    // openSettings
+    export async function openSettings() {
         StoreSettings.set({ show: true });
     }
-    
-    // TODO: show "save", "cancel" when settings.show == true
+
+    export async function saveSettings() {
+        StoreSettings.set({ show: false });
+    }
+
+    export async function cancelSettings() {
+        StoreSettings.set({ show: false });
+    }
 </script>
 
 <footer>
-    <!-- logout -->
     {#if $page.url.pathname == '/'}
-        <button id="settings" on:click={handleSettings}>settings</button>
-        <button id="logout" on:click={handleLogout}>logout</button>
+        {#if !settings.show}
+            <button id="settings" on:click={openSettings}>settings</button>
+            <button id="logout" on:click={handleLogout}>logout</button>
+        {/if}
+        {#if settings.show}
+            <button id="save" on:click={saveSettings}>save</button>
+            <button id="cancel" on:click={cancelSettings}>cancel</button>
+        {/if}
     {/if}
     <p id="copyright">© OPAGUE</p>
 </footer>
@@ -37,8 +55,9 @@
     }
 
     #copyright {
-        font-size: 12px;
+        font-size: 14px;
         margin: 7px 0;
+        cursor: default;
     }
 
     footer button {
