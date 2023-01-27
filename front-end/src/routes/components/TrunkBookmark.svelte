@@ -5,23 +5,41 @@
     let branches = tree.branches;
 
     import { flip } from 'svelte/animate';
-    import { dndzone } from 'svelte-dnd-action';
+    import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
     import { StoreSettings } from '$lib/stores.js';
     let settings;
-    let dragDisabled;
+    let branchDragDisabled = true;
+    let leafDragDisabled = true;
 
     StoreSettings.subscribe((value) => {
         settings = value;
-        dragDisabled = !value.show;
+        leafDragDisabled = !value.show;
     });
 
     function handleDndConsiderColumns(e) {
+        // console.log('consider', e.detail);
         branches = e.detail.items;
+
+		// Ensure dragging is stopped on drag finish via keyboard
+        if (
+            e.detail.info.source === SOURCES.KEYBOARD &&
+            e.detail.info.trigger === TRIGGERS.DRAG_STOPPED
+        ) {
+            branchDragDisabled = true;
+        }
     }
     function handleDndFinalizeColumns(e) {
+        // console.log('finalize', e.detail);
         branches = e.detail.items;
+
+		// Ensure dragging is stopped on drag finish via pointer (mouse, touch)
+        if (
+            e.detail.info.source === SOURCES.POINTER
+        ) {
+            branchDragDisabled = true;
+        }
     }
     function handleDndConsiderCards(cid, e) {
         const colIdx = branches.findIndex((c) => c.id === cid);
@@ -36,6 +54,14 @@
     function handleClick(e) {
         alert('dragabble elements are still clickable :)');
     }
+    function startDrag(e) {
+        // preventing default to prevent lag on touch devices (because of the browser checking for screen scrolling)
+        e.preventDefault();
+        if (!leafDragDisabled) branchDragDisabled = false;
+    }
+    function handleKeyDown(e) {
+        if ((e.key === 'Enter' || e.key === ' ') && branchDragDisabled) branchDragDisabled = false;
+    }
 </script>
 
 <div
@@ -44,7 +70,7 @@
         items: branches,
         flipDurationMs,
         type: 'columns',
-        dragDisabled,
+        dragDisabled: branchDragDisabled,
         dropTargetStyle: {},
     }}
     on:consider={handleDndConsiderColumns}
@@ -55,13 +81,21 @@
             class="branch {settings.show ? 'pruning-branch' : ''}"
             animate:flip={{ duration: flipDurationMs }}
         >
-            <div class="branch-name">{branch.name}</div>
+            <div
+                class="branch-name"
+                aria-label="drag-handle"
+                on:mousedown={startDrag}
+                on:touchstart={startDrag}
+                on:keydown={handleKeyDown}
+            >
+                {branch.name}
+            </div>
             <div
                 class="branch-leaves"
                 use:dndzone={{
                     items: branch.leaves,
                     flipDurationMs,
-                    dragDisabled,
+                    dragDisabled: leafDragDisabled,
                     dropTargetStyle: {},
                 }}
                 on:consider={(e) => handleDndConsiderCards(branch.id, e)}
@@ -82,16 +116,16 @@
                         </div>
                     </div>
                 {/each}
-                <div class="leaf add-leaf {settings.show ? 'show-leaf' : ''}">
-                    <div class="leaf-bm-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            ><title>plus</title><path
-                                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
-                            /></svg
-                        >
-                    </div>
-                    <div class="leaf-bm-name" />
+            </div>
+            <div class="leaf bud {settings.show ? 'show-bud' : ''}">
+                <div class="leaf-bm-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        ><title>plus</title><path
+                            d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+                        /></svg
+                    >
                 </div>
+                <div class="leaf-bm-name" />
             </div>
         </div>
     {/each}
