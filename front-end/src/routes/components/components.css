@@ -7,7 +7,7 @@
 }
 
 .branch {
-    padding: 0;
+    padding: 0 7px;
     margin: 0 7px;
     margin-bottom: 42px;
     outline: none;
@@ -16,7 +16,7 @@
 .branch-name {
     font-weight: bold;
     color: #333;
-    padding: 7px 14px;
+    padding: 7px;
     margin-bottom: 7px;
 }
 .branch-leaves {
@@ -27,7 +27,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 7px;
-    padding: 2px 14px;
+    padding: 2px 7px;
     cursor: pointer;
 }
 
@@ -107,22 +107,30 @@
 
 .pruning-branch {
     cursor: crosshair;
-    box-shadow: 0px 0px 10px 0px #efead8;
+    box-shadow: 0px 0px 10px 0px var(--color-beige);
     background-color: var(--color-bg-0);
     cursor: pointer !important;
-    transition: box-shadow 0.2s ease-in-out;
+    transition: box-shadow 0.14s ease-in-out;
 }
 
-.pruning-branch:hover {
-    box-shadow: 0px 0px 21px 7px #efead8;
+.pruning-branch.active {
+    box-shadow: 0px 0px 21px 7px var(--color-beige);
 }
 
 .pruning-branch .branch-name {
     cursor: pointer;
 }
 
+.pruning-branch .branch-name:hover {
+    text-decoration: underline;
+}
+
 .pruning-branch .leaf {
     cursor: pointer !important;
+}
+
+.pruning-branch .leaf:hover {
+    background-color: var(--color-beige);
 }
 
 .shaking-leaves:hover {

@@ -12,6 +12,7 @@
     let settings;
     let branchDragDisabled = true;
     let leafDragDisabled = true;
+    let hoveredBranchId = null;
 
     StoreSettings.subscribe((value) => {
         settings = value;
@@ -22,7 +23,7 @@
         // console.log('consider', e.detail);
         branches = e.detail.items;
 
-		// Ensure dragging is stopped on drag finish via keyboard
+        // Ensure dragging is stopped on drag finish via keyboard
         if (
             e.detail.info.source === SOURCES.KEYBOARD &&
             e.detail.info.trigger === TRIGGERS.DRAG_STOPPED
@@ -34,10 +35,8 @@
         // console.log('finalize', e.detail);
         branches = e.detail.items;
 
-		// Ensure dragging is stopped on drag finish via pointer (mouse, touch)
-        if (
-            e.detail.info.source === SOURCES.POINTER
-        ) {
+        // Ensure dragging is stopped on drag finish via pointer (mouse, touch)
+        if (e.detail.info.source === SOURCES.POINTER) {
             branchDragDisabled = true;
         }
     }
@@ -51,9 +50,12 @@
         branches[colIdx].leaves = e.detail.items;
         branches = [...branches];
     }
+    
     function handleClick(e) {
         alert('dragabble elements are still clickable :)');
     }
+
+    // functions for drag handle
     function startDrag(e) {
         // preventing default to prevent lag on touch devices (because of the browser checking for screen scrolling)
         e.preventDefault();
@@ -78,7 +80,9 @@
 >
     {#each branches as branch (branch.id)}
         <div
-            class="branch {settings.show ? 'pruning-branch' : ''}"
+            class="branch"
+            class:pruning-branch={settings.show}
+            class:active={hoveredBranchId === branch.id}
             animate:flip={{ duration: flipDurationMs }}
         >
             <div
@@ -87,6 +91,8 @@
                 on:mousedown={startDrag}
                 on:touchstart={startDrag}
                 on:keydown={handleKeyDown}
+                on:mouseenter={() => (hoveredBranchId = branch.id)}
+                on:mouseleave={() => (hoveredBranchId = null)}
             >
                 {branch.name}
             </div>

@@ -12,7 +12,7 @@
     {#if $page.url.pathname == '/'}
         <nav>
             <!-- search -->
-            <input id="search" type="text" placeholder="opague" autocomplete="off" />
+            <input id="search" type="text" placeholder="OPAGUE" autocomplete="off" />
         </nav>
     {/if}
 </header>

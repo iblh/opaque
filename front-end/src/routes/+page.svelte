@@ -32,7 +32,7 @@
         <div class="tree">
             <div class="root">{tree.root}</div>
 
-                <svelte:component this={trunkmapping[tree.root]} {tree} />
+            <svelte:component this={trunkmapping[tree.root]} {tree} />
 
             <div class="placeholder" />
         </div>
@@ -52,6 +52,7 @@
 
     .root {
         width: 200px;
+        padding: 7px 0;
         display: flex;
         justify-content: flex-end;
         text-transform: uppercase;
