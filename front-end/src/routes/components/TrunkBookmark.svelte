@@ -51,8 +51,16 @@
         branches = [...branches];
     }
     
-    function handleClick(e) {
-        alert('dragabble elements are still clickable :)');
+    function handleClick(e, leaf) {
+        const rect = e.currentTarget.getBoundingClientRect();
+
+        // set #komorebi to the position of the rect
+        const komorebi = document.getElementById('komorebi');
+        komorebi.style.left = Math.round(rect.left + 30) + 'px';
+        komorebi.style.top = Math.round(rect.top) + 'px';
+        komorebi.style.width = Math.round(rect.width - 30) + 'px';
+        komorebi.style.display = 'flex';
+
     }
 
     // functions for drag handle
@@ -112,7 +120,7 @@
                     <div
                         class="leaf"
                         animate:flip={{ duration: flipDurationMs }}
-                        on:click={handleClick}
+                        on:click={(e) => handleClick(e, leaf)}
                     >
                         <div class="leaf-bm-icon">
                             {@html leaf.icon}

@@ -1,139 +1,127 @@
 .trunk {
-    width: calc(100% - 200px);
-    max-width: 1440px;
-    padding: 0 35px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+  width: calc(100% - 200px);
+  max-width: 1440px;
+  padding: 0 35px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .branch {
-    padding: 0 7px;
-    margin: 0 7px;
-    margin-bottom: 42px;
-    outline: none;
+  padding: 0 7px;
+  margin: 0 7px;
+  margin-bottom: 42px;
+  outline: none;
 }
 
 .branch-name {
-    font-weight: bold;
-    color: #333;
-    padding: 7px;
-    margin-bottom: 7px;
+  font-weight: bold;
+  color: #333;
+  padding: 7px;
+  margin-bottom: 7px;
 }
+
 .branch-leaves {
-    padding: 7px 0;
+  padding: 7px 0;
 }
 
 .leaf {
-    display: flex;
-    align-items: center;
-    margin-bottom: 7px;
-    padding: 2px 7px;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 7px;
+  padding: 2px 7px;
+  cursor: pointer;
 }
-
 .leaf .leaf-bm-icon {
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
 .leaf .leaf-bm-name {
-    font-size: 14px;
-    margin-left: 6px;
+  font-size: 14px;
+  margin-left: 6px;
 }
-
 .leaf .leaf-app-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
 .leaf .leaf-app-info {
-    margin-left: 12px;
+  margin-left: 12px;
 }
-
 .leaf .leaf-app-name {
-    font-size: 14px;
+  font-size: 14px;
 }
-
 .leaf .leaf-app-url {
-    font-size: 12px;
-    color: #aaa;
-    margin-top: 2px;
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
 }
 
 .twig {
-    padding: 0 14px;
-    margin: 0 7px;
-    margin-bottom: 42px;
-    display: flex;
+  padding: 0 14px;
+  margin: 0 7px;
+  margin-bottom: 42px;
+  display: flex;
 }
-
 .twig .twig-icon {
-    width: 35px;
-    height: 35px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
 .twig .twig-info {
-    margin-left: 13px;
+  margin-left: 13px;
 }
-
 .twig .twig-name {
-    font-weight: bold;
+  font-weight: bold;
 }
-
 .twig .twig-url {
-    font-size: 14px;
-    color: #aaa;
-    margin-top: 2px;
+  font-size: 14px;
+  color: #aaa;
+  margin-top: 2px;
 }
 
 .bud {
-    opacity: 0;
-    cursor: default;
+  opacity: 0;
+  cursor: default;
 }
 
 .show-bud {
-    opacity: 1;
-    cursor: pointer;
+  opacity: 1;
+  cursor: pointer;
 }
 
 .pruning-branch {
-    cursor: crosshair;
-    box-shadow: 0px 0px 10px 0px var(--color-beige);
-    background-color: var(--color-bg-0);
-    cursor: pointer !important;
-    transition: box-shadow 0.14s ease-in-out;
+  cursor: crosshair;
+  /* shadow4 - light */
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
+  background-color: var(--color-bg);
+  cursor: pointer !important;
+  transition: box-shadow 0.14s ease-in-out;
+}
+.pruning-branch .branch-name {
+  cursor: pointer;
+}
+.pruning-branch .branch-name:hover {
+  text-decoration: underline;
+}
+.pruning-branch .leaf {
+  cursor: pointer !important;
+}
+.pruning-branch .leaf:hover {
+  background-color: var(--color-beige);
+  box-shadow: inset 0px 0px 0px 1px var(--color-primary);
 }
 
 .pruning-branch.active {
-    box-shadow: 0px 0px 21px 7px var(--color-beige);
-}
-
-.pruning-branch .branch-name {
-    cursor: pointer;
-}
-
-.pruning-branch .branch-name:hover {
-    text-decoration: underline;
-}
-
-.pruning-branch .leaf {
-    cursor: pointer !important;
-}
-
-.pruning-branch .leaf:hover {
-    background-color: var(--color-beige);
-}
-
-.shaking-leaves:hover {
-    /* text-decoration: underline; */
-    /* position: relative; */
-}
+  box-shadow: 0px 0px 21px 7px var(--color-beige);
+  /* elevation ms-depth-16 */
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-primary);
+  /* shadow16 - light */
+  /* box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14); */
+}/*# sourceMappingURL=components.css.map */

@@ -8,6 +8,7 @@
     import TrunkBookmark from './components/TrunkBookmark.svelte';
     import TrunkApplication from './components/TrunkApplication.svelte';
     import TrunkServer from './components/TrunkServer.svelte';
+    import Komorebi from './components/Komorebi.svelte';
     import './components/components.css';
 
     /** @type {import('./$types').PageData} */
@@ -37,6 +38,7 @@
             <div class="placeholder" />
         </div>
     {/each}
+    <Komorebi />
 </div>
 
 <style>
@@ -75,7 +77,7 @@
         height: 2px;
         bottom: -2px;
         left: 0;
-        background-color: var(--color-accent-2);
+        background-color: var(--color-accent-1);
         transform-origin: bottom right;
         transition: transform 0.25s ease-out;
     }

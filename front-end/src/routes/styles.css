@@ -4,12 +4,9 @@
     --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
         Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-mono: 'Fira Mono', monospace;
-    --color-bg-0: #fffef2;
-    --color-bg-1: hsl(209, 36%, 86%);
-    --color-bg-2: hsl(224, 44%, 95%);
+    --color-bg: #fffef2;
     --color-primary: #464e2e;
-    --color-accent-1: #464e2e;
-    --color-accent-2: #5f7161;
+    --color-accent-1: #5f7161;
     --color-accent-3: #acb992;
     --color-beige: #efead8;
     --color-text: #333;
@@ -26,7 +23,7 @@
 body {
     min-height: 100vh;
     margin: 0;
-    background-color: var(--color-bg-0);
+    background-color: var(--color-bg);
     background-size: 100vw 100vh;
 }
 
@@ -41,7 +38,7 @@ p {
 }
 
 a {
-    color: var(--color-accent-2);
+    color: var(--color-accent-1);
     text-decoration: none;
 }
 
@@ -102,9 +99,11 @@ button:focus:not(:focus-visible) {
     cursor: pointer;
 }
 
+.flex {
+    display: flex;
+}
 
-.leaf svg,
-.twig svg {
+svg {
     width: 100% !important;
     height: 100% !important;
 }

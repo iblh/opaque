@@ -115,7 +115,7 @@
     #login-form input[type='password'] {
         all: unset;
         height: 30px;
-        border-bottom: 1px solid var(--color-accent-2);
+        border-bottom: 1px solid var(--color-accent-1);
         width: 200px;
     }
 
@@ -132,14 +132,14 @@
         display: inline-block;
         width: 100%;
         height: 100%;
-        border: 1px solid var(--color-accent-2);
-        background-color: var(--color-bg-0);
-        box-shadow: inset 0px 0px 0px 2px var(--color-bg-0);
+        border: 1px solid var(--color-accent-1);
+        background-color: var(--color-bg);
+        box-shadow: inset 0px 0px 0px 2px var(--color-bg);
         visibility: visible;
     }
 
     #login-form input[type='checkbox']:checked::after {
-        background-color: var(--color-accent-2);
+        background-color: var(--color-accent-1);
     }
 
     #login-form label {
@@ -158,12 +158,12 @@
     }
 
     #login-form button:hover {
-        background-color: var(--color-accent-2);
+        background-color: var(--color-accent-1);
         color: var(--color-beige);
     }
 
     #login-form button:focus {
         outline: none;
-        box-shadow: 0 0 0 2px var(--color-accent-2);
+        box-shadow: 0 0 0 2px var(--color-accent-1);
     }
 </style>
