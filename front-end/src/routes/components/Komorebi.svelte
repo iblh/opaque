@@ -1,4 +1,42 @@
-<div id="komorebi">
+<script>
+    // @ts-nocheck
+
+    import { StoreKomorebi } from '$lib/stores.js';
+
+    let komorebi;
+    StoreKomorebi.subscribe((value) => {
+        komorebi = value;
+    });
+
+    function clickOutside(node) {
+        const handleClick = (event) => {
+            if (
+                node &&
+                !node.contains(event.target) &&
+                !event.defaultPrevented &&
+                window.getComputedStyle(node).display !== 'none'
+            ) {
+                node.dispatchEvent(new CustomEvent('click_outside', node));
+            }
+        };
+
+        document.addEventListener('mousedown', handleClick, true);
+
+        return {
+            destroy() {
+                document.removeEventListener('mousedown', handleClick, true);
+            },
+        };
+    }
+
+    function handleClickOutside(event) {
+        // set display to none
+        const komorebi = document.getElementById('komorebi');
+        komorebi.style.display = 'none';
+    }
+</script>
+
+<div id="komorebi" use:clickOutside on:click_outside={handleClickOutside}>
     <div class="row">
         <div class="icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -7,7 +45,14 @@
                 /></svg
             >
         </div>
-        <input type="text" class="value" name="name" placeholder="Name" autocomplete="off" />
+        <input
+            type="text"
+            class="value"
+            name="name"
+            placeholder="Name"
+            autocomplete="off"
+            value={komorebi.name}
+        />
     </div>
     <div class="row">
         <div class="icon">
@@ -17,7 +62,14 @@
                 /></svg
             >
         </div>
-        <input type="text" class="value" name="url" placeholder="URL" autocomplete="off" />
+        <input
+            type="text"
+            class="value"
+            name="url"
+            placeholder="URL"
+            autocomplete="off"
+            value={komorebi.url}
+        />
     </div>
     <div class="row">
         <div class="icon">
@@ -27,7 +79,14 @@
                 /></svg
             >
         </div>
-        <input type="text" class="value" name="icon" placeholder="Icon" autocomplete="off" />
+        <input
+            type="text"
+            class="value"
+            name="icon"
+            placeholder="Icon"
+            autocomplete="off"
+            value={komorebi.icon}
+        />
     </div>
     <div class="ctrl">
         <div class="flex">
@@ -65,7 +124,7 @@
         width: 0;
         flex-direction: column;
         align-items: center;
-        padding: 7px 0;
+        padding: 10px 0;
         box-sizing: border-box;
         font-size: 14px;
         background: rgba(70, 78, 46, 0.75);
@@ -95,7 +154,7 @@
         align-items: center;
         width: 100%;
         margin-bottom: 7px;
-        padding: 7px;
+        padding: 2px 7px;
     }
 
     #komorebi .ctrl {
@@ -103,7 +162,7 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        margin-top: 7px;
+        margin-top: 10px;
         padding: 0 7px;
     }
 

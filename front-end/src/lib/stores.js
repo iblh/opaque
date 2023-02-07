@@ -1,3 +1,6 @@
 import { writable } from 'svelte/store';
 
-export const StoreSettings = writable({ show: false });
+const StoreSettings = writable({ show: false });
+const StoreKomorebi = writable({name: '', url: '', icon: ''});
+
+export { StoreSettings, StoreKomorebi };

@@ -8,7 +8,7 @@
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
-    import { StoreSettings } from '$lib/stores.js';
+    import { StoreSettings, StoreKomorebi } from '$lib/stores.js';
     let settings;
     let branchDragDisabled = true;
     let leafDragDisabled = true;
@@ -52,6 +52,7 @@
     }
     
     function handleClick(e, leaf) {
+        if (!settings.show) return;
         const rect = e.currentTarget.getBoundingClientRect();
 
         // set #komorebi to the position of the rect
@@ -61,12 +62,15 @@
         komorebi.style.width = Math.round(rect.width - 30) + 'px';
         komorebi.style.display = 'flex';
 
+        StoreKomorebi.set(leaf);
     }
 
     // functions for drag handle
     function startDrag(e) {
         // preventing default to prevent lag on touch devices (because of the browser checking for screen scrolling)
         e.preventDefault();
+
+        // prevent branch dragging if the leaf is not active
         if (!leafDragDisabled) branchDragDisabled = false;
     }
     function handleKeyDown(e) {
