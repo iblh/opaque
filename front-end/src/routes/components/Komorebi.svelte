@@ -130,8 +130,8 @@
         background: rgba(70, 78, 46, 0.75);
         color: var(--color-beige);
         backdrop-filter: blur(2px);
-        /* shadow28 - light */
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14),
+        /* shadow28 - dark  */
+        box-shadow: rgb(0 0 0 / 24%) 0px 0px 8px, rgb(0 0 0 / 28%) 0px 14px 28px,
             inset 0px 0px 0px 1.4px var(--color-primary);
     }
 
@@ -171,7 +171,7 @@
         width: 100%;
         flex: 1;
         margin: 0 6px;
-        border-bottom: 1px solid rgba(239, 234, 216, 0.75);
+        border-bottom: 1px solid rgba(239, 234, 216, 0.7);
     }
 
     #komorebi input[type='text'] {

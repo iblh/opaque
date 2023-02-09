@@ -50,19 +50,22 @@
         branches[colIdx].leaves = e.detail.items;
         branches = [...branches];
     }
-    
+
     function handleClick(e, leaf) {
-        if (!settings.show) return;
-        const rect = e.currentTarget.getBoundingClientRect();
+        if (settings.show) {
+            const rect = e.currentTarget.getBoundingClientRect();
 
-        // set #komorebi to the position of the rect
-        const komorebi = document.getElementById('komorebi');
-        komorebi.style.left = Math.round(rect.left + 30) + 'px';
-        komorebi.style.top = Math.round(rect.top) + 'px';
-        komorebi.style.width = Math.round(rect.width - 30) + 'px';
-        komorebi.style.display = 'flex';
+            // set #komorebi to the position of the rect
+            const komorebi = document.getElementById('komorebi');
+            komorebi.style.left = Math.round(rect.left + 30) + 'px';
+            komorebi.style.top = Math.round(rect.top) + 'px';
+            komorebi.style.width = Math.round(rect.width - 30) + 'px';
+            komorebi.style.display = 'flex';
 
-        StoreKomorebi.set(leaf);
+            StoreKomorebi.set(leaf);
+        } else {
+            return;
+        }
     }
 
     // functions for drag handle
@@ -121,8 +124,12 @@
             >
                 {#each branch.leaves as leaf (leaf.id)}
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <div
+                    <svelte:element
+                        this={settings.show ? 'div' : 'a'}
                         class="leaf"
+                        href={leaf.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         animate:flip={{ duration: flipDurationMs }}
                         on:click={(e) => handleClick(e, leaf)}
                     >
@@ -132,7 +139,7 @@
                         <div class="leaf-bm-name">
                             {leaf.name}
                         </div>
-                    </div>
+                    </svelte:element>
                 {/each}
             </div>
             <div class="leaf bud {settings.show ? 'show-bud' : ''}">
