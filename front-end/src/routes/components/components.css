@@ -121,7 +121,6 @@
   background-color: var(--color-beige);
   box-shadow: inset 0px 0px 0px 1px var(--color-primary);
 }
-
 .pruning-branch.active {
   box-shadow: 0px 0px 21px 7px var(--color-beige);
   /* elevation ms-depth-16 */

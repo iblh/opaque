@@ -132,15 +132,15 @@
         background-color: var(--color-beige);
         box-shadow: inset 0px 0px 0px 1px var(--color-primary);
     }
-}
 
-.pruning-branch.active {
-    box-shadow: 0px 0px 21px 7px var(--color-beige);
-    /* elevation ms-depth-16 */
-    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
-        inset 0px 0px 0px 1px var(--color-primary);
-
-    /* shadow16 - light */
-    // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
-    //     inset 0px 0px 0px 1px var(--color-primary);
+    &.active {
+        box-shadow: 0px 0px 21px 7px var(--color-beige);
+        /* elevation ms-depth-16 */
+        box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
+            inset 0px 0px 0px 1px var(--color-primary);
+    
+        /* shadow16 - light */
+        // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
+        //     inset 0px 0px 0px 1px var(--color-primary);
+    }
 }
