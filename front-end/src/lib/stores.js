@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 
-const StoreSettings = writable({ show: false });
-const StoreKomorebi = writable({name: '', url: '', icon: ''});
+const StoreOnAir = writable({ forest: {}, config: {} });
+const StoreSettings = writable({ show: false, forest: {}, config: {} });
+const StoreKomorebi = writable({ name: '', url: '', icon: '' });
 
-export { StoreSettings, StoreKomorebi };
+export { StoreOnAir, StoreSettings, StoreKomorebi };

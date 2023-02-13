@@ -104,13 +104,27 @@
     </div>
     <div class="ctrl">
         <div class="flex ">
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div class="icon" id="komorebi-confirm" on:click={handleConfirm}>
+            <div
+                class="icon"
+                id="komorebi-confirm"
+                on:click={handleConfirm}
+                on:keydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleConfirm();
+                }}
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
                 </svg>
             </div>
-            <div class="icon" id="komorebi-cancel" on:click={handleCancel}>
+            <div
+                class="icon"
+                id="komorebi-cancel"
+                on:click={handleCancel}
+                on:keydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleCancel();
+                }}
+                style="margin-left: 7px;"
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                         d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
@@ -143,7 +157,7 @@
         backdrop-filter: blur(2px);
         /* shadow28 - dark  */
         box-shadow: rgb(0 0 0 / 24%) 0px 0px 8px, rgb(0 0 0 / 28%) 0px 14px 28px,
-            inset 0px 0px 0px 1.4px var(--color-primary);
+            inset 0px 0px 0px 1px var(--color-primary);
     }
 
     #komorebi .icon {
@@ -199,6 +213,9 @@
 
     #komorebi input[type='text'] {
         font-size: 14px;
+    }
+    #komorebi input:focus {
+        border-bottom: 1px solid rgba(239, 234, 216, 1);
     }
 
     #komorebi ::-webkit-input-placeholder {

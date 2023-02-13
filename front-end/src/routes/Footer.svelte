@@ -1,9 +1,10 @@
 <script>
     // @ts-nocheck
 
+	import { get } from 'svelte/store'
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
-    import { StoreSettings } from '$lib/stores.js';
+    import { StoreOnAir, StoreSettings } from '$lib/stores.js';
 
     let settings;
     StoreSettings.subscribe((value) => {
@@ -18,7 +19,8 @@
 
     // openSettings
     export async function openSettings() {
-        StoreSettings.set({ show: true });
+        const onair = get(StoreOnAir);
+        StoreSettings.set({ show: true, forest: onair.forest, config: onair.config });
     }
 
     export async function saveSettings() {

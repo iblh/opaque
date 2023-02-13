@@ -29,7 +29,7 @@
 </svelte:head>
 
 <div id="dashboard">
-    {#each data.dashboard.content as tree}
+    {#each data.dashboard.forest as tree}
         <div class="tree">
             <div class="root">{tree.root}</div>
 
@@ -68,22 +68,4 @@
         justify-content: space-between;
         margin: 10px 0;
     }
-
-    /* .shaking-leaves::after {
-        content: '';
-        position: absolute;
-        width: 100%;
-        transform: scaleX(0);
-        height: 2px;
-        bottom: -2px;
-        left: 0;
-        background-color: var(--color-accent-1);
-        transform-origin: bottom right;
-        transition: transform 0.25s ease-out;
-    }
-
-    .shaking-leaves:hover::after {
-        transform: scaleX(1);
-        transform-origin: bottom left;
-    } */
 </style>

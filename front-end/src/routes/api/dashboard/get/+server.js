@@ -22,8 +22,8 @@ export async function GET({ request }) {
     } else {
         const username = decoded.username;
         // find dashboard by username
-        const dashboard = await db.collection('dashboard').findOne({ username });
-        const content = dashboard.content;
-        return json({ content }, { status: 200 });
+        const dashboard = await db.collection('dashboards').findOne({ username });
+
+        return json({ dashboard }, { status: 200 });
     }
 }

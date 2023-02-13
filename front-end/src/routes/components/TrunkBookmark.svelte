@@ -62,6 +62,7 @@
             komorebi.style.width = Math.round(rect.width - 30) + 'px';
             komorebi.style.display = 'flex';
 
+            console.log(leaf);
             StoreKomorebi.set(leaf);
         } else {
             return;
@@ -123,7 +124,6 @@
                 on:finalize={(e) => handleDndFinalizeCards(branch.id, e)}
             >
                 {#each branch.leaves as leaf (leaf.id)}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <svelte:element
                         this={settings.show ? 'div' : 'a'}
                         class="leaf"
@@ -132,6 +132,9 @@
                         rel="noopener noreferrer"
                         animate:flip={{ duration: flipDurationMs }}
                         on:click={(e) => handleClick(e, leaf)}
+                        on:keydown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') handleClick(e, leaf);
+                        }}
                     >
                         <div class="leaf-bm-icon">
                             {@html leaf.icon}
