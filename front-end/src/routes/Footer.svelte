@@ -20,7 +20,7 @@
     // openSettings
     export async function openSettings() {
         const onair = get(StoreOnAir);
-        StoreSettings.set({ show: true, forest: onair.forest, config: onair.config });
+        StoreSettings.set({ show: true, config: onair.config });
     }
 
     export async function saveSettings() {

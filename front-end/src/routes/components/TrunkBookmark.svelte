@@ -62,7 +62,6 @@
             komorebi.style.width = Math.round(rect.width - 30) + 'px';
             komorebi.style.display = 'flex';
 
-            console.log(leaf);
             StoreKomorebi.set(leaf);
         } else {
             return;
@@ -98,7 +97,7 @@
         <div
             class="branch"
             class:pruning-branch={settings.show}
-            class:active={hoveredBranchId === branch.id}
+            class:hovered={hoveredBranchId === branch.id}
             animate:flip={{ duration: flipDurationMs }}
         >
             <div
@@ -126,6 +125,7 @@
                 {#each branch.leaves as leaf (leaf.id)}
                     <svelte:element
                         this={settings.show ? 'div' : 'a'}
+                        id={leaf.id}
                         class="leaf"
                         href={leaf.url}
                         target="_blank"

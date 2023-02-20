@@ -121,9 +121,16 @@
   background-color: var(--color-beige);
   box-shadow: inset 0px 0px 0px 1px var(--color-primary);
 }
-.pruning-branch.active {
+.pruning-branch.hovered {
   box-shadow: 0px 0px 21px 7px var(--color-beige);
   /* elevation ms-depth-16 */
   box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-primary);
   /* shadow16 - light */
+}
+
+#dnd-action-dragged-el.leaf {
+  -webkit-backdrop-filter: blur(2px) !important;
+          backdrop-filter: blur(2px) !important;
+  background-color: rgba(239, 234, 216, 0.75) !important;
+  box-shadow: inset 0px 0px 0px 1px var(--color-primary);
 }/*# sourceMappingURL=components.css.map */

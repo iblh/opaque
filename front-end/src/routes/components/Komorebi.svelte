@@ -36,21 +36,50 @@
     }
 
     function handleConfirm() {
+        const elemK = document.getElementById('komorebi');
+        const elemLeaf = document.getElementById(komorebi.id);
+
+        const formData = new FormData(elemK);
+
+        // set href of elemLeaf
+        elemLeaf.href = formData.get('url');
+
+        // set icon and name of elemLeaf
+        const elemLeafName = elemLeaf.querySelector('.leaf-bm-name');
+        elemLeafName.innerHTML = formData.get('name');
+
+        const elemLeafIcon = elemLeaf.querySelector('.leaf-bm-icon');
+        let svg = formData.get('icon');
+        
+        // if svg have title, remove it
+        if (svg.includes('<title>')) {
+            svg = svg.replace(/<title>.*?<\/title>/, '');
+        }
+        elemLeafIcon.innerHTML = svg
+
+
+        // set display to none
+        elemK.style.display = 'none';
+    }
+
+    function handleCancel(event) {
+        event.preventDefault();
         // set display to none
         const elemK = document.getElementById('komorebi');
         elemK.style.display = 'none';
     }
 
-    function handleCancel() {
-        // set display to none
-        const elemK = document.getElementById('komorebi');
-        elemK.style.display = 'none';
+    function handleDelete(event) {
+        event.preventDefault();
     }
-
-    function handleDelete() {}
 </script>
 
-<div id="komorebi" use:clickOutside on:click_outside={handleClickOutside}>
+<form
+    id="komorebi"
+    use:clickOutside
+    on:click_outside={handleClickOutside}
+    on:submit|preventDefault={handleConfirm}
+>
     <div class="row">
         <div class="icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -103,21 +132,16 @@
         />
     </div>
     <div class="ctrl">
-        <div class="flex ">
-            <div
-                class="icon"
-                id="komorebi-confirm"
-                on:click={handleConfirm}
-                on:keydown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') handleConfirm();
-                }}
-            >
+        <div class="flex">
+            <!-- confirm btn -->
+            <button type="submit" class="btn" id="komorebi-confirm">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
                 </svg>
-            </div>
-            <div
-                class="icon"
+            </button>
+            <!-- cancel btn -->
+            <button
+                class="btn"
                 id="komorebi-cancel"
                 on:click={handleCancel}
                 on:keydown={(e) => {
@@ -130,17 +154,17 @@
                         d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
                     />
                 </svg>
-            </div>
+            </button>
         </div>
-        <div class="icon" id="komorebi-delete">
+        <button type="button" class="btn" id="komorebi-delete">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path
                     d="M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19M8,9H16V19H8V9M15.5,4L14.5,3H9.5L8.5,4H5V6H19V4H15.5Z"
                 /></svg
             >
-        </div>
+        </button>
     </div>
-</div>
+</form>
 
 <style>
     #komorebi {
@@ -191,14 +215,26 @@
         padding: 0 6px;
     }
 
-    #komorebi .ctrl .icon {
+    #komorebi .ctrl .btn svg {
+        width: 100%;
+        height: 100%;
+        fill: var(--color-beige);
+    }
+
+    #komorebi .ctrl .btn {
         padding: 1px;
         width: 20px;
         height: 20px;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-beige);
+        background: none;
+        border: none;
     }
 
-    #komorebi .ctrl .icon:hover {
+    #komorebi .ctrl .btn:hover {
         background: rgba(239, 234, 216, 0.2);
         border: 1px solid var(--color-beige);
     }
