@@ -1,13 +1,13 @@
 <script>
     // @ts-nocheck
 
-	import { get } from 'svelte/store'
+    import { get } from 'svelte/store';
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
-    import { StoreOnAir, StoreSettings } from '$lib/stores.js';
+    import { StoreOnAir, StoreTune } from '$lib/stores.js';
 
     let settings;
-    StoreSettings.subscribe((value) => {
+    StoreTune.subscribe((value) => {
         settings = value;
     });
 
@@ -20,15 +20,15 @@
     // openSettings
     export async function openSettings() {
         const onair = get(StoreOnAir);
-        StoreSettings.set({ show: true, config: onair.config });
+        StoreTune.set({ show: true, forest: onair.forest, config: onair.config, });
     }
 
     export async function saveSettings() {
-        StoreSettings.set({ show: false });
+        StoreTune.set({ show: false });
     }
 
     export async function cancelSettings() {
-        StoreSettings.set({ show: false });
+        StoreTune.set({ show: false });
     }
 </script>
 

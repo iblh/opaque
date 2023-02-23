@@ -13,8 +13,10 @@
 
     /** @type {import('./$types').PageData} */
     export let data;
+    import { StoreOnAir } from '$lib/stores.js';
 
     console.log(data);
+    StoreOnAir.set(data.dashboard);
 
     const trunkmapping = {
         bookmarks: TrunkBookmark,

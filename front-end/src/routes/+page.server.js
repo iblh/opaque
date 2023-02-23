@@ -3,7 +3,6 @@
 // it so that it gets served as a static asset in production
 import { redirect } from '@sveltejs/kit';
 import { jwt_verify } from '$lib/hooks/auth';
-import { StoreOnAir } from '$lib/stores.js';
 // import MDI from '@mdi/js';
 
 export const prerender = true;
@@ -26,6 +25,6 @@ export async function load({ fetch, params, cookies }) {
     // console.log(iconPath);
 
     const dashboard = await res.json();
-    StoreOnAir.set({ forest: dashboard.forest, config: dashboard.config });
+    
     return dashboard;
 }

@@ -8,19 +8,18 @@
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
-    import { StoreSettings, StoreKomorebi } from '$lib/stores.js';
+    import { StoreTune, StoreKomorebi } from '$lib/stores.js';
     let settings;
     let branchDragDisabled = true;
     let leafDragDisabled = true;
     let hoveredBranchId = null;
 
-    StoreSettings.subscribe((value) => {
+    StoreTune.subscribe((value) => {
         settings = value;
         leafDragDisabled = !value.show;
     });
 
     function handleDndConsiderColumns(e) {
-        // console.log('consider', e.detail);
         branches = e.detail.items;
 
         // Ensure dragging is stopped on drag finish via keyboard
@@ -31,9 +30,16 @@
             branchDragDisabled = true;
         }
     }
+
     function handleDndFinalizeColumns(e) {
-        // console.log('finalize', e.detail);
         branches = e.detail.items;
+        // update branches in settings.forest array based on root (tree.root)
+        const forest = settings.forest;
+        const rootIdx = forest.findIndex((r) => r.root === tree.root);
+        forest[rootIdx].branches = branches;
+        settings.forest = [...forest];
+
+        StoreTune.set(settings);
 
         // Ensure dragging is stopped on drag finish via pointer (mouse, touch)
         if (e.detail.info.source === SOURCES.POINTER) {
@@ -98,6 +104,7 @@
             class="branch"
             class:pruning-branch={settings.show}
             class:hovered={hoveredBranchId === branch.id}
+            id={branch.id}
             animate:flip={{ duration: flipDurationMs }}
         >
             <div
