@@ -25,6 +25,6 @@ export async function load({ fetch, params, cookies }) {
     // console.log(iconPath);
 
     const dashboard = await res.json();
-    
+
     return dashboard;
 }
