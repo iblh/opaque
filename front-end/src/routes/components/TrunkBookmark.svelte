@@ -17,6 +17,7 @@
     StoreTune.subscribe((value) => {
         settings = value;
         leafDragDisabled = !value.show;
+        console.log(settings);
     });
 
     function handleDndConsiderColumns(e) {
@@ -46,15 +47,23 @@
             branchDragDisabled = true;
         }
     }
-    function handleDndConsiderCards(cid, e) {
-        const colIdx = branches.findIndex((c) => c.id === cid);
+    function handleDndConsiderCards(branchId, e) {
+        const colIdx = branches.findIndex((c) => c.id === branchId);
         branches[colIdx].leaves = e.detail.items;
         branches = [...branches];
     }
-    function handleDndFinalizeCards(cid, e) {
-        const colIdx = branches.findIndex((c) => c.id === cid);
+    function handleDndFinalizeCards(branchId, e) {
+        const colIdx = branches.findIndex((c) => c.id === branchId);
         branches[colIdx].leaves = e.detail.items;
         branches = [...branches];
+
+        // console.log(branches);
+        // // update branches in settings.forest array based on root (tree.root)
+        // const forest = settings.forest;
+        // const rootIdx = forest.findIndex((r) => r.root === tree.root);
+        // forest[rootIdx].branches = branches;
+        // // settings.forest = [...forest];
+        // StoreTune.set(settings);
     }
 
     function handleClick(e, leaf) {
