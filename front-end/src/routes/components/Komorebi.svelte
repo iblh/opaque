@@ -1,12 +1,13 @@
 <script>
     // @ts-nocheck
-
+    import { get } from 'svelte/store';
     import { StoreKomorebi } from '$lib/stores.js';
 
-    let komorebi;
-    StoreKomorebi.subscribe((value) => {
-        komorebi = value;
-    });
+    // let komorebi;
+    // StoreKomorebi.subscribe((value) => {
+    //     komorebi = value;
+    //     console.log(komorebi);
+    // });
 
     function clickOutside(node) {
         const handleClick = (event) => {
@@ -36,27 +37,26 @@
     }
 
     function handleConfirm() {
+        // get data from StoreKomorebi
+        const sk = get(StoreKomorebi);
         const elemK = document.getElementById('komorebi');
-        const elemLeaf = document.getElementById(komorebi.id);
-
-        const formData = new FormData(elemK);
+        const elemLeaf = document.getElementById(sk.id);
 
         // set href of elemLeaf
-        elemLeaf.href = formData.get('url');
+        elemLeaf.href = sk.href;
 
         // set icon and name of elemLeaf
         const elemLeafName = elemLeaf.querySelector('.leaf-bm-name');
-        elemLeafName.innerHTML = formData.get('name');
+        elemLeafName.innerHTML = sk.name;
 
         const elemLeafIcon = elemLeaf.querySelector('.leaf-bm-icon');
-        let svg = formData.get('icon');
-        
+        let svg = sk.icon;
+
         // if svg have title, remove it
         if (svg.includes('<title>')) {
             svg = svg.replace(/<title>.*?<\/title>/, '');
         }
-        elemLeafIcon.innerHTML = svg
-
+        elemLeafIcon.innerHTML = svg;
 
         // set display to none
         elemK.style.display = 'none';
@@ -94,7 +94,7 @@
             name="name"
             placeholder="Name"
             autocomplete="off"
-            value={komorebi.name}
+            bind:value={$StoreKomorebi.name}
         />
     </div>
     <div class="row">
@@ -111,7 +111,7 @@
             name="url"
             placeholder="URL"
             autocomplete="off"
-            value={komorebi.url}
+            value={$StoreKomorebi.url}
         />
     </div>
     <div class="row">
@@ -128,7 +128,7 @@
             name="icon"
             placeholder="Icon"
             autocomplete="off"
-            value={komorebi.icon}
+            value={$StoreKomorebi.icon}
         />
     </div>
     <div class="ctrl">

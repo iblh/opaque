@@ -1,8 +1,9 @@
 <script>
     // @ts-nocheck
 
+    // export let mirage;
     export let tree;
-    let branches = tree.branches;
+    // let branches = tree.branches;
 
     import { flip } from 'svelte/animate';
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
@@ -17,11 +18,10 @@
     StoreTune.subscribe((value) => {
         settings = value;
         leafDragDisabled = !value.show;
-        console.log(settings);
     });
 
     function handleDndConsiderColumns(e) {
-        branches = e.detail.items;
+        tree.branches = e.detail.items;
 
         // Ensure dragging is stopped on drag finish via keyboard
         if (
@@ -33,14 +33,7 @@
     }
 
     function handleDndFinalizeColumns(e) {
-        branches = e.detail.items;
-        // update branches in settings.forest array based on root (tree.root)
-        const forest = settings.forest;
-        const rootIdx = forest.findIndex((r) => r.root === tree.root);
-        forest[rootIdx].branches = branches;
-        settings.forest = [...forest];
-
-        StoreTune.set(settings);
+        tree.branches = e.detail.items;
 
         // Ensure dragging is stopped on drag finish via pointer (mouse, touch)
         if (e.detail.info.source === SOURCES.POINTER) {
@@ -48,22 +41,14 @@
         }
     }
     function handleDndConsiderCards(branchId, e) {
-        const colIdx = branches.findIndex((c) => c.id === branchId);
-        branches[colIdx].leaves = e.detail.items;
-        branches = [...branches];
+        const colIdx = tree.branches.findIndex((c) => c.id === branchId);
+        tree.branches[colIdx].leaves = e.detail.items;
+        // branches = [...branches];
     }
     function handleDndFinalizeCards(branchId, e) {
-        const colIdx = branches.findIndex((c) => c.id === branchId);
-        branches[colIdx].leaves = e.detail.items;
-        branches = [...branches];
-
-        // console.log(branches);
-        // // update branches in settings.forest array based on root (tree.root)
-        // const forest = settings.forest;
-        // const rootIdx = forest.findIndex((r) => r.root === tree.root);
-        // forest[rootIdx].branches = branches;
-        // // settings.forest = [...forest];
-        // StoreTune.set(settings);
+        const colIdx = tree.branches.findIndex((c) => c.id === branchId);
+        tree.branches[colIdx].leaves = e.detail.items;
+        // branches = [...branches];
     }
 
     function handleClick(e, leaf) {
@@ -77,7 +62,9 @@
             komorebi.style.width = Math.round(rect.width - 30) + 'px';
             komorebi.style.display = 'flex';
 
-            StoreKomorebi.set(leaf);
+            console.log(leaf);
+            let _leaf = { ...leaf };
+            StoreKomorebi.set(_leaf);
         } else {
             return;
         }
@@ -99,7 +86,7 @@
 <div
     class="trunk"
     use:dndzone={{
-        items: branches,
+        items: tree.branches,
         flipDurationMs,
         type: 'columns',
         dragDisabled: branchDragDisabled,
@@ -108,7 +95,7 @@
     on:consider={handleDndConsiderColumns}
     on:finalize={handleDndFinalizeColumns}
 >
-    {#each branches as branch (branch.id)}
+    {#each tree.branches as branch (branch.id)}
         <div
             class="branch"
             class:pruning-branch={settings.show}

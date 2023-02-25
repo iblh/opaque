@@ -9,14 +9,14 @@
     import TrunkApplication from './components/TrunkApplication.svelte';
     import TrunkServer from './components/TrunkServer.svelte';
     import Komorebi from './components/Komorebi.svelte';
+    import Tune from './Tune.svelte';
     import './components/components.css';
 
     /** @type {import('./$types').PageData} */
     export let data;
-    import { StoreOnAir } from '$lib/stores.js';
 
     console.log(data);
-    StoreOnAir.set(data.dashboard);
+    const mirage = structuredClone(data);
 
     const trunkmapping = {
         bookmarks: TrunkBookmark,
@@ -35,13 +35,22 @@
         <div class="tree">
             <div class="root">{tree.root}</div>
 
-            <svelte:component this={trunkmapping[tree.root]} {tree} />
+            <svelte:component this={trunkmapping[tree.root]} bind:tree />
 
             <div class="placeholder" />
         </div>
     {/each}
     <Komorebi />
+    <!-- <button
+        on:click={() => {
+            console.log(data.dashboard.forest[0].branches);
+            console.log(mirage.dashboard.forest[0].branches);
+            data = structuredClone(mirage);
+        }}
+        >reset
+    </button> -->
 </div>
+<Tune />
 
 <style>
     #dashboard {

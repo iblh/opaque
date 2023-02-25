@@ -23,7 +23,9 @@
 
     main {
         display: flex;
+        flex: 1;
         flex-direction: column;
+        justify-content: space-between;
         width: 100vw;
         margin: 0 auto;
         margin-top: 5vh;
