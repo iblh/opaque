@@ -28,6 +28,7 @@
     #search {
         all: unset;
         height: 30px;
+        /* padding: 7px 0; */
         border-bottom: 1px solid #ccc;
         width: 200px;
     }

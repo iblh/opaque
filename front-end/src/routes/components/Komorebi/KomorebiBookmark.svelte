@@ -186,8 +186,8 @@
     }
 
     .komorebi .icon {
-        width: 17px;
-        height: 17px;
+        width: 14px;
+        height: 14px;
         display: flex;
         align-items: center;
         justify-content: center;

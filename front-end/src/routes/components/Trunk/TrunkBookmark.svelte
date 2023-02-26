@@ -59,7 +59,7 @@
 
             // set #komorebi to the position of the rect
             const elKomorebi = document.getElementById('komorebi-bookmark');
-            elKomorebi.style.left = Math.round(rect.left) + 'px';
+            elKomorebi.style.left = Math.round(rect.left + 30) + 'px';
             elKomorebi.style.top = Math.round(rect.top - 5) + 'px';
             elKomorebi.style.width = Math.round(rect.width) + 'px';
             elKomorebi.style.display = 'flex';
