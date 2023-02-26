@@ -65,7 +65,6 @@
             elKomorebi.style.display = 'flex';
 
             komorebi = leaf;
-            console.log(komorebi);
         } else {
             return;
         }
@@ -161,5 +160,6 @@
             </div>
         </div>
     {/each}
-    <KomorebiBookmark bind:komorebi />
 </div>
+
+<KomorebiBookmark bind:komorebi />

@@ -1,4 +1,7 @@
 <script>
+    export let data;
+    export let mirage;
+
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
     import { storeTune } from '$lib/stores.js';
@@ -23,6 +26,7 @@
     }
 
     export async function saveSettings() {
+        console.log(data)
         storeTune.set({
             show: false,
             config: {},

@@ -15,7 +15,7 @@
     export let data;
 
     console.log(data);
-    const mirage = structuredClone(data);
+    let mirage = structuredClone(data);
 
     const trunkmapping = {
         bookmarks: TrunkBookmark,
@@ -48,7 +48,7 @@
         >reset
     </button> -->
 </div>
-<Tune />
+<Tune bind:data bind:mirage/>
 
 <style>
     #dashboard {

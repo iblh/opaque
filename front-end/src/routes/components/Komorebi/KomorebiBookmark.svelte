@@ -31,7 +31,7 @@
 
     function handleConfirm(event) {
         event.preventDefault();
-        
+
         const elKomerbi = document.getElementById('komorebi-bookmark');
         const elLeaf = document.getElementById(komorebi.id);
         const formData = new FormData(elKomerbi);
@@ -42,15 +42,23 @@
             svg = svg.replace(/<title>.*?<\/title>/, '');
         }
 
+        // if url begin without http:// or https://, add http://
+        let url = formData.get('url');
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'http://' + url;
+        }
+
+        elLeaf.querySelector('.leaf-bm-name').textContent = formData.get('name');
+        elLeaf.setAttribute('href', url);
+        elLeaf.querySelector('.leaf-bm-icon').innerHTML = svg;
+
         // update komorebi
         komorebi.name = formData.get('name');
-        komorebi.url = formData.get('url');
+        komorebi.url = url;
         komorebi.icon = svg;
 
         // set display to none
         elKomerbi.style.display = 'none';
-
-        console.log(komorebi);
     }
 
     function handleCancel(event) {
@@ -178,8 +186,8 @@
     }
 
     .komorebi .icon {
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
         display: flex;
         align-items: center;
         justify-content: center;
