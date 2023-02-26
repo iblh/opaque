@@ -173,7 +173,7 @@
         width: 0;
         flex-direction: column;
         align-items: center;
-        padding: 10px 0;
+        padding: 7px 0;
         box-sizing: border-box;
         font-size: 14px;
         background: rgba(70, 78, 46, 0.75);

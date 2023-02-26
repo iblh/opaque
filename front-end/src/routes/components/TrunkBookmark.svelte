@@ -57,9 +57,9 @@
 
             // set #komorebi to the position of the rect
             const komorebi = document.getElementById('komorebi');
-            komorebi.style.left = Math.round(rect.left + 30) + 'px';
-            komorebi.style.top = Math.round(rect.top) + 'px';
-            komorebi.style.width = Math.round(rect.width - 30) + 'px';
+            komorebi.style.left = Math.round(rect.left) + 'px';
+            komorebi.style.top = Math.round(rect.top - 5) + 'px';
+            komorebi.style.width = Math.round(rect.width) + 'px';
             komorebi.style.display = 'flex';
 
             console.log(leaf);
