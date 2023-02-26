@@ -5,10 +5,9 @@
     import logo from '$lib/images/favicon-32x32.png';
     // console.log(mdiAccount);
 
-    import TrunkBookmark from './components/TrunkBookmark.svelte';
-    import TrunkApplication from './components/TrunkApplication.svelte';
-    import TrunkServer from './components/TrunkServer.svelte';
-    import Komorebi from './components/Komorebi.svelte';
+    import TrunkBookmark from './components/Trunk/TrunkBookmark.svelte';
+    import TrunkApplication from './components/Trunk/TrunkApplication.svelte';
+    import TrunkServer from './components/Trunk/TrunkServer.svelte';
     import Tune from './Tune.svelte';
     import './components/components.css';
 
@@ -40,7 +39,6 @@
             <div class="placeholder" />
         </div>
     {/each}
-    <Komorebi />
     <!-- <button
         on:click={() => {
             console.log(data.dashboard.forest[0].branches);

@@ -1,13 +1,13 @@
 <script>
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
-    import { StoreTune } from '$lib/stores.js';
+    import { storeTune } from '$lib/stores.js';
 
     /**
      * @type {{ show: boolean; config: object; }}
      */
     let settings;
-    StoreTune.subscribe((value) => {
+    storeTune.subscribe((value) => {
         settings = value;
     });
 
@@ -19,18 +19,18 @@
 
     // openSettings
     export async function openSettings() {
-        StoreTune.set({ show: true, config: {} });
+        storeTune.set({ show: true, config: {} });
     }
 
     export async function saveSettings() {
-        StoreTune.set({
+        storeTune.set({
             show: false,
             config: {},
         });
     }
 
     export async function cancelSettings() {
-        StoreTune.set({
+        storeTune.set({
             show: false,
             config: {},
         });

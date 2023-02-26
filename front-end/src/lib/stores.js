@@ -1,6 +1,8 @@
 import { writable } from 'svelte/store';
 
-const StoreTune = writable({ show: false, config: {} });
-const StoreKomorebi = writable({ id: '', name: '', url: '', icon: '' });
+const storeTune = writable({
+    show: false,
+    config: {},
+});
 
-export { StoreTune, StoreKomorebi };
+export { storeTune };

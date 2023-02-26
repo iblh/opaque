@@ -7,15 +7,17 @@
 
     import { flip } from 'svelte/animate';
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
+    import KomorebiBookmark from '../Komorebi/KomorebiBookmark.svelte';
     const flipDurationMs = 200;
 
-    import { StoreTune, StoreKomorebi } from '$lib/stores.js';
+    import { storeTune } from '$lib/stores.js';
     let settings;
+    let komorebi = { id: '', name: '', url: '', icon: '' };
     let branchDragDisabled = true;
     let leafDragDisabled = true;
     let hoveredBranchId = null;
 
-    StoreTune.subscribe((value) => {
+    storeTune.subscribe((value) => {
         settings = value;
         leafDragDisabled = !value.show;
     });
@@ -51,20 +53,19 @@
         // branches = [...branches];
     }
 
-    function handleClick(e, leaf) {
+    function handleClick(e, root, branchId, leaf) {
         if (settings.show) {
             const rect = e.currentTarget.getBoundingClientRect();
 
             // set #komorebi to the position of the rect
-            const komorebi = document.getElementById('komorebi');
-            komorebi.style.left = Math.round(rect.left) + 'px';
-            komorebi.style.top = Math.round(rect.top - 5) + 'px';
-            komorebi.style.width = Math.round(rect.width) + 'px';
-            komorebi.style.display = 'flex';
+            const elKomorebi = document.getElementById('komorebi-bookmark');
+            elKomorebi.style.left = Math.round(rect.left) + 'px';
+            elKomorebi.style.top = Math.round(rect.top - 5) + 'px';
+            elKomorebi.style.width = Math.round(rect.width) + 'px';
+            elKomorebi.style.display = 'flex';
 
-            console.log(leaf);
-            let _leaf = { ...leaf };
-            StoreKomorebi.set(_leaf);
+            komorebi = leaf;
+            console.log(komorebi);
         } else {
             return;
         }
@@ -134,7 +135,7 @@
                         target="_blank"
                         rel="noopener noreferrer"
                         animate:flip={{ duration: flipDurationMs }}
-                        on:click={(e) => handleClick(e, leaf)}
+                        on:click={(e) => handleClick(e, tree.root, branch.id, leaf)}
                         on:keydown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') handleClick(e, leaf);
                         }}
@@ -160,4 +161,5 @@
             </div>
         </div>
     {/each}
+    <KomorebiBookmark bind:komorebi />
 </div>

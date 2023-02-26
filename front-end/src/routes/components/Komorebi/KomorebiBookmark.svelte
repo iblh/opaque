@@ -1,13 +1,7 @@
 <script>
     // @ts-nocheck
-    import { get } from 'svelte/store';
-    import { StoreKomorebi } from '$lib/stores.js';
 
-    // let komorebi;
-    // StoreKomorebi.subscribe((value) => {
-    //     komorebi = value;
-    //     console.log(komorebi);
-    // });
+    export let komorebi;
 
     function clickOutside(node) {
         const handleClick = (event) => {
@@ -32,41 +26,39 @@
 
     function handleClickOutside(event) {
         // set display to none
-        const elemK = document.getElementById('komorebi');
-        elemK.style.display = 'none';
+        handleCancel(event);
     }
 
-    function handleConfirm() {
-        // get data from StoreKomorebi
-        const sk = get(StoreKomorebi);
-        const elemK = document.getElementById('komorebi');
-        const elemLeaf = document.getElementById(sk.id);
-
-        // set href of elemLeaf
-        elemLeaf.href = sk.href;
-
-        // set icon and name of elemLeaf
-        const elemLeafName = elemLeaf.querySelector('.leaf-bm-name');
-        elemLeafName.innerHTML = sk.name;
-
-        const elemLeafIcon = elemLeaf.querySelector('.leaf-bm-icon');
-        let svg = sk.icon;
+    function handleConfirm(event) {
+        event.preventDefault();
+        
+        const elKomerbi = document.getElementById('komorebi-bookmark');
+        const elLeaf = document.getElementById(komorebi.id);
+        const formData = new FormData(elKomerbi);
 
         // if svg have title, remove it
+        let svg = formData.get('icon');
         if (svg.includes('<title>')) {
             svg = svg.replace(/<title>.*?<\/title>/, '');
         }
-        elemLeafIcon.innerHTML = svg;
+
+        // update komorebi
+        komorebi.name = formData.get('name');
+        komorebi.url = formData.get('url');
+        komorebi.icon = svg;
 
         // set display to none
-        elemK.style.display = 'none';
+        elKomerbi.style.display = 'none';
+
+        console.log(komorebi);
     }
 
     function handleCancel(event) {
         event.preventDefault();
         // set display to none
-        const elemK = document.getElementById('komorebi');
-        elemK.style.display = 'none';
+        const elKomorebi = document.getElementById('komorebi-bookmark');
+        elKomorebi.style.display = 'none';
+        komorebi = { id: '', name: '', url: '', icon: '' };
     }
 
     function handleDelete(event) {
@@ -75,9 +67,10 @@
 </script>
 
 <form
-    id="komorebi"
+    id="komorebi-bookmark"
+    class="komorebi"
     use:clickOutside
-    on:click_outside={handleClickOutside}
+    on:click_outside={handleCancel}
     on:submit|preventDefault={handleConfirm}
 >
     <div class="row">
@@ -94,7 +87,7 @@
             name="name"
             placeholder="Name"
             autocomplete="off"
-            bind:value={$StoreKomorebi.name}
+            value={komorebi.name}
         />
     </div>
     <div class="row">
@@ -111,7 +104,7 @@
             name="url"
             placeholder="URL"
             autocomplete="off"
-            value={$StoreKomorebi.url}
+            value={komorebi.url}
         />
     </div>
     <div class="row">
@@ -128,7 +121,7 @@
             name="icon"
             placeholder="Icon"
             autocomplete="off"
-            value={$StoreKomorebi.icon}
+            value={komorebi.icon}
         />
     </div>
     <div class="ctrl">
@@ -167,7 +160,7 @@
 </form>
 
 <style>
-    #komorebi {
+    .komorebi {
         position: absolute;
         display: none;
         width: 0;
@@ -184,7 +177,7 @@
             inset 0px 0px 0px 1px var(--color-primary);
     }
 
-    #komorebi .icon {
+    .komorebi .icon {
         width: 18px;
         height: 18px;
         display: flex;
@@ -192,13 +185,13 @@
         justify-content: center;
     }
 
-    #komorebi .icon svg {
+    .komorebi .icon svg {
         width: 100%;
         height: 100%;
         fill: var(--color-beige);
     }
 
-    #komorebi .row {
+    .komorebi .row {
         display: flex;
         align-items: center;
         width: 100%;
@@ -206,7 +199,7 @@
         padding: 2px 7px;
     }
 
-    #komorebi .ctrl {
+    .komorebi .ctrl {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -215,13 +208,13 @@
         padding: 0 6px;
     }
 
-    #komorebi .ctrl .btn svg {
+    .komorebi .ctrl .btn svg {
         width: 100%;
         height: 100%;
         fill: var(--color-beige);
     }
 
-    #komorebi .ctrl .btn {
+    .komorebi .ctrl .btn {
         padding: 1px;
         width: 20px;
         height: 20px;
@@ -234,12 +227,12 @@
         border: none;
     }
 
-    #komorebi .ctrl .btn:hover {
+    .komorebi .ctrl .btn:hover {
         background: rgba(239, 234, 216, 0.2);
         border: 1px solid var(--color-beige);
     }
 
-    #komorebi input {
+    .komorebi input {
         all: unset;
         width: 100%;
         flex: 1;
@@ -247,37 +240,37 @@
         border-bottom: 1px solid rgba(239, 234, 216, 0.7);
     }
 
-    #komorebi input[type='text'] {
+    .komorebi input[type='text'] {
         font-size: 14px;
     }
-    #komorebi input:focus {
+    .komorebi input:focus {
         border-bottom: 1px solid rgba(239, 234, 216, 1);
     }
 
-    #komorebi ::-webkit-input-placeholder {
+    .komorebi ::-webkit-input-placeholder {
         /* WebKit, Blink, Edge */
         color: rgba(239, 234, 216, 0.55);
     }
-    #komorebi :-moz-placeholder {
+    .komorebi :-moz-placeholder {
         /* Mozilla Firefox 4 to 18 */
         color: rgba(239, 234, 216, 0.55);
         opacity: 1;
     }
-    #komorebi ::-moz-placeholder {
+    .komorebi ::-moz-placeholder {
         /* Mozilla Firefox 19+ */
         color: rgba(239, 234, 216, 0.55);
         opacity: 1;
     }
-    #komorebi :-ms-input-placeholder {
+    .komorebi :-ms-input-placeholder {
         /* Internet Explorer 10-11 */
         color: rgba(239, 234, 216, 0.55);
     }
-    #komorebi ::-ms-input-placeholder {
+    .komorebi ::-ms-input-placeholder {
         /* Microsoft Edge */
         color: rgba(239, 234, 216, 0.55);
     }
 
-    #komorebi ::placeholder {
+    .komorebi ::placeholder {
         /* Most modern browsers support this now. */
         color: rgba(239, 234, 216, 0.55);
     }
