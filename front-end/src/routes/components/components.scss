@@ -11,16 +11,101 @@
     margin: 0 7px;
     margin-bottom: 42px;
     outline: none;
-}
+    cursor: default;
 
-.branch-name {
-    font-weight: bold;
-    color: var(--color-text);
-    padding: 7px;
-    margin-bottom: 7px;
-}
-.branch-leaves {
-    padding: 7px 0;
+    .branch-name-wrapper {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 7px;
+        padding: 0 7px;
+
+        .branch-name {
+            display: flex;
+            font-weight: bold;
+            color: var(--color-text);
+            padding: 7px 0;
+        }
+
+        .branch-name-input {
+            all: unset;
+            display: none;
+            font-weight: bold;
+            cursor: text;
+            padding: 7px 0;
+        }
+
+        .line {
+            display: flex;
+            height: 2px;
+            width: 0;
+            position: relative;
+            top: -7px;
+        }
+    }
+
+    .branch-leaves {
+        padding: 7px 0;
+    }
+
+    &.pruning-branch {
+        /* shadow4 - light */
+        box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
+        background-color: var(--color-bg);
+        background-color: rgb(255 254 242 / 75%);
+        backdrop-filter: blur(2px);
+        cursor: default !important;
+        transition: box-shadow 0.14s ease-in-out;
+
+        .branch-name-wrapper {
+            cursor: pointer;
+
+            .branch-name {
+                cursor: pointer;
+            }
+
+            &.editing {
+                .branch-name {
+                    display: none;
+                }
+                .branch-name-input {
+                    display: flex;
+                }
+            }
+        }
+
+        .leaf {
+            cursor: pointer !important;
+        }
+
+        .leaf:hover {
+            background-color: var(--color-beige);
+            box-shadow: inset 0px 0px 0px 1px var(--color-primary);
+        }
+
+        &.hovered {
+            box-shadow: 0px 0px 21px 7px var(--color-beige);
+            /* elevation ms-depth-16 */
+            box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
+                inset 0px 0px 0px 1px var(--color-primary);
+
+            /* shadow16 - light */
+            // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
+            //     inset 0px 0px 0px 1px var(--color-primary);
+
+            .branch-name-wrapper {
+                .line {
+                    width: 20%;
+                    background-color: var(--color-primary);
+                    transition: width 0.3s;
+                }
+                &.editing {
+                    .line {
+                        width: 100%;
+                    }
+                }
+            }
+        }
+    }
 }
 
 .leaf {
@@ -104,45 +189,6 @@
 .show-bud {
     opacity: 1;
     cursor: pointer;
-}
-
-.pruning-branch {
-    cursor: pointer;
-    /* shadow4 - light */
-    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
-    background-color: var(--color-bg);
-    background-color: rgb(255 254 242 / 75%);
-    backdrop-filter: blur(2px);
-    cursor: pointer !important;
-    transition: box-shadow 0.14s ease-in-out;
-
-    .branch-name {
-        cursor: pointer;
-    }
-
-    .branch-name:hover {
-        text-decoration: underline;
-    }
-
-    .leaf {
-        cursor: pointer !important;
-    }
-
-    .leaf:hover {
-        background-color: var(--color-beige);
-        box-shadow: inset 0px 0px 0px 1px var(--color-primary);
-    }
-
-    &.hovered {
-        box-shadow: 0px 0px 21px 7px var(--color-beige);
-        /* elevation ms-depth-16 */
-        box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
-            inset 0px 0px 0px 1px var(--color-primary);
-
-        /* shadow16 - light */
-        // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
-        //     inset 0px 0px 0px 1px var(--color-primary);
-    }
 }
 
 #dnd-action-dragged-el.leaf {

@@ -80,6 +80,11 @@
     use:clickOutside
     on:click_outside={handleCancel}
     on:submit|preventDefault={handleConfirm}
+    on:keydown={(event) => {
+        if (event.key === 'Escape') {
+            handleCancel(event);
+        }
+    }}
 >
     <div class="row">
         <div class="icon">
@@ -183,6 +188,7 @@
         /* shadow28 - dark  */
         box-shadow: rgb(0 0 0 / 24%) 0px 0px 8px, rgb(0 0 0 / 28%) 0px 14px 28px,
             inset 0px 0px 0px 1px var(--color-primary);
+        z-index: 99;
     }
 
     .komorebi .icon {

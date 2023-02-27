@@ -11,17 +11,79 @@
   margin: 0 7px;
   margin-bottom: 42px;
   outline: none;
+  cursor: default;
 }
-
-.branch-name {
+.branch .branch-name-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 7px;
+  padding: 0 7px;
+}
+.branch .branch-name-wrapper .branch-name {
+  display: flex;
   font-weight: bold;
   color: var(--color-text);
-  padding: 7px;
-  margin-bottom: 7px;
-}
-
-.branch-leaves {
   padding: 7px 0;
+}
+.branch .branch-name-wrapper .branch-name-input {
+  all: unset;
+  display: none;
+  font-weight: bold;
+  cursor: text;
+  padding: 7px 0;
+}
+.branch .branch-name-wrapper .line {
+  display: flex;
+  height: 2px;
+  width: 0;
+  position: relative;
+  top: -7px;
+}
+.branch .branch-leaves {
+  padding: 7px 0;
+}
+.branch.pruning-branch {
+  /* shadow4 - light */
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
+  background-color: var(--color-bg);
+  background-color: rgba(255, 254, 242, 0.75);
+  -webkit-backdrop-filter: blur(2px);
+          backdrop-filter: blur(2px);
+  cursor: default !important;
+  transition: box-shadow 0.14s ease-in-out;
+}
+.branch.pruning-branch .branch-name-wrapper {
+  cursor: pointer;
+}
+.branch.pruning-branch .branch-name-wrapper .branch-name {
+  cursor: pointer;
+}
+.branch.pruning-branch .branch-name-wrapper.editing .branch-name {
+  display: none;
+}
+.branch.pruning-branch .branch-name-wrapper.editing .branch-name-input {
+  display: flex;
+}
+.branch.pruning-branch .leaf {
+  cursor: pointer !important;
+}
+.branch.pruning-branch .leaf:hover {
+  background-color: var(--color-beige);
+  box-shadow: inset 0px 0px 0px 1px var(--color-primary);
+}
+.branch.pruning-branch.hovered {
+  box-shadow: 0px 0px 21px 7px var(--color-beige);
+  /* elevation ms-depth-16 */
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-primary);
+  /* shadow16 - light */
+}
+.branch.pruning-branch.hovered .branch-name-wrapper .line {
+  width: 20%;
+  background-color: var(--color-primary);
+  transition: width 0.3s;
+}
+.branch.pruning-branch.hovered .branch-name-wrapper.editing .line {
+  width: 100%;
 }
 
 .leaf {
@@ -95,37 +157,6 @@
 .show-bud {
   opacity: 1;
   cursor: pointer;
-}
-
-.pruning-branch {
-  cursor: pointer;
-  /* shadow4 - light */
-  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
-  background-color: var(--color-bg);
-  background-color: rgba(255, 254, 242, 0.75);
-  -webkit-backdrop-filter: blur(2px);
-          backdrop-filter: blur(2px);
-  cursor: pointer !important;
-  transition: box-shadow 0.14s ease-in-out;
-}
-.pruning-branch .branch-name {
-  cursor: pointer;
-}
-.pruning-branch .branch-name:hover {
-  text-decoration: underline;
-}
-.pruning-branch .leaf {
-  cursor: pointer !important;
-}
-.pruning-branch .leaf:hover {
-  background-color: var(--color-beige);
-  box-shadow: inset 0px 0px 0px 1px var(--color-primary);
-}
-.pruning-branch.hovered {
-  box-shadow: 0px 0px 21px 7px var(--color-beige);
-  /* elevation ms-depth-16 */
-  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-primary);
-  /* shadow16 - light */
 }
 
 #dnd-action-dragged-el.leaf {

@@ -16,6 +16,8 @@
     let branchDragDisabled = true;
     let leafDragDisabled = true;
     let hoveredBranchId = null;
+    let editingBranchId = null;
+    let tempBranchName = '';
 
     storeTune.subscribe((value) => {
         settings = value;
@@ -53,7 +55,7 @@
         // branches = [...branches];
     }
 
-    function handleClick(e, root, branchId, leaf) {
+    function handleLeafClick(e, root, branchId, leaf) {
         if (settings.show) {
             const rect = e.currentTarget.getBoundingClientRect();
 
@@ -67,6 +69,14 @@
             komorebi = leaf;
         } else {
             return;
+        }
+    }
+
+    function handleBranchClick(e, branchId, branchName) {
+        if (settings.show) {
+            editingBranchId = branchId;
+            branchDragDisabled = true;
+            tempBranchName = branchName;
         }
     }
 
@@ -99,20 +109,40 @@
         <div
             class="branch"
             class:pruning-branch={settings.show}
-            class:hovered={hoveredBranchId === branch.id}
+            class:hovered={settings.show & (hoveredBranchId === branch.id)}
             id={branch.id}
             animate:flip={{ duration: flipDurationMs }}
         >
             <div
-                class="branch-name"
+                class="branch-name-wrapper"
+                class:editing={settings.show & (editingBranchId === branch.id)}
                 aria-label="drag-handle"
-                on:mousedown={startDrag}
-                on:touchstart={startDrag}
-                on:keydown={handleKeyDown}
                 on:mouseenter={() => (hoveredBranchId = branch.id)}
                 on:mouseleave={() => (hoveredBranchId = null)}
             >
-                {branch.name}
+                <div
+                    class="branch-name"
+                    on:mousedown={startDrag}
+                    on:touchstart={startDrag}
+                    on:keydown={handleKeyDown}
+                    on:click={(e) => handleBranchClick(e, branch.id, branch.name)}
+                >
+                    {branch.name}
+                </div>
+                <input
+                    type="text"
+                    class="branch-name-input"
+                    bind:value={branch.name}
+                    on:mouseleave={() => (editingBranchId = null)}
+                    on:keydown={(e) => {
+                        if (e.key === 'Enter') editingBranchId = null;
+                        else if (e.key === 'Escape') {
+                            editingBranchId = null;
+                            branch.name = tempBranchName;
+                        }
+                    }}
+                />
+                <div class="line" />
             </div>
             <div
                 class="branch-leaves"
@@ -134,9 +164,10 @@
                         target="_blank"
                         rel="noopener noreferrer"
                         animate:flip={{ duration: flipDurationMs }}
-                        on:click={(e) => handleClick(e, tree.root, branch.id, leaf)}
+                        on:click={(e) => handleLeafClick(e, tree.root, branch.id, leaf)}
                         on:keydown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') handleClick(e, leaf);
+                            if (e.key === 'Enter' || e.key === ' ')
+                                handleLeafClick(e, tree.root, branch.id, leaf);
                         }}
                     >
                         <div class="leaf-bm-icon">
@@ -150,11 +181,9 @@
             </div>
             <div class="leaf bud {settings.show ? 'show-bud' : ''}">
                 <div class="leaf-bm-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                        ><title>plus</title><path
-                            d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
-                        /></svg
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                    </svg>
                 </div>
                 <div class="leaf-bm-name" />
             </div>
