@@ -1,9 +1,7 @@
 <script>
     // @ts-nocheck
 
-    import { mdiAccount } from '@mdi/js';
     import logo from '$lib/images/favicon-32x32.png';
-    // console.log(mdiAccount);
 
     import TrunkBookmark from './components/Trunk/TrunkBookmark.svelte';
     import TrunkApplication from './components/Trunk/TrunkApplication.svelte';

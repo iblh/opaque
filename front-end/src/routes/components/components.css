@@ -12,6 +12,8 @@
   margin-bottom: 42px;
   outline: none;
   cursor: default;
+  display: flex;
+  flex-direction: column;
 }
 .branch .branch-name-wrapper {
   display: flex;
@@ -40,6 +42,7 @@
 }
 .branch .branch-leaves {
   padding: 14px 0 7px;
+  flex: 1;
 }
 .branch.pruning-branch {
   /* shadow4 - light */
@@ -86,8 +89,6 @@
 }
 .branch.pruning-branch.pre-delete {
   text-decoration: line-through;
-  opacity: 0.5;
-  transition: opacity 0.3s;
 }
 
 .leaf {
@@ -156,6 +157,8 @@
 .bud {
   opacity: 0;
   cursor: default;
+  display: flex;
+  justify-content: space-between;
 }
 .bud .bud-icon {
   width: 17px;
