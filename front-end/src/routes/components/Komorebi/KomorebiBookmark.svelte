@@ -36,14 +36,28 @@
         const elLeaf = document.getElementById(komorebi.id);
         const formData = new FormData(elKomerbi);
 
+        let name = formData.get('name');
+        if (name === '') {
+            elKomerbi.querySelector('#komorebi-name-input').focus();
+            return;
+        }
+
         // if svg have title, remove it
         let svg = formData.get('icon');
+        if (svg === '') {
+            elKomerbi.querySelector('#komorebi-icon-input').focus();
+            return;
+        }
         if (svg.includes('<title>')) {
             svg = svg.replace(/<title>.*?<\/title>/, '');
         }
 
         // if url begin without http:// or https://, add http://
         let url = formData.get('url');
+        if (url === '') {
+            elKomerbi.querySelector('#komorebi-url-input').focus();
+            return;
+        }
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
             url = 'http://' + url;
         }
@@ -97,6 +111,7 @@
         <input
             type="text"
             class="value"
+            id="komorebi-name-input"
             name="name"
             placeholder="Name"
             autocomplete="off"
@@ -114,6 +129,7 @@
         <input
             type="text"
             class="value"
+            id="komorebi-url-input"
             name="url"
             placeholder="URL"
             autocomplete="off"
@@ -131,6 +147,7 @@
         <input
             type="text"
             class="value"
+            id="komorebi-icon-input"
             name="icon"
             placeholder="Icon"
             autocomplete="off"
@@ -192,8 +209,8 @@
     }
 
     .komorebi .icon {
-        width: 14px;
-        height: 14px;
+        width: 17px;
+        height: 17px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -209,7 +226,7 @@
         display: flex;
         align-items: center;
         width: 100%;
-        margin-bottom: 7px;
+        margin-bottom: 9px;
         padding: 2px 7px;
     }
 
@@ -251,14 +268,14 @@
         width: 100%;
         flex: 1;
         margin: 0 6px;
-        border-bottom: 1px solid rgba(239, 234, 216, 0.7);
+        border-bottom: 1.4px solid rgba(239, 234, 216, 0.7);
     }
 
     .komorebi input[type='text'] {
         font-size: 14px;
     }
     .komorebi input:focus {
-        border-bottom: 1px solid rgba(239, 234, 216, 1);
+        border-bottom: 1.4px solid rgba(239, 234, 216, 1);
     }
 
     .komorebi ::-webkit-input-placeholder {

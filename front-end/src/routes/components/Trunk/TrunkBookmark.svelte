@@ -6,6 +6,7 @@
     // let branches = tree.branches;
 
     import { flip } from 'svelte/animate';
+    import { v4 as uuidv4 } from 'uuid';
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     import KomorebiBookmark from '../Komorebi/KomorebiBookmark.svelte';
     const flipDurationMs = 200;
@@ -17,6 +18,7 @@
     let leafDragDisabled = true;
     let hoveredBranchId = null;
     let editingBranchId = null;
+    let preDeleteBranchId = [];
     let tempBranchName = '';
 
     storeTune.subscribe((value) => {
@@ -47,12 +49,23 @@
     function handleDndConsiderCards(branchId, e) {
         const colIdx = tree.branches.findIndex((c) => c.id === branchId);
         tree.branches[colIdx].leaves = e.detail.items;
-        // branches = [...branches];
+        tree.branches = [...tree.branches];
     }
     function handleDndFinalizeCards(branchId, e) {
         const colIdx = tree.branches.findIndex((c) => c.id === branchId);
         tree.branches[colIdx].leaves = e.detail.items;
-        // branches = [...branches];
+        tree.branches = [...tree.branches];
+
+        // get count of leaves according to branchId
+        const count = tree.branches[colIdx].leaves.length;
+
+        if (count === 0) {
+            preDeleteBranchId.push(branchId);
+            let elBranch = document.getElementById(branchId);
+        } else {
+            // remove branchId from preDeleteBranchId
+            preDeleteBranchId = preDeleteBranchId.filter((id) => id !== branchId);
+        }
     }
 
     function handleLeafClick(e, root, branchId, leaf) {
@@ -110,6 +123,7 @@
             class="branch"
             class:pruning-branch={settings.show}
             class:hovered={settings.show & (hoveredBranchId === branch.id)}
+            class:pre-delete={settings.show & preDeleteBranchId.includes(branch.id)}
             id={branch.id}
             animate:flip={{ duration: flipDurationMs }}
         >
@@ -131,12 +145,18 @@
                 </div>
                 <input
                     type="text"
+                    name="branch-name"
                     class="branch-name-input"
                     bind:value={branch.name}
-                    on:mouseleave={() => (editingBranchId = null)}
+                    on:mouseleave={() => {
+                        editingBranchId = null;
+                        if (branch.name === '') branch.name = 'undefined';
+                    }}
                     on:keydown={(e) => {
-                        if (e.key === 'Enter') editingBranchId = null;
-                        else if (e.key === 'Escape') {
+                        if (e.key === 'Enter') {
+                            editingBranchId = null;
+                            if (branch.name === '') branch.name = 'undefined';
+                        } else if (e.key === 'Escape') {
                             editingBranchId = null;
                             branch.name = tempBranchName;
                         }
@@ -189,6 +209,30 @@
             </div>
         </div>
     {/each}
+
+    <!-- new branch btn -->
+    <div class="branch bud {settings.show ? 'show-bud' : ''}">
+        <div class="branch-name-wrapper" aria-label="drag-handle">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+                class="branch-name"
+                on:click={() => {
+                    tree.branches.push({
+                        id: uuidv4(),
+                        name: 'undefined',
+                        leaves: [],
+                    });
+                    tree.branches = [...tree.branches];
+                }}
+            >
+                <div class="bud-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <KomorebiBookmark bind:komorebi />

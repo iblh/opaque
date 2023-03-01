@@ -16,7 +16,6 @@
 .branch .branch-name-wrapper {
   display: flex;
   flex-direction: column;
-  margin-bottom: 7px;
   padding: 0 7px;
 }
 .branch .branch-name-wrapper .branch-name {
@@ -40,7 +39,7 @@
   top: -7px;
 }
 .branch .branch-leaves {
-  padding: 7px 0;
+  padding: 14px 0 7px;
 }
 .branch.pruning-branch {
   /* shadow4 - light */
@@ -84,6 +83,11 @@
 }
 .branch.pruning-branch.hovered .branch-name-wrapper.editing .line {
   width: 100%;
+}
+.branch.pruning-branch.pre-delete {
+  text-decoration: line-through;
+  opacity: 0.5;
+  transition: opacity 0.3s;
 }
 
 .leaf {
@@ -153,10 +157,16 @@
   opacity: 0;
   cursor: default;
 }
-
-.show-bud {
-  opacity: 1;
+.bud .bud-icon {
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+.bud.show-bud {
+  opacity: 1;
 }
 
 #dnd-action-dragged-el.leaf {
