@@ -48,7 +48,7 @@
         {/if}
         {#if settings.show}
             <button id="logout" on:click={handleLogout}>logout</button>
-            <button id="cancel" on:click={cancelSettings}>cancel</button>
+            <button id="cancel" on:click={cancelSettings}>reset</button>
             <button id="save" on:click={saveSettings}>save</button>
         {/if}
     {/if}

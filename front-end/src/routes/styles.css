@@ -27,6 +27,10 @@ body {
     background-size: 100vw 100vh;
 }
 
+::selection {
+    background-color: var(--color-accent);
+    color: var(--color-background);
+}
 h1,
 h2,
 p {

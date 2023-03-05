@@ -8,16 +8,15 @@
     import { flip } from 'svelte/animate';
     import { v4 as uuidv4 } from 'uuid';
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
-    // import KomorebiBookmark from '../Komorebi/KomorebiBookmark.svelte';
     const flipDurationMs = 200;
 
     import { storeTune } from '$lib/stores.js';
     let settings;
-    // let komorebi = { id: '', name: '', url: '', icon: '' };
     let branchDragDisabled = true;
     let leafDragDisabled = true;
     let hoveredBranchId = null;
     let editingBranchId = null;
+    let elvatedBranchId = null;
     let hoveredLeafId = null;
     let editingLeafId = null;
     let tempBranchName = '';
@@ -61,20 +60,15 @@
         const count = tree.branches[colIdx].leaves.length;
     }
 
-    function handleLeafClick(event, leaf) {
-        if (settings.show) {
+    function handleLeafClick(event, branchId, leaf) {
+        if (settings.show && editingLeafId !== leaf.id) {
             editingLeafId = leaf.id;
             leafDragDisabled = true;
+            elvatedBranchId = branchId;
 
             const elLeaf = document.getElementById(leaf.id);
             const elLeafWrapper = elLeaf.querySelector('.leaf-wrapper');
             const elLeafPlaceholder = elLeaf.querySelector('.leaf-placeholder');
-
-            // elLeaf.style.overflow = 'visible';
-            // elLeafWrapper.style.position = 'absolute';
-            // elLeafWrapper.style.maxHeight = '144px';
-            // elLeafWrapper.style.zIndex = '99';
-            // elLeafPlaceholder.style.display = 'block';
         } else {
             return;
         }
@@ -103,17 +97,15 @@
 
     function handleCancelLeafEditing(event, leaf) {
         event.preventDefault();
+        event.stopPropagation();
+
         editingLeafId = null;
         leafDragDisabled = false;
+        elvatedBranchId = null;
 
         const elLeaf = document.getElementById(leaf.id);
         const elLeafWrapper = elLeaf.querySelector('.leaf-wrapper');
         const elLeafPlaceholder = elLeaf.querySelector('.leaf-placeholder');
-
-        // elLeafWrapper.style.position = 'relative';
-        // elLeafWrapper.style.maxHeight = '21px';
-        // elLeafWrapper.style.zIndex = '0';
-        // elLeafPlaceholder.style.display = 'none';
     }
 
     function handleBranchClick(event, branchId, branchName) {
@@ -156,6 +148,7 @@
             class="branch"
             class:pruning-branch={settings.show}
             class:hovered={settings.show & (hoveredBranchId === branch.id)}
+            class:elevated={settings.show & (elvatedBranchId === branch.id)}
             id={branch.id}
             animate:flip={{ duration: flipDurationMs }}
             tabindex="-1"
@@ -214,11 +207,11 @@
                         this={settings.show ? 'div' : 'a'}
                         id={leaf.id}
                         class="leaf"
+                        class:shaking-leaf={settings.show}
                         href={leaf.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         animate:flip={{ duration: flipDurationMs }}
-                        tabindex="-1"
                     >
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
                         <div
@@ -226,7 +219,7 @@
                             class:hovered={settings.show & (hoveredLeafId === leaf.id)}
                             class:editing={settings.show & (editingLeafId === leaf.id)}
                             use:clickLeafOutside
-                            on:click={(event) => handleLeafClick(event, leaf)}
+                            on:click={(event) => handleLeafClick(event, branch.id, leaf)}
                             on:mouseenter={() => {
                                 hoveredLeafId = leaf.id;
                             }}
@@ -235,12 +228,19 @@
                             }}
                             on:leaf_click_outside={(event) => handleCancelLeafEditing(event, leaf)}
                         >
-                            <div class="leaf-bm">
+                            <div
+                                class="leaf-bm"
+                                class:hide={settings.show & (editingLeafId === leaf.id)}
+                            >
                                 <div class="leaf-bm-icon">
                                     {@html leaf.icon}
                                 </div>
                                 <div class="leaf-bm-name">
-                                    {leaf.name}
+                                    <div class="line overline" />
+                                    <div>
+                                        {leaf.name}
+                                    </div>
+                                    <div class="line underline" />
                                 </div>
                             </div>
                             <form
@@ -251,15 +251,18 @@
                                     <div class="icon">
                                         {@html leaf.icon}
                                     </div>
-                                    <input
-                                        type="text"
-                                        class="value"
-                                        id="komorebi-name-input"
-                                        name="name"
-                                        placeholder="Name"
-                                        autocomplete="off"
-                                        value={leaf.name}
-                                    />
+                                    <div class="value">
+                                        <div class="line overline" />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            placeholder="Name"
+                                            autocomplete="off"
+                                            spellcheck="false"
+                                            value={leaf.name}
+                                        />
+                                        <div class="line underline" />
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="icon">
@@ -269,15 +272,18 @@
                                             />
                                         </svg>
                                     </div>
-                                    <input
-                                        type="text"
-                                        class="value"
-                                        id="komorebi-url-input"
-                                        name="url"
-                                        placeholder="URL"
-                                        autocomplete="off"
-                                        value={leaf.url}
-                                    />
+                                    <div class="value">
+                                        <div class="line overline" />
+                                        <input
+                                            type="text"
+                                            name="url"
+                                            placeholder="URL"
+                                            autocomplete="off"
+                                            spellcheck="false"
+                                            value={leaf.url}
+                                        />
+                                        <div class="line underline" />
+                                    </div>
                                 </div>
                                 <div class="row">
                                     <div class="icon">
@@ -287,20 +293,23 @@
                                             />
                                         </svg>
                                     </div>
-                                    <input
-                                        type="text"
-                                        class="value"
-                                        id="komorebi-icon-input"
-                                        name="icon"
-                                        placeholder="Icon"
-                                        autocomplete="off"
-                                        value={leaf.icon}
-                                    />
+                                    <div class="value">
+                                        <div class="line overline" />
+                                        <input
+                                            type="text"
+                                            name="icon"
+                                            placeholder="Icon"
+                                            autocomplete="off"
+                                            spellcheck="false"
+                                            value={leaf.icon}
+                                        />
+                                        <div class="line underline" />
+                                    </div>
                                 </div>
                                 <div class="ctrl">
                                     <div class="flex">
                                         <!-- confirm btn -->
-                                        <button type="submit" class="btn" id="komorebi-confirm">
+                                        <button type="submit" class="btn">
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 viewBox="0 0 24 24"
@@ -313,7 +322,12 @@
                                         <!-- cancel btn -->
                                         <button
                                             class="btn"
-                                            id="komorebi-cancel"
+                                            on:click={(event) =>
+                                                handleCancelLeafEditing(event, leaf)}
+                                            on:keydown={(event) => {
+                                                if (event.key === 'Enter' || event.key === ' ')
+                                                    handleCancelLeafEditing(event, leaf);
+                                            }}
                                             style="margin-left: 7px;"
                                         >
                                             <svg
@@ -326,7 +340,7 @@
                                             </svg>
                                         </button>
                                     </div>
-                                    <button type="button" class="btn" id="komorebi-delete">
+                                    <button type="button" class="btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                             <path d="M19,13H5V11H19V13Z" />
                                         </svg>
@@ -384,5 +398,3 @@
         </div>
     </div>
 </div>
-
-<!-- <KomorebiBookmark bind:komorebi /> -->

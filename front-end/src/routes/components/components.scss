@@ -49,78 +49,72 @@
         padding: 14px 0 7px;
         flex: 1;
     }
+}
 
-    &.pruning-branch {
-        /* shadow4 - light */
-        box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
-        background-color: var(--color-background);
-        background-color: rgb(255 254 242 / 75%);
-        backdrop-filter: blur(2px);
-        cursor: default !important;
-        transition: box-shadow 0.14s ease-in-out;
+.pruning-branch {
+    /* shadow4 - light */
+    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
+    background-color: rgb(255 254 242 / 75%);
+    backdrop-filter: blur(2px);
+    cursor: default !important;
+    transition: box-shadow 0.14s ease-in-out;
+
+    .branch-name-wrapper {
+        cursor: pointer;
+
+        .branch-name {
+            cursor: pointer;
+        }
+
+        &.editing {
+            .branch-name {
+                display: none;
+            }
+            .branch-name-input {
+                display: flex;
+            }
+        }
+    }
+
+    .leaf {
+        cursor: pointer !important;
+    }
+
+    &.hovered {
+        box-shadow: 0px 0px 21px 7px var(--color-primary);
+        /* elevation ms-depth-16 */
+        box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
+            inset 0px 0px 0px 1px var(--color-accent);
 
         .branch-name-wrapper {
-            cursor: pointer;
-
-            .branch-name {
-                cursor: pointer;
+            .line {
+                width: 20%;
+                background-color: var(--color-accent);
+                transition: width 0.3s;
             }
-
             &.editing {
-                .branch-name {
-                    display: none;
-                }
-                .branch-name-input {
-                    display: flex;
-                }
-            }
-        }
-
-        .leaf {
-            cursor: pointer !important;
-            // overflow: hidden;
-            // &:hover {
-            //     background-color: var(--color-primary);
-            //     box-shadow: inset 0px 0px 0px 1px var(--color-accent);
-            // }
-        }
-
-        &.hovered {
-            box-shadow: 0px 0px 21px 7px var(--color-primary);
-            /* elevation ms-depth-16 */
-            box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
-                inset 0px 0px 0px 1px var(--color-accent);
-
-            /* shadow16 - light */
-            // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
-            //     inset 0px 0px 0px 1px var(--color-accent);
-
-            .branch-name-wrapper {
                 .line {
-                    width: 20%;
-                    background-color: var(--color-accent);
-                    transition: width 0.3s;
-                }
-                &.editing {
-                    .line {
-                        width: 100%;
-                    }
+                    width: 100%;
                 }
             }
         }
+    }
 
-        &.pre-delete {
-            text-decoration: line-through;
-        }
+    &.elevated {
+        z-index: 1;
+    }
+
+    &.pre-delete {
+        text-decoration: line-through;
     }
 }
 
 .leaf {
     display: flex;
     flex-direction: column;
-    margin-bottom: 7px;
+    margin-bottom: 4px;
     cursor: pointer;
-    max-height: 21px;
+    max-height: 28px;
     position: relative;
     color: var(--color-text);
 
@@ -128,31 +122,45 @@
         display: flex;
         overflow: hidden;
         flex-direction: column;
-        padding: 2px 7px;
+        padding: 5px 7px;
         width: 100%;
         position: absolute;
-        max-height: 21px;
-        transition: max-height 0.3s;
+        max-height: 28px;
         z-index: 1;
 
-        &.hovered {
-            backdrop-filter: blur(2px) !important;
-            // background-color: var(--color-primary);
-            background-color: rgb(239 234 216 / 75%) !important;
-            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        &:hover {
+            text-decoration: underline;
         }
 
-        &.editing {
-            backdrop-filter: blur(2px) !important;
-            background-color: rgb(239 234 216 / 75%) !important;
-            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
-            max-height: 144px;
-            z-index: 99;
-            cursor: default;
+        .line {
+            height: 1px;
+            width: 100%;
+            background: none;
         }
+
         .leaf-bm {
             display: flex;
             align-items: center;
+            height: 18px;
+
+            &.hide {
+                display: none;
+            }
+
+            .leaf-bm-icon {
+                width: 17px;
+                height: 17px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .leaf-bm-name {
+                font-size: 14px;
+                margin-left: 6px;
+                flex: 1;
+                height: 18px;
+            }
         }
 
         .leaf-bm-form {
@@ -160,7 +168,6 @@
             width: 100%;
             flex-direction: column;
             align-items: center;
-            padding: 7px 0;
             box-sizing: border-box;
             font-size: 14px;
 
@@ -168,17 +175,17 @@
                 display: flex;
             }
 
-            input {
-                all: unset;
-                cursor: text;
-                width: 100%;
-                flex: 1;
-                margin: 0 6px;
-                border-bottom: 1.4px solid rgb(70 78 46 / 20%);
+            .underline {
+                background-color: rgb(70 78 46 / 40%);
+            }
 
-                &:focus {
-                    border-bottom: 1.4px solid var(--color-accent);
-                }
+            .row {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                margin-bottom: 4px;
+                height: 28px;
+                padding: 5px 0px;
             }
 
             .icon {
@@ -195,12 +202,23 @@
                 }
             }
 
-            .row {
-                display: flex;
-                align-items: center;
-                width: 100%;
-                margin-bottom: 9px;
-                // padding: 2px 7px;
+            .value {
+                margin-left: 6px;
+                flex: 1;
+                height: 18px;
+
+                input {
+                    all: unset;
+                    cursor: text;
+                    width: 100%;
+                    // border-bottom: 1.4px solid rgb(70 78 46 / 20%);
+
+                    &:focus + .underline {
+                        transition: background-color 0.3s;
+                        background-color: var(--color-accent);
+
+                    }
+                }
             }
 
             .ctrl {
@@ -208,13 +226,13 @@
                 align-items: center;
                 justify-content: space-between;
                 width: 100%;
-                margin-top: 10px;
-                // padding: 0 6px;
+                // margin-top: 5px;
+                padding: 5px 0 8px;
 
                 .btn {
-                    padding: 1px;
-                    width: 20px;
-                    height: 20px;
+                    padding: 0;
+                    width: 17px;
+                    height: 17px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -229,8 +247,13 @@
                         // fill: var(--color-primary);
                     }
                     &:hover {
+                        // background: var(--color-accent);
                         background: var(--color-primary);
                         border: 1px solid var(--color-accent);
+
+                        // svg {
+                        //     fill: var(--color-primary);
+                        // }
                     }
                 }
             }
@@ -240,20 +263,7 @@
     .leaf-placeholder {
         display: block;
         width: 100%;
-        height: 21px;
-    }
-
-    .leaf-bm-icon {
-        width: 17px;
-        height: 17px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .leaf-bm-name {
-        font-size: 14px;
-        margin-left: 6px;
+        height: 28px;
     }
 
     .leaf-app-icon {
@@ -276,6 +286,33 @@
         font-size: 12px;
         color: #aaa;
         margin-top: 2px;
+    }
+}
+
+.shaking-leaf {
+    .leaf-wrapper {
+        &:hover {
+            text-decoration: none;
+        }
+        &.hovered {
+            backdrop-filter: blur(2px) !important;
+            // background-color: var(--color-primary);
+            background-color: rgb(239 234 216 / 75%) !important;
+            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        }
+
+        &.editing {
+            padding: 0 7px;
+            backdrop-filter: blur(2px) !important;
+            background-color: rgb(239 234 216 / 75%) !important;
+            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+            box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
+                inset 0px 0px 0px 1px var(--color-accent);
+            max-height: 126px;
+            z-index: 99;
+            cursor: default;
+            transition: max-height 0.3s, box-shadow 0.2s ease-in-out;
+        }
     }
 }
 
