@@ -29,6 +29,7 @@
 
         .branch-name-input {
             all: unset;
+            width: 100%;
             display: none;
             font-weight: bold;
             cursor: text;
@@ -52,7 +53,7 @@
     &.pruning-branch {
         /* shadow4 - light */
         box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
-        background-color: var(--color-bg);
+        background-color: var(--color-background);
         background-color: rgb(255 254 242 / 75%);
         backdrop-filter: blur(2px);
         cursor: default !important;
@@ -77,27 +78,27 @@
 
         .leaf {
             cursor: pointer !important;
-        }
-
-        .leaf:hover {
-            background-color: var(--color-beige);
-            box-shadow: inset 0px 0px 0px 1px var(--color-primary);
+            // overflow: hidden;
+            // &:hover {
+            //     background-color: var(--color-primary);
+            //     box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+            // }
         }
 
         &.hovered {
-            box-shadow: 0px 0px 21px 7px var(--color-beige);
+            box-shadow: 0px 0px 21px 7px var(--color-primary);
             /* elevation ms-depth-16 */
             box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
-                inset 0px 0px 0px 1px var(--color-primary);
+                inset 0px 0px 0px 1px var(--color-accent);
 
             /* shadow16 - light */
             // box-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14),
-            //     inset 0px 0px 0px 1px var(--color-primary);
+            //     inset 0px 0px 0px 1px var(--color-accent);
 
             .branch-name-wrapper {
                 .line {
                     width: 20%;
-                    background-color: var(--color-primary);
+                    background-color: var(--color-accent);
                     transition: width 0.3s;
                 }
                 &.editing {
@@ -116,11 +117,131 @@
 
 .leaf {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     margin-bottom: 7px;
-    padding: 2px 7px;
     cursor: pointer;
+    max-height: 21px;
+    position: relative;
     color: var(--color-text);
+
+    .leaf-wrapper {
+        display: flex;
+        overflow: hidden;
+        flex-direction: column;
+        padding: 2px 7px;
+        width: 100%;
+        position: absolute;
+        max-height: 21px;
+        transition: max-height 0.3s;
+        z-index: 1;
+
+        &.hovered {
+            backdrop-filter: blur(2px) !important;
+            // background-color: var(--color-primary);
+            background-color: rgb(239 234 216 / 75%) !important;
+            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        }
+
+        &.editing {
+            backdrop-filter: blur(2px) !important;
+            background-color: rgb(239 234 216 / 75%) !important;
+            box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+            max-height: 144px;
+            z-index: 99;
+            cursor: default;
+        }
+        .leaf-bm {
+            display: flex;
+            align-items: center;
+        }
+
+        .leaf-bm-form {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            padding: 7px 0;
+            box-sizing: border-box;
+            font-size: 14px;
+
+            &.displayed {
+                display: flex;
+            }
+
+            input {
+                all: unset;
+                cursor: text;
+                width: 100%;
+                flex: 1;
+                margin: 0 6px;
+                border-bottom: 1.4px solid rgb(70 78 46 / 20%);
+
+                &:focus {
+                    border-bottom: 1.4px solid var(--color-accent);
+                }
+            }
+
+            .icon {
+                width: 17px;
+                height: 17px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                svg {
+                    width: 100%;
+                    height: 100%;
+                    // fill: var(--color-primary);
+                }
+            }
+
+            .row {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                margin-bottom: 9px;
+                // padding: 2px 7px;
+            }
+
+            .ctrl {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                margin-top: 10px;
+                // padding: 0 6px;
+
+                .btn {
+                    padding: 1px;
+                    width: 20px;
+                    height: 20px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--color-primary);
+                    background: none;
+                    border: none;
+
+                    svg {
+                        width: 100%;
+                        height: 100%;
+                        // fill: var(--color-primary);
+                    }
+                    &:hover {
+                        background: var(--color-primary);
+                        border: 1px solid var(--color-accent);
+                    }
+                }
+            }
+        }
+    }
+
+    .leaf-placeholder {
+        display: block;
+        width: 100%;
+        height: 21px;
+    }
 
     .leaf-bm-icon {
         width: 17px;
@@ -189,9 +310,11 @@
 
 .bud {
     opacity: 0;
+    padding: 2px 7px;
     cursor: default;
     display: flex;
     justify-content: space-between;
+    flex-direction: row;
 
     .bud-icon {
         width: 17px;
@@ -200,6 +323,11 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
+
+        &:hover {
+            background: var(--color-primary);
+            border: 1px solid var(--color-accent);
+        }
     }
 
     &.show-bud {
@@ -207,8 +335,8 @@
     }
 }
 
-#dnd-action-dragged-el.leaf {
+#dnd-action-dragged-el.leaf .leaf-wrapper {
     backdrop-filter: blur(2px) !important;
     background-color: rgb(239 234 216 / 75%) !important;
-    box-shadow: inset 0px 0px 0px 1px var(--color-primary);
+    box-shadow: inset 0px 0px 0px 1px var(--color-accent);
 }

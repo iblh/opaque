@@ -4,12 +4,12 @@
     --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
         Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-mono: 'Fira Mono', monospace;
-    --color-bg: #fffef2;
-    --color-primary: #464e2e;
+    --color-background: #fffef2;
+    --color-primary: #efead8;
+    --color-accent: #464e2e;
+    --color-text: #333;
     --color-accent-1: #5f7161;
     --color-accent-3: #acb992;
-    --color-beige: #efead8;
-    --color-text: #333;
     --column-width: 42rem;
     --column-margin-top: 4rem;
     font-family: var(--font-body);
@@ -23,7 +23,7 @@
 body {
     min-height: 100vh;
     margin: 0;
-    background-color: var(--color-bg);
+    background-color: var(--color-background);
     background-size: 100vw 100vh;
 }
 

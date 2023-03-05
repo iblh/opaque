@@ -205,11 +205,11 @@
         box-sizing: border-box;
         font-size: 14px;
         background: rgba(70, 78, 46, 0.75);
-        color: var(--color-beige);
+        color: var(--color-primary);
         backdrop-filter: blur(2px);
         /* shadow28 - dark  */
         box-shadow: rgb(0 0 0 / 24%) 0px 0px 8px, rgb(0 0 0 / 28%) 0px 14px 28px,
-            inset 0px 0px 0px 1px var(--color-primary);
+            inset 0px 0px 0px 1px var(--color-accent);
         z-index: 99;
     }
 
@@ -224,7 +224,7 @@
     .komorebi .icon svg {
         width: 100%;
         height: 100%;
-        fill: var(--color-beige);
+        fill: var(--color-primary);
     }
 
     .komorebi .row {
@@ -247,7 +247,7 @@
     .komorebi .ctrl .btn svg {
         width: 100%;
         height: 100%;
-        fill: var(--color-beige);
+        fill: var(--color-primary);
     }
 
     .komorebi .ctrl .btn {
@@ -258,14 +258,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-beige);
+        color: var(--color-primary);
         background: none;
         border: none;
     }
 
     .komorebi .ctrl .btn:hover {
         background: rgba(239, 234, 216, 0.2);
-        border: 1px solid var(--color-beige);
+        border: 1px solid var(--color-primary);
     }
 
     .komorebi input {

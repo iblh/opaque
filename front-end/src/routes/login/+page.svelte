@@ -133,8 +133,8 @@
         width: 100%;
         height: 100%;
         border: 1px solid var(--color-accent-1);
-        background-color: var(--color-bg);
-        box-shadow: inset 0px 0px 0px 2px var(--color-bg);
+        background-color: var(--color-background);
+        box-shadow: inset 0px 0px 0px 2px var(--color-background);
         visibility: visible;
     }
 
@@ -159,7 +159,7 @@
 
     #login-form button:hover {
         background-color: var(--color-accent-1);
-        color: var(--color-beige);
+        color: var(--color-primary);
     }
 
     #login-form button:focus {
