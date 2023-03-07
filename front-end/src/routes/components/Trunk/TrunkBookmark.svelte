@@ -10,6 +10,7 @@
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
+    import LeafBookmark from '../Leaf/LeafBookmark.svelte';
     import { storeTune } from '$lib/stores.js';
     let settings;
     let branchDragDisabled = true;
@@ -20,6 +21,8 @@
     let hoveredLeafId = null;
     let editingLeafId = null;
     let tempBranchName = '';
+
+    const leafInputClass = ['leaf-bm-input-name', 'leaf-bm-input-url', 'leaf-bm-input-icon'];
 
     storeTune.subscribe((value) => {
         settings = value;
@@ -67,8 +70,10 @@
             elvatedBranchId = branchId;
 
             const elLeaf = document.getElementById(leaf.id);
-            const elLeafWrapper = elLeaf.querySelector('.leaf-wrapper');
-            const elLeafPlaceholder = elLeaf.querySelector('.leaf-placeholder');
+            for (let i = 0; i < leafInputClass.length; i++) {
+                const elLeafInput = elLeaf.querySelector(`.${leafInputClass[i]}`);
+                elLeafInput.value = leaf[leafInputClass[i].split('-')[3]];
+            }
         } else {
             return;
         }
@@ -102,10 +107,6 @@
         editingLeafId = null;
         leafDragDisabled = false;
         elvatedBranchId = null;
-
-        const elLeaf = document.getElementById(leaf.id);
-        const elLeafWrapper = elLeaf.querySelector('.leaf-wrapper');
-        const elLeafPlaceholder = elLeaf.querySelector('.leaf-placeholder');
     }
 
     function handleBranchClick(event, branchId, branchName) {
@@ -255,6 +256,7 @@
                                         <div class="line overline" />
                                         <input
                                             type="text"
+                                            class="leaf-bm-input-name"
                                             name="name"
                                             placeholder="Name"
                                             autocomplete="off"
@@ -276,6 +278,7 @@
                                         <div class="line overline" />
                                         <input
                                             type="text"
+                                            class="leaf-bm-input-url"
                                             name="url"
                                             placeholder="URL"
                                             autocomplete="off"
@@ -297,6 +300,7 @@
                                         <div class="line overline" />
                                         <input
                                             type="text"
+                                            class="leaf-bm-input-icon"
                                             name="icon"
                                             placeholder="Icon"
                                             autocomplete="off"

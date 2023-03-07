@@ -9,7 +9,7 @@
 .branch {
   padding: 0 7px;
   margin: 0 7px;
-  margin-bottom: 42px;
+  margin-bottom: 28px;
   outline: none;
   cursor: default;
   display: flex;
@@ -172,7 +172,7 @@
   height: 100%;
 }
 .leaf .leaf-wrapper .leaf-bm-form .value {
-  margin-left: 6px;
+  margin: 0 6px;
   flex: 1;
   height: 18px;
 }
@@ -285,6 +285,7 @@
 
 .bud {
   opacity: 0;
+  visibility: hidden;
   padding: 2px 7px;
   cursor: default;
   display: flex;
@@ -305,6 +306,8 @@
 }
 .bud.show-bud {
   opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s;
 }
 
 #dnd-action-dragged-el.leaf .leaf-wrapper {
