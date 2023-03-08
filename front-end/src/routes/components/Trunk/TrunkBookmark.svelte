@@ -10,7 +10,6 @@
     import { dndzone, SOURCES, TRIGGERS } from 'svelte-dnd-action';
     const flipDurationMs = 200;
 
-    import LeafBookmark from '../Leaf/LeafBookmark.svelte';
     import { storeTune } from '$lib/stores.js';
     let settings;
     let branchDragDisabled = true;
