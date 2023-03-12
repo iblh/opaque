@@ -132,7 +132,7 @@
   align-items: center;
   justify-content: center;
 }
-.leaf .leaf-wrapper .leaf-bm .leaf-bm-name {
+.leaf .leaf-wrapper .leaf-bm .leaf-bm-name-wrapper {
   font-size: 14px;
   margin-left: 6px;
   flex: 1;

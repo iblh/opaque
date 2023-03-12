@@ -155,7 +155,7 @@
                 justify-content: center;
             }
 
-            .leaf-bm-name {
+            .leaf-bm-name-wrapper {
                 font-size: 14px;
                 margin-left: 6px;
                 flex: 1;
@@ -216,7 +216,6 @@
                     &:focus + .underline {
                         transition: background-color 0.3s;
                         background-color: var(--color-accent);
-
                     }
                 }
             }

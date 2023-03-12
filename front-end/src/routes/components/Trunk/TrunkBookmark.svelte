@@ -98,8 +98,58 @@
             },
         };
     }
+    function handleConfirmLeafEdit(event, leaf) {
+        event.preventDefault();
 
-    function handleCancelLeafEditing(event, leaf) {
+        const elLeaf = document.getElementById(leaf.id);
+        const elLeafForm = document.getElementById(leaf.id + '-form');
+        const formData = new FormData(elLeafForm);
+
+        // name is required
+        let name = formData.get('name');
+        if (name === '') {
+            elLeafForm.querySelector('.leaf-bm-input-name').focus();
+            return;
+        }
+
+        // url is required, format url
+        let url = formData.get('url');
+        if (url === '') {
+            elLeafForm.querySelector('.leaf-bm-input-url').focus();
+            return;
+        }
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'http://' + url;
+        }
+
+        // svg is required, remove title
+        let svg = formData.get('icon');
+        if (svg === '') {
+            elLeafForm.querySelector('.leaf-bm-input-icon').focus();
+            return;
+        } else if (!svg.match(/<svg.*?>(.*?)<\/svg>/)) {
+            elLeafForm.querySelector('.leaf-bm-input-icon').focus();
+            return;
+        }
+
+        if (svg.includes('<title>')) {
+            svg = svg.replace(/<title>.*?<\/title>/, '');
+        }
+
+        // update leaf & tree
+        leaf.name = name;
+        leaf.url = url;
+        leaf.icon = svg;
+
+        leaf = { ...leaf };
+        tree = { ...tree };
+
+        editingLeafId = null;
+        leafDragDisabled = false;
+        elvatedBranchId = null;
+    }
+
+    function handleCancelLeafEdit(event, leaf) {
         event.preventDefault();
         event.stopPropagation();
 
@@ -226,7 +276,12 @@
                             on:mouseleave={() => {
                                 hoveredLeafId = null;
                             }}
-                            on:leaf_click_outside={(event) => handleCancelLeafEditing(event, leaf)}
+                            on:leaf_click_outside={(event) => handleCancelLeafEdit(event, leaf)}
+                            on:keydown={(event) => {
+                                if (event.key === 'Escape') {
+                                    handleCancelLeafEdit(event);
+                                }
+                            }}
                         >
                             <div
                                 class="leaf-bm"
@@ -235,9 +290,9 @@
                                 <div class="leaf-bm-icon">
                                     {@html leaf.icon}
                                 </div>
-                                <div class="leaf-bm-name">
+                                <div class="leaf-bm-name-wrapper">
                                     <div class="line overline" />
-                                    <div>
+                                    <div class="leaf-bm-name">
                                         {leaf.name}
                                     </div>
                                     <div class="line underline" />
@@ -245,7 +300,10 @@
                             </div>
                             <form
                                 class="leaf-bm-form"
+                                id={leaf.id + '-form'}
                                 class:displayed={settings.show & (editingLeafId === leaf.id)}
+                                on:submit|preventDefault={(event) =>
+                                    handleConfirmLeafEdit(event, leaf)}
                             >
                                 <div class="row">
                                     <div class="icon">
@@ -325,11 +383,10 @@
                                         <!-- cancel btn -->
                                         <button
                                             class="btn"
-                                            on:click={(event) =>
-                                                handleCancelLeafEditing(event, leaf)}
+                                            on:click={(event) => handleCancelLeafEdit(event, leaf)}
                                             on:keydown={(event) => {
                                                 if (event.key === 'Enter' || event.key === ' ')
-                                                    handleCancelLeafEditing(event, leaf);
+                                                    handleCancelLeafEdit(event, leaf);
                                             }}
                                             style="margin-left: 7px;"
                                         >
