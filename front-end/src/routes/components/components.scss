@@ -55,7 +55,6 @@
     /* shadow4 - light */
     box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgb(0, 0, 0, 0.14);
     background-color: rgb(255 254 242 / 75%);
-    backdrop-filter: blur(2px);
     cursor: default !important;
     transition: box-shadow 0.14s ease-in-out;
 
@@ -81,6 +80,7 @@
     }
 
     &.hovered {
+        backdrop-filter: blur(2px);
         box-shadow: 0px 0px 21px 7px var(--color-primary);
         /* elevation ms-depth-16 */
         box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
@@ -346,7 +346,6 @@
 
 .bud {
     opacity: 0;
-    visibility: hidden;
     padding: 2px 7px;
     cursor: default;
     display: flex;
@@ -369,13 +368,6 @@
 
     &.show-bud {
         opacity: 1;
-        visibility: visible;
         transition: opacity 0.3s;
     }
-}
-
-#dnd-action-dragged-el.leaf .leaf-wrapper {
-    backdrop-filter: blur(2px) !important;
-    background-color: rgb(239 234 216 / 75%) !important;
-    box-shadow: inset 0px 0px 0px 1px var(--color-accent);
 }
