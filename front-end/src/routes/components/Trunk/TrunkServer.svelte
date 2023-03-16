@@ -5,19 +5,19 @@
 </script>
 
 <div class="trunk">
-    {#each tree.twigs as twig}
-        <div class="twig">
-            <div class="twig-icon">
-                {@html twig.icon}
+    {#each tree.branches as branch}
+        <div class="branch b-server">
+            <div class="branch-icon">
+                {@html branch.icon}
             </div>
-            <div class="twig-info">
-                <div class="twig-name">
-                    {twig.name}
+            <div class="branch-info">
+                <div class="branch-name">
+                    {branch.name}
                 </div>
 
-                <div class="twig-url">
+                <div class="branch-url">
                     <!-- remove protocol -->
-                    {twig.url.replace(/(^\w+:|^)\/\//, '')}
+                    {branch.url.replace(/(^\w+:|^)\/\//, '')}
                 </div>
             </div>
         </div>

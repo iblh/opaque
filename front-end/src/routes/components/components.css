@@ -25,6 +25,7 @@
   font-weight: bold;
   color: var(--color-text);
   padding: 7px 0;
+  align-items: center;
 }
 .branch .branch-name-wrapper .branch-name-input {
   all: unset;
@@ -65,6 +66,9 @@
 .pruning-branch .branch-name-wrapper.editing .branch-name-input {
   display: flex;
 }
+.pruning-branch .branch-name-wrapper.editing .line {
+  cursor: text;
+}
 .pruning-branch .leaf {
   cursor: pointer !important;
 }
@@ -86,7 +90,7 @@
 .pruning-branch.elevated {
   z-index: 1;
 }
-.pruning-branch.pre-delete {
+.pruning-branch.pre-del {
   text-decoration: line-through;
 }
 
@@ -209,8 +213,11 @@
   height: 100%;
 }
 .leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover {
-  background: var(--color-primary);
+  background: var(--color-accent);
   border: 1px solid var(--color-accent);
+}
+.leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover svg {
+  fill: var(--color-primary);
 }
 .leaf .leaf-placeholder {
   display: block;
@@ -258,26 +265,26 @@
   transition: max-height 0.3s, box-shadow 0.2s ease-in-out;
 }
 
-.twig {
+.b-server {
   padding: 0 14px;
   margin: 0 7px;
   margin-bottom: 42px;
   display: flex;
 }
-.twig .twig-icon {
+.b-server .branch-icon {
   width: 35px;
   height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.twig .twig-info {
+.b-server .branch-info {
   margin-left: 13px;
 }
-.twig .twig-name {
+.b-server .branch-name {
   font-weight: bold;
 }
-.twig .twig-url {
+.b-server .branch-url {
   font-size: 14px;
   color: #aaa;
   margin-top: 2px;
@@ -285,6 +292,7 @@
 
 .bud {
   opacity: 0;
+  visibility: hidden;
   padding: 2px 7px;
   cursor: default;
   display: flex;
@@ -300,10 +308,80 @@
   cursor: pointer;
 }
 .bud .bud-icon:hover {
-  background: var(--color-primary);
-  border: 1px solid var(--color-accent);
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
 }
 .bud.show-bud {
   opacity: 1;
+  visibility: inherit;
   transition: opacity 0.3s;
+}
+
+.twig {
+  opacity: 0;
+  cursor: default;
+  display: flex;
+}
+.twig .branch-name-wrapper .branch-name-input {
+  display: flex;
+  padding: 0;
+  width: auto;
+  flex: 1;
+  padding-left: 7px;
+  visibility: hidden;
+}
+.twig .branch-name-wrapper .branch-name-input::before {
+  content: url("https://www.prospectsoft.com/images/security/shield2.svg");
+}
+.twig .bud-icon {
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.twig .bud-icon:hover {
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+}
+.twig .ctrl {
+  display: none;
+  padding: 2px 7px;
+  justify-content: flex-start;
+}
+.twig.show-twig {
+  opacity: 1;
+  transition: opacity 0.3s, box-shadow 0.14s ease-in-out;
+}
+.twig.hovered {
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+}
+.twig.hovered .line {
+  cursor: text;
+  width: 0%;
+  background-color: var(--color-accent);
+}
+.twig.editing {
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+  transition: box-shadow 0.14s ease-in-out;
+}
+.twig.editing .branch-name-wrapper .branch-name-input {
+  visibility: visible;
+}
+.twig.editing .branch-name-wrapper .bud-icon {
+  cursor: text;
+}
+.twig.editing .branch-name-wrapper .bud-icon:hover {
+  box-shadow: none;
+}
+.twig.editing .line {
+  cursor: text;
+  width: 100%;
+  background-color: var(--color-accent);
+  transition: width 0.3s;
+}
+.twig.editing .ctrl {
+  display: flex;
+  flex-direction: row;
 }/*# sourceMappingURL=components.css.map */

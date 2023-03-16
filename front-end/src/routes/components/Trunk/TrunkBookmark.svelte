@@ -17,6 +17,7 @@
     let hoveredBranchId = null;
     let editingBranchId = null;
     let elvatedBranchId = null;
+    let preDelBranchId = null;
     let hoveredLeafId = null;
     let editingLeafId = null;
     let tempBranchName = '';
@@ -163,6 +164,13 @@
             editingBranchId = branchId;
             branchDragDisabled = true;
             tempBranchName = branchName;
+
+            // sleep for 10ms to wait for the input to be focused
+            setTimeout(() => {
+                const elBranch = document.getElementById(branchId);
+                const elBranchInput = elBranch.querySelector('.branch-name-input');
+                elBranchInput.focus();
+            }, 10);
         }
     }
 
@@ -199,6 +207,7 @@
             class:pruning-branch={settings.show}
             class:hovered={settings.show & (hoveredBranchId === branch.id)}
             class:elevated={settings.show & (elvatedBranchId === branch.id)}
+            class:pre-del={settings.show & (preDelBranchId === branch.id)}
             id={branch.id}
             animate:flip={{ duration: flipDurationMs }}
             tabindex="-1"
@@ -208,7 +217,11 @@
                 class:editing={settings.show & (editingBranchId === branch.id)}
                 aria-label="drag-handle"
                 on:mouseenter={() => (hoveredBranchId = branch.id)}
-                on:mouseleave={() => (hoveredBranchId = null)}
+                on:mouseleave={() => {
+                    hoveredBranchId = null;
+                    editingBranchId = null;
+                    if (branch.name === '') branch.name = 'undefined';
+                }}
             >
                 <div
                     class="branch-name"
@@ -224,10 +237,6 @@
                     name="branch-name"
                     class="branch-name-input"
                     bind:value={branch.name}
-                    on:mouseleave={() => {
-                        editingBranchId = null;
-                        if (branch.name === '') branch.name = 'undefined';
-                    }}
                     on:keydown={(event) => {
                         if (event.key === 'Enter') {
                             editingBranchId = null;
@@ -425,7 +434,13 @@
                         />
                     </svg>
                 </div> -->
-                <div class="bud-icon">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div
+                    class="bud-icon"
+                    on:click={() => {
+                        preDelBranchId = branch.id;
+                    }}
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <path d="M19,13H5V11H19V13Z" />
                     </svg>
@@ -435,25 +450,61 @@
     {/each}
 
     <!-- new branch btn -->
-    <div class="branch bud {settings.show ? 'show-bud' : ''}">
-        <div class="branch-name-wrapper" aria-label="drag-handle">
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div
-                class="branch-name"
-                on:click={() => {
-                    tree.branches.push({
-                        id: uuidv4(),
-                        name: 'undefined',
-                        leaves: [],
-                    });
-                    tree.branches = [...tree.branches];
-                }}
-            >
-                <div class="bud-icon">
+    <div
+        class="branch twig {settings.show ? 'show-twig  ' : ''}"
+        class:hovered={hoveredBranchId === 'new'}
+        class:editing={editingBranchId === 'new'}
+    >
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="branch-name-wrapper">
+            <div class="branch-name">
+                <div
+                    class="bud-icon"
+                    on:mouseenter={() => (hoveredBranchId = 'new')}
+                    on:mouseleave={() => (hoveredBranchId = null)}
+                    on:click={() => {
+                        editingBranchId = 'new';
+                        setTimeout(() => {
+                            document.getElementById(tree.root + '-twig-input').focus();
+                        }, 20);
+                    }}
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
                     </svg>
                 </div>
+
+                <input
+                    id={tree.root + '-twig-input'}
+                    type="text"
+                    name="branch-name"
+                    class="branch-name-input"
+                    on:keydown={(event) => {
+                        if (event.key === 'Enter') {
+                            editingBranchId = null;
+                            if (branch.name === '') branch.name = 'undefined';
+                        } else if (event.key === 'Escape') {
+                            editingBranchId = null;
+                            branch.name = tempBranchName;
+                        }
+                    }}
+                />
+            </div>
+            <div class="line" />
+        </div>
+        <div class="branch-leaves" />
+        <div class="leaf ctrl show-bud">
+            <div class="bud-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                </svg>
+            </div>
+            <div class="bud-icon" style="margin-left: 7px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                    />
+                </svg>
             </div>
         </div>
     </div>

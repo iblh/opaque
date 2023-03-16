@@ -110,4 +110,5 @@ button:focus:not(:focus-visible) {
 svg {
     width: 100% !important;
     height: 100% !important;
+    fill: var(--color-accent);
 }
