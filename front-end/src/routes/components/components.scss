@@ -386,9 +386,7 @@
         .branch-name-input {
             display: flex;
             padding: 0;
-            width: auto;
             flex: 1;
-            padding-left: 7px;
             visibility: hidden;
 
             &::before {
@@ -404,25 +402,31 @@
         justify-content: center;
         cursor: pointer;
 
-        &:hover {
+        // &:hover {
+        //     box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        // }
+    }
+
+    .ctrl {
+        display: flex;
+        flex-direction: row;
+        visibility: hidden;
+        padding: 2px 7px;
+        justify-content: flex-start;
+
+        .bud-icon:hover {
             box-shadow: inset 0px 0px 0px 1px var(--color-accent);
         }
     }
 
-    .ctrl {
-        display: none;
-        padding: 2px 7px;
-        justify-content: flex-start;
-    }
-
     &.show-twig {
         opacity: 1;
-        transition: opacity 0.3s, box-shadow 0.14s ease-in-out;
     }
 
     &.hovered {
+        transition: opacity 0.3s, box-shadow 0.14s ease-in-out;
         box-shadow: 0px 0px 2px rgb(0 0 0 / 12%), 0px 2px 4px rgb(0 0 0 / 14%);
-        box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        // box-shadow: inset 0px 0px 0px 1px var(--color-accent);
         // background-color: rgba(255, 254, 242, 0.75);
 
         .line {
@@ -434,7 +438,11 @@
 
     &.editing {
         box-shadow: 0px 0px 2px rgb(0 0 0 / 12%), 0px 2px 4px rgb(0 0 0 / 14%);
-        box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        // box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+        // box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11),
+        //     inset 0px 0px 0px 1px var(--color-accent);
+        box-shadow: 0px 0px 2px rgb(0 0 0 / 12%), 0px 2px 4px rgb(0 0 0 / 14%),
+            inset 0px 0px 0px 1px var(--color-accent);
         // background-color: rgba(255, 254, 242, 0.75);
         transition: box-shadow 0.14s ease-in-out;
 
@@ -459,8 +467,7 @@
         }
 
         .ctrl {
-            display: flex;
-            flex-direction: row;
+            visibility: visible;
         }
     }
 }

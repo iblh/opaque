@@ -21,6 +21,7 @@
     let hoveredLeafId = null;
     let editingLeafId = null;
     let tempBranchName = '';
+    let activeTwig = null;
 
     const leafInputClass = ['leaf-bm-input-name', 'leaf-bm-input-url', 'leaf-bm-input-icon'];
 
@@ -79,7 +80,7 @@
         }
     }
 
-    function clickLeafOutside(node) {
+    function clickOutside(node) {
         const handleClick = (event) => {
             if (
                 node &&
@@ -87,7 +88,7 @@
                 !event.defaultPrevented &&
                 node.classList.contains('editing')
             ) {
-                node.dispatchEvent(new CustomEvent('leaf_click_outside', node));
+                node.dispatchEvent(new CustomEvent('click_outside', node));
             }
         };
 
@@ -277,7 +278,7 @@
                             class="leaf-wrapper"
                             class:hovered={settings.show & (hoveredLeafId === leaf.id)}
                             class:editing={settings.show & (editingLeafId === leaf.id)}
-                            use:clickLeafOutside
+                            use:clickOutside
                             on:click={(event) => handleLeafClick(event, branch.id, leaf)}
                             on:mouseenter={() => {
                                 hoveredLeafId = leaf.id;
@@ -285,7 +286,7 @@
                             on:mouseleave={() => {
                                 hoveredLeafId = null;
                             }}
-                            on:leaf_click_outside={(event) => handleCancelLeafEdit(event, leaf)}
+                            on:click_outside={(event) => handleCancelLeafEdit(event, leaf)}
                             on:keydown={(event) => {
                                 if (event.key === 'Escape') {
                                     handleCancelLeafEdit(event);
@@ -453,7 +454,13 @@
     <div
         class="branch twig {settings.show ? 'show-twig  ' : ''}"
         class:hovered={hoveredBranchId === 'new'}
-        class:editing={editingBranchId === 'new'}
+        class:editing={activeTwig === tree.root}
+        use:clickOutside
+        on:click_outside={(event) => {
+            activeTwig = null;
+            const twigInput = document.getElementById(tree.root + '-twig-input');
+            twigInput.value = '';
+        }}
     >
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="branch-name-wrapper">
@@ -463,7 +470,7 @@
                     on:mouseenter={() => (hoveredBranchId = 'new')}
                     on:mouseleave={() => (hoveredBranchId = null)}
                     on:click={() => {
-                        editingBranchId = 'new';
+                        activeTwig = tree.root;
                         setTimeout(() => {
                             document.getElementById(tree.root + '-twig-input').focus();
                         }, 20);
@@ -479,13 +486,23 @@
                     type="text"
                     name="branch-name"
                     class="branch-name-input"
+                    autocomplete="off"
                     on:keydown={(event) => {
+                        const twigInput = document.getElementById(tree.root + '-twig-input');
                         if (event.key === 'Enter') {
-                            editingBranchId = null;
-                            if (branch.name === '') branch.name = 'undefined';
+                            if (twigInput.value === '') return;
+
+                            tree.branches.push({
+                                id: uuidv4(),
+                                name: twigInput.value,
+                                leaves: [],
+                            });
+                            tree.branches = [...tree.branches];
+                            activeTwig = null;
+                            twigInput.value = '';
                         } else if (event.key === 'Escape') {
-                            editingBranchId = null;
-                            branch.name = tempBranchName;
+                            activeTwig = null;
+                            twigInput.value = '';
                         }
                     }}
                 />
@@ -494,12 +511,37 @@
         </div>
         <div class="branch-leaves" />
         <div class="leaf ctrl show-bud">
-            <div class="bud-icon">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+                class="bud-icon"
+                on:click={() => {
+                    const twigInput = document.getElementById(tree.root + '-twig-input');
+                    if (twigInput.value === '') return;
+
+                    tree.branches.push({
+                        id: uuidv4(),
+                        name: twigInput.value,
+                        leaves: [],
+                    });
+                    tree.branches = [...tree.branches];
+                    activeTwig = null;
+                    twigInput.value = '';
+                }}
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
                 </svg>
             </div>
-            <div class="bud-icon" style="margin-left: 7px">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+                class="bud-icon"
+                style="margin-left: 7px"
+                on:click={() => {
+                    activeTwig = null;
+                    const twigInput = document.getElementById(tree.root + '-twig-input');
+                    twigInput.value = '';
+                }}
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                         d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"

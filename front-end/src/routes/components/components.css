@@ -324,9 +324,7 @@
 .twig .branch-name-wrapper .branch-name-input {
   display: flex;
   padding: 0;
-  width: auto;
   flex: 1;
-  padding-left: 7px;
   visibility: hidden;
 }
 .twig .branch-name-wrapper .branch-name-input::before {
@@ -340,21 +338,22 @@
   justify-content: center;
   cursor: pointer;
 }
-.twig .bud-icon:hover {
-  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
-}
 .twig .ctrl {
-  display: none;
+  display: flex;
+  flex-direction: row;
+  visibility: hidden;
   padding: 2px 7px;
   justify-content: flex-start;
 }
+.twig .ctrl .bud-icon:hover {
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+}
 .twig.show-twig {
   opacity: 1;
-  transition: opacity 0.3s, box-shadow 0.14s ease-in-out;
 }
 .twig.hovered {
+  transition: opacity 0.3s, box-shadow 0.14s ease-in-out;
   box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
-  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
 }
 .twig.hovered .line {
   cursor: text;
@@ -363,7 +362,7 @@
 }
 .twig.editing {
   box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
-  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14), inset 0px 0px 0px 1px var(--color-accent);
   transition: box-shadow 0.14s ease-in-out;
 }
 .twig.editing .branch-name-wrapper .branch-name-input {
@@ -382,6 +381,5 @@
   transition: width 0.3s;
 }
 .twig.editing .ctrl {
-  display: flex;
-  flex-direction: row;
+  visibility: visible;
 }/*# sourceMappingURL=components.css.map */
