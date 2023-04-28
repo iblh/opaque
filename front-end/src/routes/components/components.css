@@ -47,6 +47,84 @@
   flex: 1;
 }
 
+.item-bm-form, .bud .bud-bm-form, .leaf .leaf-wrapper .leaf-bm-form {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+.item-bm-form.displayed, .bud .displayed.bud-bm-form, .leaf .leaf-wrapper .displayed.leaf-bm-form {
+  display: flex;
+}
+.item-bm-form .underline, .bud .bud-bm-form .underline, .leaf .leaf-wrapper .leaf-bm-form .underline {
+  background-color: rgba(70, 78, 46, 0.4);
+}
+.item-bm-form .row, .bud .bud-bm-form .row, .leaf .leaf-wrapper .leaf-bm-form .row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 4px;
+  height: 28px;
+  padding: 5px 0px;
+}
+.item-bm-form .icon, .bud .bud-bm-form .icon, .leaf .leaf-wrapper .leaf-bm-form .icon {
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item-bm-form .icon svg, .bud .bud-bm-form .icon svg, .leaf .leaf-wrapper .leaf-bm-form .icon svg {
+  width: 100%;
+  height: 100%;
+}
+.item-bm-form .value, .bud .bud-bm-form .value, .leaf .leaf-wrapper .leaf-bm-form .value {
+  margin: 0 6px;
+  flex: 1;
+  height: 18px;
+}
+.item-bm-form .value input, .bud .bud-bm-form .value input, .leaf .leaf-wrapper .leaf-bm-form .value input {
+  all: unset;
+  cursor: text;
+  width: 100%;
+}
+.item-bm-form .value input:focus + .underline, .bud .bud-bm-form .value input:focus + .underline, .leaf .leaf-wrapper .leaf-bm-form .value input:focus + .underline {
+  transition: background-color 0.3s;
+  background-color: var(--color-accent);
+}
+.item-bm-form .ctrl, .bud .bud-bm-form .ctrl, .leaf .leaf-wrapper .leaf-bm-form .ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 0 8px;
+}
+.item-bm-form .ctrl .btn, .bud .bud-bm-form .ctrl .btn, .leaf .leaf-wrapper .leaf-bm-form .ctrl .btn {
+  padding: 0;
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+}
+.item-bm-form .ctrl .btn svg, .bud .bud-bm-form .ctrl .btn svg, .leaf .leaf-wrapper .leaf-bm-form .ctrl .btn svg {
+  width: 100%;
+  height: 100%;
+}
+.item-bm-form .ctrl .btn:hover, .bud .bud-bm-form .ctrl .btn:hover, .leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover {
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+.item-bm-form .ctrl .btn:hover svg, .bud .bud-bm-form .ctrl .btn:hover svg, .leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover svg {
+  fill: var(--color-primary);
+}
+
 .pruning-branch {
   /* shadow4 - light */
   box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
@@ -72,6 +150,27 @@
 .pruning-branch .leaf {
   cursor: pointer !important;
 }
+.pruning-branch .leaf .leaf-wrapper:hover {
+  text-decoration: none;
+}
+.pruning-branch .leaf .leaf-wrapper.hovered {
+  -webkit-backdrop-filter: blur(2px) !important;
+          backdrop-filter: blur(2px) !important;
+  background-color: rgba(239, 234, 216, 0.75) !important;
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+}
+.pruning-branch .leaf .leaf-wrapper.editing {
+  padding: 0 7px;
+  -webkit-backdrop-filter: blur(2px) !important;
+          backdrop-filter: blur(2px) !important;
+  background-color: rgba(239, 234, 216, 0.75) !important;
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-accent);
+  max-height: 126px;
+  z-index: 99;
+  cursor: default;
+  transition: max-height 0.3s, box-shadow 0.2s ease-in-out;
+}
 .pruning-branch.hovered {
   -webkit-backdrop-filter: blur(2px);
           backdrop-filter: blur(2px);
@@ -86,6 +185,9 @@
 }
 .pruning-branch.hovered .branch-name-wrapper.editing .line {
   width: 100%;
+}
+.pruning-branch.editing {
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14), inset 0px 0px 0px 1px var(--color-accent);
 }
 .pruning-branch.elevated {
   z-index: 1;
@@ -142,83 +244,6 @@
   flex: 1;
   height: 18px;
 }
-.leaf .leaf-wrapper .leaf-bm-form {
-  display: none;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  box-sizing: border-box;
-  font-size: 14px;
-}
-.leaf .leaf-wrapper .leaf-bm-form.displayed {
-  display: flex;
-}
-.leaf .leaf-wrapper .leaf-bm-form .underline {
-  background-color: rgba(70, 78, 46, 0.4);
-}
-.leaf .leaf-wrapper .leaf-bm-form .row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 4px;
-  height: 28px;
-  padding: 5px 0px;
-}
-.leaf .leaf-wrapper .leaf-bm-form .icon {
-  width: 17px;
-  height: 17px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.leaf .leaf-wrapper .leaf-bm-form .icon svg {
-  width: 100%;
-  height: 100%;
-}
-.leaf .leaf-wrapper .leaf-bm-form .value {
-  margin: 0 6px;
-  flex: 1;
-  height: 18px;
-}
-.leaf .leaf-wrapper .leaf-bm-form .value input {
-  all: unset;
-  cursor: text;
-  width: 100%;
-}
-.leaf .leaf-wrapper .leaf-bm-form .value input:focus + .underline {
-  transition: background-color 0.3s;
-  background-color: var(--color-accent);
-}
-.leaf .leaf-wrapper .leaf-bm-form .ctrl {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 5px 0 8px;
-}
-.leaf .leaf-wrapper .leaf-bm-form .ctrl .btn {
-  padding: 0;
-  width: 17px;
-  height: 17px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  background: none;
-  border: none;
-}
-.leaf .leaf-wrapper .leaf-bm-form .ctrl .btn svg {
-  width: 100%;
-  height: 100%;
-}
-.leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover {
-  background: var(--color-accent);
-  border: 1px solid var(--color-accent);
-}
-.leaf .leaf-wrapper .leaf-bm-form .ctrl .btn:hover svg {
-  fill: var(--color-primary);
-}
 .leaf .leaf-placeholder {
   display: block;
   width: 100%;
@@ -241,28 +266,6 @@
   font-size: 12px;
   color: #aaa;
   margin-top: 2px;
-}
-
-.shaking-leaf .leaf-wrapper:hover {
-  text-decoration: none;
-}
-.shaking-leaf .leaf-wrapper.hovered {
-  -webkit-backdrop-filter: blur(2px) !important;
-          backdrop-filter: blur(2px) !important;
-  background-color: rgba(239, 234, 216, 0.75) !important;
-  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
-}
-.shaking-leaf .leaf-wrapper.editing {
-  padding: 0 7px;
-  -webkit-backdrop-filter: blur(2px) !important;
-          backdrop-filter: blur(2px) !important;
-  background-color: rgba(239, 234, 216, 0.75) !important;
-  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
-  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-accent);
-  max-height: 126px;
-  z-index: 99;
-  cursor: default;
-  transition: max-height 0.3s, box-shadow 0.2s ease-in-out;
 }
 
 .b-server {
@@ -309,6 +312,16 @@
 }
 .bud .bud-icon:hover {
   box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+}
+.bud .bud-bm-form {
+  -webkit-backdrop-filter: blur(2px) !important;
+          backdrop-filter: blur(2px) !important;
+  background-color: rgba(239, 234, 216, 0.75) !important;
+  box-shadow: inset 0px 0px 0px 1px var(--color-accent);
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.13), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.11), inset 0px 0px 0px 1px var(--color-accent);
+  z-index: 99;
+  cursor: default;
+  transition: max-height 0.3s, box-shadow 0.2s ease-in-out;
 }
 .bud.show-bud {
   opacity: 1;
@@ -361,7 +374,6 @@
   background-color: var(--color-accent);
 }
 .twig.editing {
-  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14);
   box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.12), 0px 2px 4px rgba(0, 0, 0, 0.14), inset 0px 0px 0px 1px var(--color-accent);
   transition: box-shadow 0.14s ease-in-out;
 }
