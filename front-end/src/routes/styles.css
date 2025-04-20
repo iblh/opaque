@@ -4,7 +4,8 @@
     --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
         Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-mono: 'Fira Mono', monospace;
-    --color-background: #fffef2;
+    /* --color-background: #fffef2; */
+    --color-background: #fff;
     --color-primary: #efead8;
     --color-accent: #464e2e;
     --color-text: #333;
