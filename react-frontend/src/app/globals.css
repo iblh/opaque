@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+    --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+        Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-mono: 'Fira Mono', monospace;
+    --color-background: #fff;
+    --color-primary: #efead8;
+    --color-accent: #464e2e;
+    --color-text: #333;
+    --color-accent-1: #5f7161;
+    --color-accent-3: #acb992;
+    --column-width: 42rem;
+    --column-margin-top: 4rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--color-background);
+    font-family: var(--font-body);
+    color: var(--color-text);
+}
+
+::selection {
+    background-color: var(--color-accent);
+    color: var(--color-background);
+}
+
+h1,
+h2,
+p {
+    font-weight: 400;
+}
+
+p {
+    line-height: 1.5;
+}
+
+a {
+    color: var(--color-accent-1);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 2rem;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1rem;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.flex {
+    display: flex;
+}
+
+/* Custom checkbox styling for login page */
+input[type="checkbox"] {
+    appearance: none;
+    background-color: transparent;
+    border: 1px solid rgb(168 162 158 / 0.4);
+    border-radius: 2px;
+    width: 16px;
+    height: 16px;
+    position: relative;
+    cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+    background-color: rgb(41 37 36 / 0.9);
+    border-color: rgb(41 37 36 / 0.9);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(120 113 108 / 0.6);
+}
