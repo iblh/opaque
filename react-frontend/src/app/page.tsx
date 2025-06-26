@@ -3,10 +3,25 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
+import TrunkBookmark from '@/components/Trunk/TrunkBookmark'
+import TrunkApplication from '@/components/Trunk/TrunkApplication'
+import TrunkServer from '@/components/Trunk/TrunkServer'
+import Tune from '@/components/Tune'
+import '@/app/dashboard.css'
+
+interface Leaf {
+  id: string;
+  name: string;
+  url: string;
+  icon: string;
+}
 
 interface Branch {
+  id: string;
   name: string;
-  items: any[];
+  leaves?: Leaf[];
+  url?: string;
+  icon?: string;
 }
 
 interface Tree {
@@ -17,6 +32,12 @@ interface Tree {
 interface Dashboard {
   forest: Tree[];
   username: string;
+}
+
+const trunkMapping = {
+  bookmarks: TrunkBookmark,
+  applications: TrunkApplication,
+  servers: TrunkServer,
 }
 
 export default function HomePage() {
@@ -89,70 +110,21 @@ export default function HomePage() {
   }
 
   return (
-    <div id="dashboard" className="flex flex-col py-7">
-      <div className="text-2xl font-bold mb-8 text-center">
-        Welcome to OPAQUE
-      </div>
-      
-      {dashboard.forest && dashboard.forest.length > 0 ? (
-        dashboard.forest.map((tree, index) => (
-          <div key={index} className="tree flex flex-row justify-between my-3">
-            <div className="root w-50 py-2 flex justify-end uppercase font-bold text-gray-600">
-              {tree.root}
-            </div>
+    <div id="dashboard">
+      {dashboard.forest && dashboard.forest.map((tree, index) => {
+        const TrunkComponent = trunkMapping[tree.root as keyof typeof trunkMapping]
+        
+        return (
+          <div key={index} className="tree">
+            <div className="root">{tree.root}</div>
             
-            <div className="trunk flex-1 px-8">
-              {tree.branches && tree.branches.map((branch, branchIndex) => (
-                <div key={branchIndex} className="branch mb-4 p-4 border rounded-lg">
-                  <div className="branch-name font-semibold mb-2">
-                    {branch.name}
-                  </div>
-                  <div className="branch-items">
-                    {branch.items && branch.items.length > 0 ? (
-                      <ul className="list-disc list-inside">
-                        {branch.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="text-sm text-gray-700">
-                            {typeof item === 'string' ? item : JSON.stringify(item)}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-gray-500 text-sm">No items</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              {(!tree.branches || tree.branches.length === 0) && (
-                <div className="text-gray-500 text-center py-8">
-                  No branches yet. Start adding some content!
-                </div>
-              )}
-            </div>
+            {TrunkComponent && <TrunkComponent tree={tree} />}
             
-            <div className="placeholder w-50"></div>
+            <div className="placeholder" />
           </div>
-        ))
-      ) : (
-        <div className="text-center py-12">
-          <div className="text-gray-500 mb-4">Your dashboard is empty</div>
-          <div className="text-sm text-gray-400">
-            Start by creating some bookmarks, applications, or servers
-          </div>
-        </div>
-      )}
-      
-      <div className="mt-12 text-center">
-        <button
-          onClick={() => {
-            Cookies.remove('jwt_token')
-            router.push('/login')
-          }}
-          className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-        >
-          Logout
-        </button>
-      </div>
+        )
+      })}
+      <Tune dashboard={dashboard} setDashboard={setDashboard} />
     </div>
   )
 }

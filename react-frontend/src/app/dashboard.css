@@ -1,0 +1,216 @@
+/* Dashboard specific styles - converted from Svelte to black/white theme */
+
+#dashboard {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0;
+}
+
+.placeholder {
+  width: 200px;
+}
+
+.root {
+  width: 200px;
+  padding: 7px 0;
+  display: flex;
+  justify-content: flex-end;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #666;
+}
+
+.tree {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.trunk {
+  width: calc(100% - 400px);
+  max-width: 1440px;
+  padding: 0 35px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.branch {
+  padding: 0 7px;
+  margin: 0 7px;
+  margin-bottom: 28px;
+  outline: none;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+}
+
+.branch .branch-name-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 0 7px;
+}
+
+.branch .branch-name-wrapper .branch-name {
+  display: flex;
+  font-weight: bold;
+  color: #333;
+  padding: 7px 0;
+  align-items: center;
+}
+
+.branch .branch-name-wrapper .branch-name-input {
+  all: unset;
+  width: 100%;
+  display: none;
+  font-weight: bold;
+  cursor: text;
+  padding: 7px 0;
+}
+
+.branch .branch-name-wrapper .line {
+  display: flex;
+  height: 2px;
+  width: 0;
+  position: relative;
+  top: -7px;
+}
+
+.branch .branch-leaves {
+  padding: 14px 0 7px;
+  flex: 1;
+}
+
+.leaf {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+  cursor: pointer;
+  max-height: 28px;
+  position: relative;
+  color: #333;
+}
+
+.leaf .leaf-wrapper {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 5px 7px;
+  width: 100%;
+  position: absolute;
+  max-height: 28px;
+  z-index: 1;
+}
+
+.leaf .leaf-wrapper:hover {
+  text-decoration: underline;
+}
+
+.leaf .leaf-wrapper .line {
+  height: 1px;
+  width: 100%;
+  background: none;
+}
+
+.leaf .leaf-wrapper .leaf-bm {
+  display: flex;
+  align-items: center;
+  height: 18px;
+}
+
+.leaf .leaf-wrapper .leaf-bm.hide {
+  display: none;
+}
+
+.leaf .leaf-wrapper .leaf-bm .leaf-bm-icon {
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaf .leaf-wrapper .leaf-bm .leaf-bm-name-wrapper {
+  font-size: 14px;
+  margin-left: 6px;
+  flex: 1;
+  height: 18px;
+}
+
+.leaf .leaf-placeholder {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+
+.leaf .leaf-app-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaf .leaf-app-info {
+  margin-left: 12px;
+}
+
+.leaf .leaf-app-name {
+  font-size: 14px;
+}
+
+.leaf .leaf-app-url {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.b-server {
+  padding: 0 14px;
+  margin: 0 7px;
+  margin-bottom: 42px;
+  display: flex;
+}
+
+.b-server .branch-icon {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.b-server .branch-info {
+  margin-left: 13px;
+}
+
+.b-server .branch-name {
+  font-weight: bold;
+}
+
+.b-server .branch-url {
+  font-size: 14px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Tune component styles */
+#tune {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  height: 100%;
+}
+
+#tune button {
+  all: unset;
+  cursor: pointer;
+  color: #666;
+  margin: 7px 0;
+}
+
+#tune button:hover {
+  color: #333;
+  text-decoration: underline;
+} 
