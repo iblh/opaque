@@ -344,18 +344,15 @@
    =============================================== */
 
 .b-server {
-  padding: 0 var(--space-organic-sm);
+  padding: var(--space-organic-md);
   margin: 0 var(--space-organic-xs);
   margin-bottom: var(--space-organic-xl);
-  display: flex;
-  align-items: center;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
-  padding: var(--space-organic-md);
 }
 
 .b-server:hover {
@@ -376,6 +373,118 @@
   background: var(--wabi-amber-600);
   border-radius: 4px 0 0 4px;
   opacity: 0.6;
+}
+
+/* Server expanded state */
+.b-server.expanded {
+  padding-bottom: var(--space-organic-lg);
+  margin-bottom: calc(var(--space-organic-xl) + var(--space-organic-md));
+}
+
+.b-server.expanded::after {
+  content: '';
+  position: absolute;
+  bottom: var(--space-organic-md);
+  left: var(--space-organic-lg);
+  right: var(--space-organic-lg);
+  height: 1px;
+  background: var(--color-border-light);
+  opacity: 0.4;
+}
+
+/* Progress bars in server stats */
+.b-server .progress-bar {
+  height: 2px;
+  background: var(--color-surface-elevated);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: var(--space-organic-xs);
+}
+
+.b-server .progress-bar-fill {
+  height: 100%;
+  background: var(--wabi-amber-600);
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+
+/* Stats grid layout */
+.b-server .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-organic-md);
+  margin-top: var(--space-organic-md);
+  padding-top: var(--space-organic-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.b-server .stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-organic-xs);
+}
+
+.b-server .stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.b-server .stat-value {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+/* Status indicators */
+.b-server .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-organic-xs);
+  padding: var(--space-organic-xs) var(--space-organic-sm);
+  border-radius: 2px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-light);
+}
+
+.b-server .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.b-server .status-text {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+}
+
+/* Connect button */
+.b-server .connect-button {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-organic-xs) var(--space-organic-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  color: var(--color-text-tertiary);
+  transition: all 0.2s ease;
+}
+
+.b-server .connect-button:hover:not(:disabled) {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-medium);
+  color: var(--color-text-primary);
+}
+
+.b-server .connect-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .branch-icon {

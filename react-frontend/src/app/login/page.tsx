@@ -82,192 +82,238 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="bg-wabi-base relative overflow-hidden min-h-screen">
+        <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 relative overflow-hidden">
             {/* Wabi-Sabi backdrop elements */}
-            <div className="wabi-circle" style={{ '--blur-size': '24rem', '--opacity': '0.03', top: '15%', left: '25%' } as React.CSSProperties}></div>
-            <div className="wabi-circle" style={{ '--blur-size': '16rem', '--opacity': '0.02', bottom: '25%', right: '20%' } as React.CSSProperties}></div>
-            <div className="wabi-overlay"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-amber-100/20 via-transparent to-stone-200/10"></div>
+            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-200/5 blur-3xl rounded-full"></div>
+            <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-stone-300/8 blur-2xl rounded-full"></div>
 
-            {/* Subtle geometric accents - Brutalist structure */}
-            <div className="brutalist-line" style={{ top: 'var(--space-xl)', right: 'var(--space-lg)', width: '3rem', height: '1px' } as React.CSSProperties}></div>
-            <div className="brutalist-line" style={{ bottom: 'var(--space-lg)', left: '60%', width: '1px', height: '3rem' } as React.CSSProperties}></div>
+            {/* Brutalist geometric accents */}
+            <div className="absolute top-6 right-8 w-12 h-0.5 bg-stone-400/60"></div>
+            <div className="absolute bottom-8 left-2/3 w-0.5 h-12 bg-amber-600/40"></div>
 
             <div className="relative z-10 flex min-h-screen">
-                {/* Left side - Organic asymmetrical space */}
-                <div className="w-2/5 relative flex items-center justify-center max-md:hidden">
-                    <div className="relative">
-                        {/* Subtle geometric accent - Brutalist structure */}
-                        <div className="brutalist-line" style={{ top: '-2rem', left: '-1rem', width: '4rem', height: '1px' } as React.CSSProperties}></div>
-                        <div className="brutalist-line brutalist-accent" style={{ bottom: '-1.5rem', right: '-0.5rem', width: '3rem', height: '1px' } as React.CSSProperties}></div>
+                {/* Left side - Aesthetic space */}
+                <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        {/* Brutalist grid pattern */}
+                        <div className="grid grid-cols-6 gap-px opacity-5">
+                            {Array.from({ length: 36 }).map((_, i) => (
+                                <div key={i} className="w-8 h-8 bg-stone-800"></div>
+                            ))}
+                        </div>
+                    </div>
 
-                        <div className="backdrop-blur-sm bg-white/20 p-12 border-l-2 border-stone-300/40">
-                            <div className="space-y-6">
-                                <div className="text-xs uppercase tracking-widest text-stone-600/80 font-medium">For Creators</div>
-                                <div className="text-stone-700/90 text-sm leading-relaxed max-w-xs">
-                                    A mindful space designed for designers, engineers, and artists who value both function and form.
+                    <div className="relative w-full h-full flex items-center justify-center p-12">
+                        <div className="relative max-w-lg">
+                            {/* Brutalist accent lines */}
+                            <div className="absolute -top-8 left-0 w-12 h-px bg-stone-400/40"></div>
+                            <div className="absolute -bottom-8 right-0 w-12 h-px bg-stone-400/40"></div>
+
+                            {/* Content */}
+                            <div className="space-y-12">
+                                <div className="space-y-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-6 h-px bg-stone-400/60"></div>
+                                        <span className="text-xs uppercase tracking-widest text-stone-600/80">Workspace</span>
+                                    </div>
+                                    <h1 className="text-4xl font-light text-stone-800/90 tracking-tight leading-tight">
+                                        A mindful space<br />for digital craft
+                                    </h1>
+                                </div>
+
+                                <div className="prose prose-sm text-stone-600/80 space-y-4">
+                                    <p className="text-sm leading-relaxed">
+                                        Welcome to a thoughtfully designed environment where form and function achieve perfect harmony. A space that adapts to your workflow, not the other way around.
+                                    </p>
+                                    <div className="pt-4 grid grid-cols-2 gap-8">
+                                        <div>
+                                            <div className="w-4 h-px bg-amber-400/40 mb-3"></div>
+                                            <h3 className="text-xs uppercase tracking-wider text-stone-700/90 mb-2">Mindful Design</h3>
+                                            <p className="text-xs text-stone-600/70 leading-relaxed">
+                                                Every interaction is crafted with intention, creating a calm, focused environment for your work.
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <div className="w-4 h-px bg-amber-400/40 mb-3"></div>
+                                            <h3 className="text-xs uppercase tracking-wider text-stone-700/90 mb-2">Adaptive Flow</h3>
+                                            <p className="text-xs text-stone-600/70 leading-relaxed">
+                                                Seamlessly organize your digital tools and resources in a way that feels natural.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right side - Form area with organic spacing */}
-                <div className="flex-1 flex items-center justify-start px-8 md:pl-16 md:pr-12">
+                {/* Right side - Form area */}
+                <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-8 lg:p-12">
                     <div className="w-full max-w-sm">
-                        {/* Header with natural hierarchy */}
-                        <div className="mb-12 space-y-6">
-                            <div className="brutalist-line" style={{ width: '2rem', height: '1px' } as React.CSSProperties}></div>
-                            <div>
-                                <h1 className="text-2xl font-light text-stone-800 mb-3 tracking-tight">
-                                    {isLogin ? "Welcome back" : "Join us"}
-                                </h1>
-                                <p className="text-xs text-stone-600/80 leading-relaxed">
-                                    {isLogin ? "Continue your creative journey" : "Become part of our mindful community"}
-                                </p>
-                            </div>
-                        </div>
+                        {/* Form container with subtle backdrop */}
+                        <div className="relative backdrop-blur-sm bg-white/40 p-8 border-l border-stone-200/60">
+                            {/* Brutalist accent */}
+                            <div className="absolute -top-px left-0 w-12 h-px bg-stone-400/40"></div>
 
-                        {/* Minimalist toggle */}
-                        <div className="flex mb-10 bg-stone-100/40 backdrop-blur-sm border border-stone-200/30 overflow-hidden">
-                            <button
-                                type="button"
-                                onClick={() => { setIsLogin(true); setError(''); }}
-                                className={`flex-1 py-3 px-4 text-xs uppercase tracking-wider font-medium transition-all duration-300 ${isLogin 
-                                    ? 'bg-stone-800/90 text-stone-50 shadow-sm' 
-                                    : 'text-stone-600/70 hover:text-stone-800/90 hover:bg-stone-50/50'}`}
-                            >
-                                Sign In
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setIsLogin(false); setError(''); }}
-                                className={`flex-1 py-3 px-4 text-xs uppercase tracking-wider font-medium transition-all duration-300 ${!isLogin 
-                                    ? 'bg-stone-800/90 text-stone-50 shadow-sm' 
-                                    : 'text-stone-600/70 hover:text-stone-800/90 hover:bg-stone-50/50'}`}
-                            >
-                                Sign Up
-                            </button>
-                        </div>
+                            <div className="space-y-8">
+                                {/* Header */}
+                                <div className="space-y-2">
+                                    <h2 className="text-xl font-light text-stone-800/90 tracking-tight">
+                                        {isLogin ? "Welcome back" : "Join the space"}
+                                    </h2>
+                                    <p className="text-xs text-stone-600/70">
+                                        {isLogin 
+                                            ? "Continue your creative journey" 
+                                            : "Begin crafting your digital workspace"
+                                        }
+                                    </p>
+                                </div>
 
-                        {/* Form with organic spacing */}
-                        <form className="space-y-8" onSubmit={handleSubmit}>
-                            {!isLogin && (
-                                <div className="space-y-2 animate-fadeIn">
-                                    <label htmlFor="name" className="form-label">
-                                        Name
-                                    </label>
-                                    <div className="relative">
+                                {/* Mode toggle */}
+                                <div className="flex border-b border-stone-200/60">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsLogin(true); setError(''); }}
+                                        className={`relative py-2 px-4 text-xs uppercase tracking-wider ${
+                                            isLogin 
+                                                ? 'text-stone-800 font-medium' 
+                                                : 'text-stone-500/70 hover:text-stone-600'
+                                        }`}
+                                    >
+                                        Sign In
+                                        {isLogin && <div className="absolute bottom-0 left-0 w-full h-px bg-stone-800"></div>}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsLogin(false); setError(''); }}
+                                        className={`relative py-2 px-4 text-xs uppercase tracking-wider ${
+                                            !isLogin 
+                                                ? 'text-stone-800 font-medium' 
+                                                : 'text-stone-500/70 hover:text-stone-600'
+                                        }`}
+                                    >
+                                        Sign Up
+                                        {!isLogin && <div className="absolute bottom-0 left-0 w-full h-px bg-stone-800"></div>}
+                                    </button>
+                                </div>
+
+                                {/* Form */}
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {!isLogin && (
+                                        <div className="space-y-2">
+                                            <label className="block text-xs uppercase tracking-wider text-stone-600/80" htmlFor="name">
+                                                Full Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="name"
+                                                name="name"
+                                                className="w-full px-0 py-2 bg-transparent border-0 border-b border-stone-200/60 text-sm text-stone-800 placeholder-stone-400/60 focus:ring-0 focus:border-stone-400"
+                                                placeholder="Enter your name"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="block text-xs uppercase tracking-wider text-stone-600/80" htmlFor="username">
+                                            Username
+                                        </label>
                                         <input
-                                            id="name"
-                                            name="name"
                                             type="text"
-                                            className="form-input"
-                                            placeholder="Your full name"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label htmlFor="username" className="form-label">
-                                    Username
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        id="username"
-                                        name="username"
-                                        type="text"
-                                        className="form-input"
-                                        placeholder="Choose a username"
-                                        spellCheck="false"
-                                        autoComplete="off"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label htmlFor="password" className="form-label">
-                                    Password
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        className="form-input"
-                                        placeholder="Enter password"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            {!isLogin && (
-                                <div className="space-y-2 animate-fadeIn">
-                                    <label htmlFor="confirm-password" className="form-label">
-                                        Confirm
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            id="confirm-password"
-                                            name="confirm-password"
-                                            type="password"
-                                            className="form-input"
-                                            placeholder="Confirm password"
+                                            id="username"
+                                            name="username"
                                             required
+                                            className="w-full px-0 py-2 bg-transparent border-0 border-b border-stone-200/60 text-sm text-stone-800 placeholder-stone-400/60 focus:ring-0 focus:border-stone-400"
+                                            placeholder="Choose a username"
                                         />
                                     </div>
-                                </div>
-                            )}
 
-                            {isLogin && (
-                                <div className="flex items-center space-x-3">
-                                    <input
-                                        id="remember"
-                                        name="remember"
-                                        type="checkbox"
-                                        className="form-checkbox"
-                                    />
-                                    <label htmlFor="remember" className="text-xs text-stone-600/80 font-medium cursor-pointer select-none">
-                                        remember me
-                                    </label>
-                                </div>
-                            )}
-
-                            <div className="pt-6">
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="btn-primary w-full"
-                                >
-                                    {isLoading 
-                                        ? (isLogin ? "Signing in..." : "Creating account...")
-                                        : (isLogin ? "Continue" : "Create Account")
-                                    }
-                                </button>
-                            </div>
-
-                            {error && (
-                                <div className="pt-4 animate-fadeIn">
-                                    <div className="text-red-600/80 text-xs font-medium p-3 bg-red-50/80 border border-red-200/40 backdrop-blur-sm">
-                                        {error}
+                                    <div className="space-y-2">
+                                        <label className="block text-xs uppercase tracking-wider text-stone-600/80" htmlFor="password">
+                                            Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            name="password"
+                                            required
+                                            className="w-full px-0 py-2 bg-transparent border-0 border-b border-stone-200/60 text-sm text-stone-800 placeholder-stone-400/60 focus:ring-0 focus:border-stone-400"
+                                            placeholder="Enter your password"
+                                        />
                                     </div>
-                                </div>
-                            )}
-                        </form>
 
-                        {/* Minimal footer */}
-                        <div className="mt-10 pt-6 border-t border-stone-200/30">
-                            <p className="text-xs text-stone-500/70 leading-relaxed">
-                                {isLogin ? "New here?" : "Already joined?"}{" "}
-                                <button
-                                    type="button"
-                                    onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                                    className="text-stone-700/80 hover:text-stone-900 font-medium underline underline-offset-2 decoration-stone-300/50 hover:decoration-stone-500/70 transition-colors duration-300 ml-1"
-                                >
-                                    {isLogin ? "Create account" : "Sign in"}
-                                </button>
-                            </p>
+                                    {!isLogin && (
+                                        <div className="space-y-2">
+                                            <label className="block text-xs uppercase tracking-wider text-stone-600/80" htmlFor="confirm-password">
+                                                Confirm Password
+                                            </label>
+                                            <input
+                                                type="password"
+                                                id="confirm-password"
+                                                name="confirm-password"
+                                                required
+                                                className="w-full px-0 py-2 bg-transparent border-0 border-b border-stone-200/60 text-sm text-stone-800 placeholder-stone-400/60 focus:ring-0 focus:border-stone-400"
+                                                placeholder="Confirm your password"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {isLogin && (
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="remember"
+                                                name="remember"
+                                                className="h-4 w-4 rounded border-stone-300 text-stone-600 focus:ring-stone-400/50"
+                                            />
+                                            <label htmlFor="remember" className="text-xs text-stone-600/80">
+                                                Remember me
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    {error && (
+                                        <div className="text-xs text-red-600/90 bg-red-50/50 border-l-2 border-red-200/60 p-3">
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4">
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="relative w-full py-3 text-sm font-medium uppercase tracking-wider text-stone-800 border border-stone-800/90 hover:bg-stone-800/90 hover:text-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-400/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                        >
+                                            {isLoading ? (
+                                                <span className="flex items-center justify-center">
+                                                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    {isLogin ? "Signing in..." : "Creating account..."}
+                                                </span>
+                                            ) : (
+                                                isLogin ? "Enter Workspace" : "Create Workspace"
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {/* Footer */}
+                                <div className="pt-6 border-t border-stone-200/40">
+                                    <p className="text-xs text-stone-500/70">
+                                        {isLogin ? "New to the workspace? " : "Already have an account? "}
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                                            className="text-stone-800/90 hover:text-stone-900 underline underline-offset-2"
+                                        >
+                                            {isLogin ? "Create an account" : "Sign in"}
+                                        </button>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
