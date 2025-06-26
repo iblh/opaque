@@ -25,14 +25,18 @@ interface TrunkBookmarkProps {
 const TrunkBookmark: React.FC<TrunkBookmarkProps> = ({ tree }) => {
   return (
     <div className="trunk">
-      {tree.branches.map((branch) => (
-        <div key={branch.id} className="branch">
+      {tree.branches.map((branch, branchIndex) => (
+        <div 
+          key={branch.id} 
+          className="branch"
+          style={{ '--branch-index': branchIndex } as React.CSSProperties}
+        >
           <div className="branch-name-wrapper">
             <div className="branch-name">{branch.name}</div>
             <div className="line" />
           </div>
           <div className="branch-leaves">
-            {branch.leaves.map((leaf) => (
+            {branch.leaves && branch.leaves.map((leaf) => (
               <a
                 key={leaf.id}
                 href={leaf.url}

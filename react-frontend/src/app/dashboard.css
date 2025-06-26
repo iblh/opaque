@@ -1,216 +1,538 @@
-/* Dashboard specific styles - converted from Svelte to black/white theme */
+/* ===============================================
+   DASHBOARD - WABI-SABI MINIMALIST BRUTALISM
+   =============================================== */
 
 #dashboard {
   display: flex;
   flex-direction: column;
-  padding: 28px 0;
+  padding: var(--space-organic-xl) 0;
+  min-height: 100vh;
+  position: relative;
 }
 
-.placeholder {
-  width: 200px;
+/* Subtle backdrop elements - Wabi-Sabi imperfections */
+#dashboard::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  width: 24rem;
+  height: 24rem;
+  background: radial-gradient(circle, var(--wabi-amber-200) 0%, transparent 70%);
+  opacity: 0.03;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
 }
 
-.root {
-  width: 200px;
-  padding: 7px 0;
-  display: flex;
-  justify-content: flex-end;
-  text-transform: uppercase;
-  font-weight: bold;
-  color: #666;
+#dashboard::after {
+  content: '';
+  position: absolute;
+  bottom: 30%;
+  right: 25%;
+  width: 16rem;
+  height: 16rem;
+  background: radial-gradient(circle, var(--wabi-stone-300) 0%, transparent 70%);
+  opacity: 0.05;
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
 }
+
+/* Brutalist geometric accents */
+.dashboard-accent-top {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  width: 3rem;
+  height: 1px;
+  background: var(--color-border-medium);
+  opacity: 0.6;
+}
+
+.dashboard-accent-bottom {
+  position: absolute;
+  bottom: 2rem;
+  left: 65%;
+  width: 1px;
+  height: 3rem;
+  background: var(--wabi-amber-600);
+  opacity: 0.4;
+}
+
+/* ===============================================
+   TREE STRUCTURE - ORGANIC HIERARCHY
+   =============================================== */
 
 .tree {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  margin: 10px 0;
+  margin: var(--space-organic-sm) 0;
+  position: relative;
+  animation: fadeInUp 0.6s ease-out forwards;
+  animation-delay: calc(var(--tree-index, 0) * 0.1s);
 }
+
+.placeholder {
+  width: 12.5rem; /* 200px */
+  position: relative;
+}
+
+.root {
+  width: 12.5rem; /* 200px */
+  padding: var(--space-organic-xs) 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+  position: relative;
+}
+
+/* Subtle line accent for root labels - Brutalist structure */
+.root::after {
+  content: '';
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  width: 0.75rem;
+  height: 1px;
+  background: var(--color-border-light);
+  transform: translateY(-50%);
+}
+
+/* ===============================================
+   TRUNK - GRID FOUNDATION
+   =============================================== */
 
 .trunk {
-  width: calc(100% - 400px);
-  max-width: 1440px;
-  padding: 0 35px;
+  width: calc(100% - 25rem); /* Adjusted for 200px on each side */
+  max-width: 90rem; /* 1440px */
+  padding: 0 var(--space-organic-xl);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-organic-lg);
+  position: relative;
 }
 
+/* ===============================================
+   BRANCHES - MINIMALIST CONTAINERS
+   =============================================== */
+
 .branch {
-  padding: 0 7px;
-  margin: 0 7px;
-  margin-bottom: 28px;
+  padding: 0 var(--space-organic-xs);
+  margin: 0 var(--space-organic-xs);
+  margin-bottom: var(--space-organic-lg);
   outline: none;
   cursor: default;
   display: flex;
   flex-direction: column;
+  position: relative;
+  animation: fadeIn 0.4s ease-out forwards;
+  animation-delay: calc(var(--branch-index, 0) * 0.05s);
 }
 
-.branch .branch-name-wrapper {
+.branch-name-wrapper {
   display: flex;
   flex-direction: column;
-  padding: 0 7px;
+  padding: 0 var(--space-organic-xs);
+  position: relative;
 }
 
-.branch .branch-name-wrapper .branch-name {
+.branch-name {
   display: flex;
-  font-weight: bold;
-  color: #333;
-  padding: 7px 0;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  padding: var(--space-organic-xs) 0;
   align-items: center;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  position: relative;
 }
 
-.branch .branch-name-wrapper .branch-name-input {
+/* Subtle underline for branch names - Wabi-Sabi imperfection */
+.branch-name::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  height: 1px;
+  background: var(--color-border-light);
+  transition: width 0.3s ease;
+}
+
+.branch:hover .branch-name::after {
+  width: 60%;
+  background: var(--color-border-medium);
+}
+
+.branch-name-input {
   all: unset;
   width: 100%;
   display: none;
-  font-weight: bold;
+  font-weight: 500;
   cursor: text;
-  padding: 7px 0;
+  padding: var(--space-organic-xs) 0;
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
-.branch .branch-name-wrapper .line {
-  display: flex;
-  height: 2px;
+.line {
+  height: 1px;
   width: 0;
   position: relative;
-  top: -7px;
+  top: calc(-1 * var(--space-organic-xs));
+  background: var(--color-border-medium);
+  transition: width 0.3s ease;
 }
 
-.branch .branch-leaves {
-  padding: 14px 0 7px;
+.branch-leaves {
+  padding: var(--space-organic-md) 0 var(--space-organic-xs);
   flex: 1;
+  position: relative;
 }
+
+/* ===============================================
+   LEAVES - FUNCTIONAL CONTENT
+   =============================================== */
 
 .leaf {
   display: flex;
   flex-direction: column;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-organic-xs);
   cursor: pointer;
-  max-height: 28px;
+  max-height: 1.75rem; /* 28px */
   position: relative;
-  color: #333;
+  color: var(--color-text-primary);
+  transition: all 0.2s ease;
 }
 
-.leaf .leaf-wrapper {
+.leaf:hover {
+  transform: translateY(-1px);
+}
+
+.leaf-wrapper {
   display: flex;
   overflow: hidden;
   flex-direction: column;
-  padding: 5px 7px;
+  padding: var(--space-organic-xs) var(--space-organic-xs);
   width: 100%;
   position: absolute;
-  max-height: 28px;
+  max-height: 1.75rem; /* 28px */
   z-index: 1;
+  border-radius: 2px;
+  transition: all 0.2s ease;
 }
 
-.leaf .leaf-wrapper:hover {
-  text-decoration: underline;
+.leaf-wrapper:hover {
+  background: var(--color-surface);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-soft);
 }
 
-.leaf .leaf-wrapper .line {
-  height: 1px;
-  width: 100%;
-  background: none;
-}
-
-.leaf .leaf-wrapper .leaf-bm {
+.leaf-bm {
   display: flex;
   align-items: center;
-  height: 18px;
+  height: 1.125rem; /* 18px */
+  gap: var(--space-organic-xs);
 }
 
-.leaf .leaf-wrapper .leaf-bm.hide {
+.leaf-bm.hide {
   display: none;
 }
 
-.leaf .leaf-wrapper .leaf-bm .leaf-bm-icon {
-  width: 17px;
-  height: 17px;
+.leaf-bm-icon {
+  width: 1.063rem; /* 17px */
+  height: 1.063rem; /* 17px */
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.leaf .leaf-wrapper .leaf-bm .leaf-bm-name-wrapper {
-  font-size: 14px;
-  margin-left: 6px;
+.leaf-bm-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--color-text-secondary);
+  transition: fill 0.2s ease;
+}
+
+.leaf-wrapper:hover .leaf-bm-icon svg {
+  fill: var(--color-text-primary);
+}
+
+.leaf-bm-name-wrapper {
+  font-size: 0.875rem;
+  margin-left: var(--space-organic-xs);
   flex: 1;
-  height: 18px;
+  height: 1.125rem; /* 18px */
+  overflow: hidden;
 }
 
-.leaf .leaf-placeholder {
+.leaf-bm-name {
+  font-weight: 400;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  line-height: 1.125rem;
+}
+
+.leaf-placeholder {
   display: block;
   width: 100%;
-  height: 28px;
+  height: 1.75rem; /* 28px */
 }
 
-.leaf .leaf-app-icon {
-  width: 32px;
-  height: 32px;
+/* ===============================================
+   APPLICATION LEAVES - STRUCTURED DISPLAY
+   =============================================== */
+
+.leaf-app-icon {
+  width: 2rem; /* 32px */
+  height: 2rem; /* 32px */
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
 }
 
-.leaf .leaf-app-info {
-  margin-left: 12px;
+.leaf-app-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--color-text-secondary);
 }
 
-.leaf .leaf-app-name {
-  font-size: 14px;
-}
-
-.leaf .leaf-app-url {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
-}
-
-.b-server {
-  padding: 0 14px;
-  margin: 0 7px;
-  margin-bottom: 42px;
-  display: flex;
-}
-
-.b-server .branch-icon {
-  width: 35px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.b-server .branch-info {
-  margin-left: 13px;
-}
-
-.b-server .branch-name {
-  font-weight: bold;
-}
-
-.b-server .branch-url {
-  font-size: 14px;
-  color: #666;
-  margin-top: 2px;
-}
-
-/* Tune component styles */
-#tune {
+.leaf-app-info {
+  margin-left: var(--space-organic-sm);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-end;
+  min-width: 0;
+}
+
+.leaf-app-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.leaf-app-url {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* ===============================================
+   SERVER BRANCHES - DISTINCT PRESENTATION
+   =============================================== */
+
+.b-server {
+  padding: 0 var(--space-organic-sm);
+  margin: 0 var(--space-organic-xs);
+  margin-bottom: var(--space-organic-xl);
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  padding: var(--space-organic-md);
+}
+
+.b-server:hover {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-medium);
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-1px);
+}
+
+/* Geometric accent for servers - Brutalist structure */
+.b-server::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
   height: 100%;
+  background: var(--wabi-amber-600);
+  border-radius: 4px 0 0 4px;
+  opacity: 0.6;
+}
+
+.branch-icon {
+  width: 2.188rem; /* 35px */
+  height: 2.188rem; /* 35px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--color-accent-subtle);
+}
+
+.branch-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: var(--color-text-secondary);
+}
+
+.branch-info {
+  margin-left: var(--space-organic-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.b-server .branch-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+.b-server .branch-name::after {
+  display: none;
+}
+
+.branch-url {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.25rem;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* ===============================================
+   TUNE COMPONENT - MINIMALIST CONTROLS
+   =============================================== */
+
+#tune {
+  position: fixed;
+  bottom: var(--space-organic-lg);
+  right: var(--space-organic-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-organic-xs);
+  z-index: 100;
 }
 
 #tune button {
   all: unset;
   cursor: pointer;
-  color: #666;
-  margin: 7px 0;
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  padding: var(--space-organic-xs) var(--space-organic-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 #tune button:hover {
-  color: #333;
-  text-decoration: underline;
+  color: var(--color-text-primary);
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-medium);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN - MINDFUL ADAPTATION
+   =============================================== */
+
+@media (max-width: 768px) {
+  .tree {
+    flex-direction: column;
+    gap: var(--space-organic-md);
+  }
+  
+  .root {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .root::after {
+    display: none;
+  }
+  
+  .trunk {
+    width: 100%;
+    padding: 0 var(--space-organic-md);
+    grid-template-columns: 1fr;
+  }
+  
+  .placeholder {
+    display: none;
+  }
+  
+  #tune {
+    bottom: var(--space-organic-md);
+    right: var(--space-organic-md);
+  }
+}
+
+/* ===============================================
+   ACCESSIBILITY - INCLUSIVE DESIGN
+   =============================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .tree,
+  .branch,
+  .leaf {
+    animation: none;
+  }
+  
+  .leaf:hover {
+    transform: none;
+  }
+  
+  .b-server:hover {
+    transform: none;
+  }
+  
+  #tune button:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .leaf-wrapper:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border-strong);
+  }
+  
+  .b-server {
+    border-width: 2px;
+  }
 } 

@@ -29,24 +29,39 @@ const TrunkApplication: React.FC<TrunkApplicationProps> = ({ tree }) => {
 
   return (
     <div className="trunk">
-      {tree.branches.map((branch) => (
-        <div key={branch.id} className="branch">
-          <div className="branch-name">{branch.name}</div>
-          {branch.leaves.map((leaf) => (
-            <div key={leaf.id} className="leaf">
-              <div className="leaf-app-icon">
-                <div dangerouslySetInnerHTML={{ __html: leaf.icon }} />
-              </div>
-              <div className="leaf-app-info">
-                <div className="leaf-app-name">
-                  {leaf.name}
+      {tree.branches.map((branch, branchIndex) => (
+        <div 
+          key={branch.id} 
+          className="branch"
+          style={{ '--branch-index': branchIndex } as React.CSSProperties}
+        >
+          <div className="branch-name-wrapper">
+            <div className="branch-name">{branch.name}</div>
+            <div className="line" />
+          </div>
+          <div className="branch-leaves">
+            {branch.leaves && branch.leaves.map((leaf) => (
+              <a
+                key={leaf.id}
+                href={leaf.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="leaf"
+              >
+                <div className="leaf-app-icon">
+                  <div dangerouslySetInnerHTML={{ __html: leaf.icon }} />
                 </div>
-                <div className="leaf-app-url">
-                  {removeProtocol(leaf.url)}
+                <div className="leaf-app-info">
+                  <div className="leaf-app-name">
+                    {leaf.name}
+                  </div>
+                  <div className="leaf-app-url">
+                    {removeProtocol(leaf.url)}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </a>
+            ))}
+          </div>
         </div>
       ))}
     </div>

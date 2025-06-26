@@ -1,19 +1,80 @@
 @import "tailwindcss";
 
+/* ===============================================
+   WABI-SABI MINIMALIST BRUTALISM COLOR PALETTE
+   =============================================== */
 :root {
-    --font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-        Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    --font-mono: 'Fira Mono', monospace;
-    --color-background: #fff;
-    --color-primary: #efead8;
-    --color-accent: #464e2e;
-    --color-text: #333;
-    --color-accent-1: #5f7161;
-    --color-accent-3: #acb992;
+    /* Core Wabi-Sabi Colors - Natural, Warm Stone Tones */
+    --wabi-stone-50: #fafaf9;
+    --wabi-stone-100: #f5f5f4;
+    --wabi-stone-200: #e7e5e4;
+    --wabi-stone-300: #d6d3d1;
+    --wabi-stone-400: #a8a29e;
+    --wabi-stone-500: #78716c;
+    --wabi-stone-600: #57534e;
+    --wabi-stone-700: #44403c;
+    --wabi-stone-800: #292524;
+    --wabi-stone-900: #1c1917;
+
+    /* Warm Amber Accents - Gentle, Natural Warmth */
+    --wabi-amber-50: #fffbeb;
+    --wabi-amber-100: #fef3c7;
+    --wabi-amber-200: #fde68a;
+    --wabi-amber-300: #fcd34d;
+    --wabi-amber-400: #fbbf24;
+    --wabi-amber-500: #f59e0b;
+    --wabi-amber-600: #d97706;
+    --wabi-amber-700: #b45309;
+    --wabi-amber-800: #92400e;
+    --wabi-amber-900: #78350f;
+
+    /* Functional Color System */
+    --color-background: var(--wabi-stone-50);
+    --color-background-alt: var(--wabi-amber-50);
+    --color-surface: rgba(255, 255, 255, 0.6);
+    --color-surface-elevated: rgba(255, 255, 255, 0.8);
+    
+    /* Text Hierarchy */
+    --color-text-primary: var(--wabi-stone-800);
+    --color-text-secondary: rgba(68, 64, 60, 0.8); /* stone-700/80 */
+    --color-text-tertiary: rgba(120, 113, 108, 0.7); /* stone-500/70 */
+    --color-text-muted: rgba(168, 162, 158, 0.6); /* stone-400/60 */
+
+    /* Interactive Elements */
+    --color-accent-primary: var(--wabi-stone-800);
+    --color-accent-secondary: var(--wabi-amber-600);
+    --color-accent-subtle: rgba(41, 37, 36, 0.1); /* stone-800/10 */
+    
+    /* Borders & Dividers */
+    --color-border-light: rgba(214, 211, 209, 0.3); /* stone-300/30 */
+    --color-border-medium: rgba(168, 162, 158, 0.4); /* stone-400/40 */
+    --color-border-strong: rgba(87, 83, 78, 0.6); /* stone-600/60 */
+
+    /* Shadows & Depth - Organic, Soft */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-strong: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+    
+    /* Typography */
+    --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    
+    /* Spacing System - Organic, Non-rigid */
+    --space-organic-xs: 0.375rem; /* 6px */
+    --space-organic-sm: 0.625rem; /* 10px */
+    --space-organic-md: 1.125rem; /* 18px */
+    --space-organic-lg: 1.75rem;  /* 28px */
+    --space-organic-xl: 2.75rem;  /* 44px */
+    --space-organic-2xl: 4.5rem;  /* 72px */
+
+    /* Layout */
     --column-width: 42rem;
     --column-margin-top: 4rem;
 }
 
+/* ===============================================
+   BASE STYLES - MINIMALIST FOUNDATION
+   =============================================== */
 * {
     box-sizing: border-box;
 }
@@ -21,44 +82,71 @@
 body {
     min-height: 100vh;
     margin: 0;
-    background-color: var(--color-background);
+    background: linear-gradient(135deg, var(--wabi-stone-50) 0%, rgba(255, 251, 235, 0.3) 50%, var(--wabi-stone-100) 100%);
     font-family: var(--font-body);
-    color: var(--color-text);
+    color: var(--color-text-primary);
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===============================================
+   TYPOGRAPHY - FUNCTIONAL HIERARCHY
+   =============================================== */
 ::selection {
-    background-color: var(--color-accent);
-    color: var(--color-background);
+    background-color: var(--color-accent-subtle);
+    color: var(--color-text-primary);
 }
 
-h1,
-h2,
-p {
+h1, h2, h3, h4, h5, h6 {
     font-weight: 400;
-}
-
-p {
-    line-height: 1.5;
-}
-
-a {
-    color: var(--color-accent-1);
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin: 0;
 }
 
 h1 {
     font-size: 2rem;
-    text-align: center;
+    font-weight: 300;
+    letter-spacing: -0.02em;
 }
 
 h2 {
-    font-size: 1rem;
+    font-size: 1.5rem;
+    font-weight: 350;
 }
 
+h3 {
+    font-size: 1.125rem;
+    font-weight: 400;
+}
+
+p {
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ===============================================
+   LINKS - SUBTLE, PURPOSEFUL
+   =============================================== */
+a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-medium);
+    text-underline-offset: 0.125rem;
+}
+
+/* ===============================================
+   UTILITY CLASSES - WABI-SABI HELPERS
+   =============================================== */
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -76,21 +164,72 @@ h2 {
     display: flex;
 }
 
-/* Custom checkbox styling for login page */
+/* Organic spacing utilities */
+.space-organic-xs { margin: var(--space-organic-xs); }
+.space-organic-sm { margin: var(--space-organic-sm); }
+.space-organic-md { margin: var(--space-organic-md); }
+.space-organic-lg { margin: var(--space-organic-lg); }
+.space-organic-xl { margin: var(--space-organic-xl); }
+
+/* Surface treatments */
+.surface-glass {
+    background: var(--color-surface);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.surface-elevated {
+    background: var(--color-surface-elevated);
+    box-shadow: var(--shadow-soft);
+}
+
+/* Brutalist geometric accents */
+.accent-line-h {
+    height: 1px;
+    background: var(--color-border-medium);
+}
+
+.accent-line-v {
+    width: 1px;
+    background: var(--color-border-medium);
+}
+
+/* ===============================================
+   FORM ELEMENTS - MINDFUL INTERACTIONS
+   =============================================== */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+textarea {
+    font-family: inherit;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--color-border-strong);
+}
+
+/* Custom checkbox - Minimalist */
 input[type="checkbox"] {
     appearance: none;
     background-color: transparent;
-    border: 1px solid rgb(168 162 158 / 0.4);
+    border: 1px solid var(--color-border-medium);
     border-radius: 2px;
     width: 16px;
     height: 16px;
     position: relative;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 input[type="checkbox"]:checked {
-    background-color: rgb(41 37 36 / 0.9);
-    border-color: rgb(41 37 36 / 0.9);
+    background-color: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
 }
 
 input[type="checkbox"]:checked::after {
@@ -99,12 +238,85 @@ input[type="checkbox"]:checked::after {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: white;
+    color: var(--wabi-stone-50);
     font-size: 10px;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 input[type="checkbox"]:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgb(120 113 108 / 0.6);
+    box-shadow: 0 0 0 2px var(--color-accent-subtle);
+}
+
+/* ===============================================
+   BUTTONS - BRUTALIST FUNCTIONALITY
+   =============================================== */
+.btn-primary {
+    background: var(--color-accent-primary);
+    color: var(--wabi-stone-50);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+    background: var(--wabi-stone-900);
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-medium);
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--color-accent-subtle);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+}
+
+/* ===============================================
+   ANIMATIONS - SUBTLE, NATURAL
+   =============================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
 }

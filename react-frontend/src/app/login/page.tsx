@@ -82,21 +82,25 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 relative overflow-hidden">
-            {/* Subtle backdrop elements - Wabi-Sabi imperfections */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-100/20 via-transparent to-stone-200/10"></div>
-            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-200/5 blur-3xl rounded-full"></div>
-            <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-stone-300/8 blur-2xl rounded-full"></div>
+        <div className="bg-wabi-base relative overflow-hidden min-h-screen">
+            {/* Wabi-Sabi backdrop elements */}
+            <div className="wabi-circle" style={{ '--blur-size': '24rem', '--opacity': '0.03', top: '15%', left: '25%' } as React.CSSProperties}></div>
+            <div className="wabi-circle" style={{ '--blur-size': '16rem', '--opacity': '0.02', bottom: '25%', right: '20%' } as React.CSSProperties}></div>
+            <div className="wabi-overlay"></div>
+
+            {/* Subtle geometric accents - Brutalist structure */}
+            <div className="brutalist-line" style={{ top: 'var(--space-xl)', right: 'var(--space-lg)', width: '3rem', height: '1px' } as React.CSSProperties}></div>
+            <div className="brutalist-line" style={{ bottom: 'var(--space-lg)', left: '60%', width: '1px', height: '3rem' } as React.CSSProperties}></div>
 
             <div className="relative z-10 flex min-h-screen">
                 {/* Left side - Organic asymmetrical space */}
-                <div className="w-2/5 relative flex items-center justify-center">
+                <div className="w-2/5 relative flex items-center justify-center max-md:hidden">
                     <div className="relative">
                         {/* Subtle geometric accent - Brutalist structure */}
-                        <div className="absolute -top-8 -left-4 w-16 h-0.5 bg-stone-400/60"></div>
-                        <div className="absolute -bottom-6 -right-2 w-12 h-0.5 bg-amber-600/40"></div>
+                        <div className="brutalist-line" style={{ top: '-2rem', left: '-1rem', width: '4rem', height: '1px' } as React.CSSProperties}></div>
+                        <div className="brutalist-line brutalist-accent" style={{ bottom: '-1.5rem', right: '-0.5rem', width: '3rem', height: '1px' } as React.CSSProperties}></div>
 
-                        <div className="backdrop-blur-sm bg-white/30 p-12 border-l-2 border-stone-300/50">
+                        <div className="backdrop-blur-sm bg-white/20 p-12 border-l-2 border-stone-300/40">
                             <div className="space-y-6">
                                 <div className="text-xs uppercase tracking-widest text-stone-600/80 font-medium">For Creators</div>
                                 <div className="text-stone-700/90 text-sm leading-relaxed max-w-xs">
@@ -108,11 +112,11 @@ export default function LoginPage() {
                 </div>
 
                 {/* Right side - Form area with organic spacing */}
-                <div className="flex-1 flex items-center justify-start pl-16 pr-12">
+                <div className="flex-1 flex items-center justify-start px-8 md:pl-16 md:pr-12">
                     <div className="w-full max-w-sm">
                         {/* Header with natural hierarchy */}
                         <div className="mb-12 space-y-6">
-                            <div className="w-8 h-0.5 bg-stone-400/70"></div>
+                            <div className="brutalist-line" style={{ width: '2rem', height: '1px' } as React.CSSProperties}></div>
                             <div>
                                 <h1 className="text-2xl font-light text-stone-800 mb-3 tracking-tight">
                                     {isLogin ? "Welcome back" : "Join us"}
@@ -124,7 +128,7 @@ export default function LoginPage() {
                         </div>
 
                         {/* Minimalist toggle */}
-                        <div className="flex mb-10 bg-stone-100/50 backdrop-blur-sm border border-stone-200/30">
+                        <div className="flex mb-10 bg-stone-100/40 backdrop-blur-sm border border-stone-200/30 overflow-hidden">
                             <button
                                 type="button"
                                 onClick={() => { setIsLogin(true); setError(''); }}
@@ -148,8 +152,8 @@ export default function LoginPage() {
                         {/* Form with organic spacing */}
                         <form className="space-y-8" onSubmit={handleSubmit}>
                             {!isLogin && (
-                                <div className="space-y-2">
-                                    <label htmlFor="name" className="text-xs uppercase tracking-wider text-stone-700/80 font-medium">
+                                <div className="space-y-2 animate-fadeIn">
+                                    <label htmlFor="name" className="form-label">
                                         Name
                                     </label>
                                     <div className="relative">
@@ -157,7 +161,7 @@ export default function LoginPage() {
                                             id="name"
                                             name="name"
                                             type="text"
-                                            className="w-full px-0 py-3 bg-transparent border-0 border-b border-stone-300/40 focus:border-stone-500/60 focus:ring-0 text-stone-800 text-sm placeholder:text-stone-400/60 transition-colors duration-300 outline-none"
+                                            className="form-input"
                                             placeholder="Your full name"
                                         />
                                     </div>
@@ -165,7 +169,7 @@ export default function LoginPage() {
                             )}
 
                             <div className="space-y-2">
-                                <label htmlFor="username" className="text-xs uppercase tracking-wider text-stone-700/80 font-medium">
+                                <label htmlFor="username" className="form-label">
                                     Username
                                 </label>
                                 <div className="relative">
@@ -173,7 +177,7 @@ export default function LoginPage() {
                                         id="username"
                                         name="username"
                                         type="text"
-                                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-stone-300/40 focus:border-stone-500/60 focus:ring-0 text-stone-800 text-sm placeholder:text-stone-400/60 transition-colors duration-300 outline-none"
+                                        className="form-input"
                                         placeholder="Choose a username"
                                         spellCheck="false"
                                         autoComplete="off"
@@ -183,7 +187,7 @@ export default function LoginPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label htmlFor="password" className="text-xs uppercase tracking-wider text-stone-700/80 font-medium">
+                                <label htmlFor="password" className="form-label">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -191,7 +195,7 @@ export default function LoginPage() {
                                         id="password"
                                         name="password"
                                         type="password"
-                                        className="w-full px-0 py-3 bg-transparent border-0 border-b border-stone-300/40 focus:border-stone-500/60 focus:ring-0 text-stone-800 text-sm placeholder:text-stone-400/60 transition-colors duration-300 outline-none"
+                                        className="form-input"
                                         placeholder="Enter password"
                                         required
                                     />
@@ -199,8 +203,8 @@ export default function LoginPage() {
                             </div>
 
                             {!isLogin && (
-                                <div className="space-y-2">
-                                    <label htmlFor="confirm-password" className="text-xs uppercase tracking-wider text-stone-700/80 font-medium">
+                                <div className="space-y-2 animate-fadeIn">
+                                    <label htmlFor="confirm-password" className="form-label">
                                         Confirm
                                     </label>
                                     <div className="relative">
@@ -208,7 +212,7 @@ export default function LoginPage() {
                                             id="confirm-password"
                                             name="confirm-password"
                                             type="password"
-                                            className="w-full px-0 py-3 bg-transparent border-0 border-b border-stone-300/40 focus:border-stone-500/60 focus:ring-0 text-stone-800 text-sm placeholder:text-stone-400/60 transition-colors duration-300 outline-none"
+                                            className="form-input"
                                             placeholder="Confirm password"
                                             required
                                         />
@@ -217,15 +221,14 @@ export default function LoginPage() {
                             )}
 
                             {isLogin && (
-                                /* Remember me checkbox for login only */
                                 <div className="flex items-center space-x-3">
                                     <input
                                         id="remember"
                                         name="remember"
                                         type="checkbox"
-                                        className="w-4 h-4 text-stone-800 bg-transparent border border-stone-300/40 rounded focus:ring-stone-500/60 focus:ring-2"
+                                        className="form-checkbox"
                                     />
-                                    <label htmlFor="remember" className="text-xs text-stone-600/80 font-medium cursor-pointer">
+                                    <label htmlFor="remember" className="text-xs text-stone-600/80 font-medium cursor-pointer select-none">
                                         remember me
                                     </label>
                                 </div>
@@ -235,7 +238,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full bg-stone-800/90 hover:bg-stone-900 disabled:bg-stone-600/50 text-stone-50 py-3 px-6 text-xs uppercase tracking-widest font-medium transition-all duration-300 shadow-sm hover:shadow-md backdrop-blur-sm disabled:cursor-not-allowed"
+                                    className="btn-primary w-full"
                                 >
                                     {isLoading 
                                         ? (isLogin ? "Signing in..." : "Creating account...")
@@ -245,8 +248,8 @@ export default function LoginPage() {
                             </div>
 
                             {error && (
-                                <div className="pt-4">
-                                    <div className="text-red-600/80 text-xs font-medium">
+                                <div className="pt-4 animate-fadeIn">
+                                    <div className="text-red-600/80 text-xs font-medium p-3 bg-red-50/80 border border-red-200/40 backdrop-blur-sm">
                                         {error}
                                     </div>
                                 </div>
@@ -269,10 +272,6 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Subtle geometric accents - Brutalist structure */}
-            <div className="absolute top-6 right-8 w-12 h-0.5 bg-stone-400/40"></div>
-            <div className="absolute bottom-8 left-2/3 w-0.5 h-12 bg-amber-600/30"></div>
         </div>
     )
 } 

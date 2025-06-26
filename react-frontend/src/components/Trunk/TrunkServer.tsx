@@ -23,8 +23,15 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
 
   return (
     <div className="trunk">
-      {tree.branches.map((branch) => (
-        <div key={branch.id} className="branch b-server">
+      {tree.branches.map((branch, branchIndex) => (
+        <a
+          key={branch.id}
+          href={branch.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="branch b-server"
+          style={{ '--branch-index': branchIndex } as React.CSSProperties}
+        >
           <div className="branch-icon">
             <div dangerouslySetInnerHTML={{ __html: branch.icon }} />
           </div>
@@ -36,7 +43,7 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               {removeProtocol(branch.url)}
             </div>
           </div>
-        </div>
+        </a>
       ))}
     </div>
   )
