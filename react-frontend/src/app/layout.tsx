@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="antialiased">
         <div className="app flex flex-col min-h-screen">
           <Header />
-          <main className="flex flex-1 flex-col justify-between w-screen mx-auto mt-12 px-7">
+          <main className="flex flex-1 flex-col justify-between w-screen mx-auto px-7">
             {children}
           </main>
           <Footer />

@@ -1,75 +1,81 @@
 @import "tailwindcss";
 
 /* ===============================================
-   WABI-SABI MINIMALIST BRUTALISM COLOR PALETTE
+   MINIMALIST BRUTALISM COLOR PALETTE - UPDATED
    =============================================== */
 :root {
-    /* Core Wabi-Sabi Colors - Natural, Warm Stone Tones */
-    --wabi-stone-50: #fafaf9;
-    --wabi-stone-100: #f5f5f4;
-    --wabi-stone-200: #e7e5e4;
-    --wabi-stone-300: #d6d3d1;
-    --wabi-stone-400: #a8a29e;
-    --wabi-stone-500: #78716c;
-    --wabi-stone-600: #57534e;
-    --wabi-stone-700: #44403c;
-    --wabi-stone-800: #292524;
-    --wabi-stone-900: #1c1917;
-
-    /* Warm Amber Accents - Gentle, Natural Warmth */
-    --wabi-amber-50: #fffbeb;
-    --wabi-amber-100: #fef3c7;
-    --wabi-amber-200: #fde68a;
-    --wabi-amber-300: #fcd34d;
-    --wabi-amber-400: #fbbf24;
-    --wabi-amber-500: #f59e0b;
-    --wabi-amber-600: #d97706;
-    --wabi-amber-700: #b45309;
-    --wabi-amber-800: #92400e;
-    --wabi-amber-900: #78350f;
+    /* Pure White Background */
+    --color-white: #FFFFFF;
+    
+    /* Green Accent Color */
+    --accent-green: #7E846B;
+    --accent-green-light: #9DA085;
+    --accent-green-dark: #6B7159;
+    --accent-green-subtle: rgba(126, 132, 107, 0.1);
+    --accent-green-hover: rgba(126, 132, 107, 0.15);
+    
+    /* Black/Gray Text and Borders */
+    --text-primary: #32373B;
+    --text-secondary: rgba(50, 55, 59, 0.8);
+    --text-tertiary: rgba(50, 55, 59, 0.6);
+    --text-muted: rgba(50, 55, 59, 0.4);
+    
+    /* Gray Scale for Borders and Backgrounds */
+    --gray-50: #F8F9FA;
+    --gray-100: #F1F3F4;
+    --gray-200: #E8EAED;
+    --gray-300: #DADCE0;
+    --gray-400: #BDC1C6;
+    --gray-500: #9AA0A6;
+    --gray-600: #80868B;
+    --gray-700: #5F6368;
+    --gray-800: #3C4043;
+    --gray-900: #202124;
 
     /* Functional Color System */
-    --color-background: var(--wabi-stone-50);
-    --color-background-alt: var(--wabi-amber-50);
-    --color-surface: rgba(255, 255, 255, 0.6);
-    --color-surface-elevated: rgba(255, 255, 255, 0.8);
+    --color-background: var(--color-white);
+    --color-surface: rgba(248, 249, 250, 0.8);
+    --color-surface-elevated: rgba(255, 255, 255, 0.95);
     
     /* Text Hierarchy */
-    --color-text-primary: var(--wabi-stone-800);
-    --color-text-secondary: rgba(68, 64, 60, 0.8); /* stone-700/80 */
-    --color-text-tertiary: rgba(120, 113, 108, 0.7); /* stone-500/70 */
-    --color-text-muted: rgba(168, 162, 158, 0.6); /* stone-400/60 */
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-tertiary: var(--text-tertiary);
+    --color-text-muted: var(--text-muted);
 
     /* Interactive Elements */
-    --color-accent-primary: var(--wabi-stone-800);
-    --color-accent-secondary: var(--wabi-amber-600);
-    --color-accent-subtle: rgba(41, 37, 36, 0.1); /* stone-800/10 */
+    --color-accent-primary: var(--accent-green);
+    --color-accent-secondary: var(--accent-green-dark);
+    --color-accent-subtle: var(--accent-green-subtle);
+    --color-accent-hover: var(--accent-green-hover);
     
     /* Borders & Dividers */
-    --color-border-light: rgba(214, 211, 209, 0.3); /* stone-300/30 */
-    --color-border-medium: rgba(168, 162, 158, 0.4); /* stone-400/40 */
-    --color-border-strong: rgba(87, 83, 78, 0.6); /* stone-600/60 */
+    --color-border-light: var(--gray-200);
+    --color-border-medium: var(--gray-300);
+    --color-border-strong: var(--gray-400);
 
-    /* Shadows & Depth - Organic, Soft */
-    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
-    --shadow-strong: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+    /* Shadows & Depth - Clean and Minimal */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --shadow-medium: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    --shadow-strong: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
     
     /* Typography */
     --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     
-    /* Spacing System - Organic, Non-rigid */
-    --space-organic-xs: 0.375rem; /* 6px */
-    --space-organic-sm: 0.625rem; /* 10px */
-    --space-organic-md: 1.125rem; /* 18px */
-    --space-organic-lg: 1.75rem;  /* 28px */
-    --space-organic-xl: 2.75rem;  /* 44px */
-    --space-organic-2xl: 4.5rem;  /* 72px */
+    /* Spacing System - Clean and Consistent */
+    --space-xs: 0.25rem;   /* 4px */
+    --space-sm: 0.5rem;    /* 8px */
+    --space-md: 1rem;      /* 16px */
+    --space-lg: 1.5rem;    /* 24px */
+    --space-xl: 2rem;      /* 32px */
+    --space-2xl: 3rem;     /* 48px */
+    --space-3xl: 4rem;     /* 64px */
 
     /* Layout */
     --column-width: 42rem;
     --column-margin-top: 4rem;
+    --section-spacing: var(--space-3xl);
 }
 
 /* ===============================================
@@ -82,7 +88,7 @@
 body {
     min-height: 100vh;
     margin: 0;
-    background: linear-gradient(135deg, var(--wabi-stone-50) 0%, rgba(255, 251, 235, 0.3) 50%, var(--wabi-stone-100) 100%);
+    background: var(--color-background);
     font-family: var(--font-body);
     color: var(--color-text-primary);
     font-feature-settings: "kern" 1;
@@ -145,7 +151,7 @@ a:hover {
 }
 
 /* ===============================================
-   UTILITY CLASSES - WABI-SABI HELPERS
+   UTILITY CLASSES - MINIMALIST HELPERS
    =============================================== */
 .noselect {
     -webkit-touch-callout: none;
@@ -164,12 +170,12 @@ a:hover {
     display: flex;
 }
 
-/* Organic spacing utilities */
-.space-organic-xs { margin: var(--space-organic-xs); }
-.space-organic-sm { margin: var(--space-organic-sm); }
-.space-organic-md { margin: var(--space-organic-md); }
-.space-organic-lg { margin: var(--space-organic-lg); }
-.space-organic-xl { margin: var(--space-organic-xl); }
+/* Clean spacing utilities */
+.space-xs { margin: var(--space-xs); }
+.space-sm { margin: var(--space-sm); }
+.space-md { margin: var(--space-md); }
+.space-lg { margin: var(--space-lg); }
+.space-xl { margin: var(--space-xl); }
 
 /* Surface treatments */
 .surface-glass {
@@ -203,6 +209,10 @@ input[type="email"],
 textarea {
     font-family: inherit;
     font-size: 0.875rem;
+    border: 1px solid var(--color-border-medium);
+    padding: 0.75rem;
+    background: var(--color-background);
+    color: var(--color-text-primary);
     transition: all 0.2s ease;
 }
 
@@ -211,7 +221,8 @@ input[type="password"]:focus,
 input[type="email"]:focus,
 textarea:focus {
     outline: none;
-    border-color: var(--color-border-strong);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 2px var(--color-accent-subtle);
 }
 
 /* Custom checkbox - Minimalist */
@@ -238,7 +249,7 @@ input[type="checkbox"]:checked::after {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--wabi-stone-50);
+    color: var(--color-white);
     font-size: 10px;
     font-weight: 600;
 }
@@ -253,7 +264,7 @@ input[type="checkbox"]:focus {
    =============================================== */
 .btn-primary {
     background: var(--color-accent-primary);
-    color: var(--wabi-stone-50);
+    color: var(--color-white);
     border: none;
     padding: 0.75rem 1.5rem;
     font-size: 0.75rem;
@@ -266,7 +277,7 @@ input[type="checkbox"]:focus {
 }
 
 .btn-primary:hover {
-    background: var(--wabi-stone-900);
+    background: var(--color-accent-secondary);
     box-shadow: var(--shadow-medium);
     transform: translateY(-1px);
 }

@@ -1,25 +1,13 @@
 import React from 'react'
+import { ApplicationBranch, Leaf } from '@/lib/types'
 
-interface Leaf {
-  id: string;
-  name: string;
-  url: string;
-  icon: string;
-}
-
-interface Branch {
-  id: string;
-  name: string;
-  leaves: Leaf[];
-}
-
-interface Tree {
+interface ApplicationTree {
   root: string;
-  branches: Branch[];
+  branches: ApplicationBranch[];
 }
 
 interface TrunkApplicationProps {
-  tree: Tree;
+  tree: ApplicationTree;
 }
 
 const TrunkApplication: React.FC<TrunkApplicationProps> = ({ tree }) => {

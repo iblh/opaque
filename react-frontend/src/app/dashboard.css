@@ -5,12 +5,12 @@
 #dashboard {
   display: flex;
   flex-direction: column;
-  padding: var(--space-organic-xl) 0;
+  padding: var(--space-3xl) 0;
   min-height: 100vh;
   position: relative;
 }
 
-/* Subtle backdrop elements - Wabi-Sabi imperfections */
+/* Subtle backdrop elements - Minimalist */
 #dashboard::before {
   content: '';
   position: absolute;
@@ -18,8 +18,8 @@
   left: 30%;
   width: 24rem;
   height: 24rem;
-  background: radial-gradient(circle, var(--wabi-amber-200) 0%, transparent 70%);
-  opacity: 0.03;
+  background: radial-gradient(circle, var(--gray-100) 0%, transparent 70%);
+  opacity: 0.2;
   border-radius: 50%;
   filter: blur(60px);
   pointer-events: none;
@@ -32,8 +32,8 @@
   right: 25%;
   width: 16rem;
   height: 16rem;
-  background: radial-gradient(circle, var(--wabi-stone-300) 0%, transparent 70%);
-  opacity: 0.05;
+  background: radial-gradient(circle, var(--accent-green-subtle) 0%, transparent 70%);
+  opacity: 0.3;
   border-radius: 50%;
   filter: blur(40px);
   pointer-events: none;
@@ -56,19 +56,19 @@
   left: 65%;
   width: 1px;
   height: 3rem;
-  background: var(--wabi-amber-600);
+  background: var(--accent-green);
   opacity: 0.4;
 }
 
 /* ===============================================
-   TREE STRUCTURE - ORGANIC HIERARCHY
+   TREE STRUCTURE - SECTION ORGANIZATION
    =============================================== */
 
 .tree {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  margin: var(--space-organic-sm) 0;
+  margin: var(--section-spacing) 0;
   position: relative;
   animation: fadeInUp 0.6s ease-out forwards;
   animation-delay: calc(var(--tree-index, 0) * 0.1s);
@@ -81,19 +81,20 @@
 
 .root {
   width: 12.5rem; /* 200px */
-  padding: var(--space-organic-xs) 0;
+  padding: var(--space-sm) 0;
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-start;
   text-transform: uppercase;
   font-weight: 500;
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   color: var(--color-text-tertiary);
   position: relative;
+  padding-top: var(--space-md);
 }
 
-/* Subtle line accent for root labels - Brutalist structure */
+/* Brutalist line accent for root labels */
 .root::after {
   content: '';
   position: absolute;
@@ -106,55 +107,56 @@
 }
 
 /* ===============================================
-   TRUNK - GRID FOUNDATION
+   TRUNK - FIXED WIDTH GRID LAYOUT
    =============================================== */
 
 .trunk {
   width: calc(100% - 25rem); /* Adjusted for 200px on each side */
   max-width: 90rem; /* 1440px */
-  padding: 0 var(--space-organic-xl);
+  padding: 0 var(--space-xl);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: var(--space-organic-lg);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 280px));
+  gap: var(--space-lg);
+  justify-content: start;
   position: relative;
 }
 
 /* ===============================================
-   BRANCHES - MINIMALIST CONTAINERS
+   BRANCHES - FIXED WIDTH CONTAINERS
    =============================================== */
 
 .branch {
-  padding: 0 var(--space-organic-xs);
-  margin: 0 var(--space-organic-xs);
-  margin-bottom: var(--space-organic-lg);
+  padding: var(--space-md);
+  margin: 0;
   outline: none;
   cursor: default;
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: all 0.2s ease;
   animation: fadeIn 0.4s ease-out forwards;
   animation-delay: calc(var(--branch-index, 0) * 0.05s);
+  width: 280px;
+  min-height: 200px;
 }
 
 .branch-name-wrapper {
   display: flex;
   flex-direction: column;
-  padding: 0 var(--space-organic-xs);
+  padding: 0;
   position: relative;
+  margin-bottom: var(--space-md);
 }
 
 .branch-name {
-  display: flex;
   font-weight: 500;
   color: var(--color-text-primary);
-  padding: var(--space-organic-xs) 0;
-  align-items: center;
   font-size: 0.875rem;
   letter-spacing: -0.01em;
   position: relative;
 }
 
-/* Subtle underline for branch names - Wabi-Sabi imperfection */
+/* Accent line for branch names */
 .branch-name::after {
   content: '';
   position: absolute;
@@ -162,363 +164,273 @@
   left: 0;
   width: 30%;
   height: 1px;
-  background: var(--color-border-light);
+  background: var(--accent-green);
   transition: width 0.3s ease;
 }
 
 .branch:hover .branch-name::after {
   width: 60%;
-  background: var(--color-border-medium);
-}
-
-.branch-name-input {
-  all: unset;
-  width: 100%;
-  display: none;
-  font-weight: 500;
-  cursor: text;
-  padding: var(--space-organic-xs) 0;
-  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .line {
   height: 1px;
   width: 0;
   position: relative;
-  top: calc(-1 * var(--space-organic-xs));
   background: var(--color-border-medium);
   transition: width 0.3s ease;
 }
 
 .branch-leaves {
-  padding: var(--space-organic-md) 0 var(--space-organic-xs);
   flex: 1;
   position: relative;
 }
 
 /* ===============================================
-   LEAVES - FUNCTIONAL CONTENT
+   BOOKMARK LEAVES - COMPACT FIXED GRID
    =============================================== */
 
-.leaf {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: var(--space-organic-xs);
-  cursor: pointer;
-  max-height: 1.75rem; /* 28px */
-  position: relative;
-  color: var(--color-text-primary);
-  transition: all 0.2s ease;
+/* Bookmarks have more compact, grid-like layout */
+.trunk:has(.branch:first-child .leaf-bm) .branch-leaves {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--space-sm);
 }
 
-.leaf:hover {
-  transform: translateY(-1px);
+.leaf {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.2s ease;
 }
 
 .leaf-wrapper {
-  display: flex;
-  overflow: hidden;
-  flex-direction: column;
-  padding: var(--space-organic-xs) var(--space-organic-xs);
-  width: 100%;
-  position: absolute;
-  max-height: 1.75rem; /* 28px */
-  z-index: 1;
-  border-radius: 2px;
+  position: relative;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-white);
   transition: all 0.2s ease;
+  border-radius: 2px;
 }
 
 .leaf-wrapper:hover {
-  background: var(--color-surface);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--shadow-soft);
+  border-color: var(--accent-green);
 }
 
 .leaf-bm {
   display: flex;
-  align-items: center;
-  height: 1.125rem; /* 18px */
-  gap: var(--space-organic-xs);
-}
-
-.leaf-bm.hide {
-  display: none;
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+  gap: var(--space-xs);
 }
 
 .leaf-bm-icon {
-  width: 1.063rem; /* 17px */
-  height: 1.063rem; /* 17px */
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .leaf-bm-icon svg {
-  width: 100%;
-  height: 100%;
+  width: 16px;
+  height: 16px;
   fill: var(--color-text-secondary);
   transition: fill 0.2s ease;
 }
 
 .leaf-wrapper:hover .leaf-bm-icon svg {
-  fill: var(--color-text-primary);
+  fill: var(--accent-green);
 }
 
 .leaf-bm-name-wrapper {
-  font-size: 0.875rem;
-  margin-left: var(--space-organic-xs);
-  flex: 1;
-  height: 1.125rem; /* 18px */
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .leaf-bm-name {
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.875rem;
-  line-height: 1.125rem;
-}
-
-.leaf-placeholder {
-  display: block;
-  width: 100%;
-  height: 1.75rem; /* 28px */
+  line-height: 1.3;
+  text-align: center;
+  word-break: break-word;
 }
 
 /* ===============================================
-   APPLICATION LEAVES - STRUCTURED DISPLAY
+   APPLICATION LEAVES - CARD FIXED GRID
    =============================================== */
 
+/* Applications have larger, card-like layout */
+.trunk:has(.branch:first-child .leaf-app-icon) .branch-leaves {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
 .leaf-app-icon {
-  width: 2rem; /* 32px */
-  height: 2rem; /* 32px */
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  background: var(--accent-green-subtle);
   border-radius: 4px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-sm);
+  transition: all 0.2s ease;
 }
 
 .leaf-app-icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  fill: var(--color-text-secondary);
+  width: 24px;
+  height: 24px;
+  fill: var(--accent-green);
+}
+
+.leaf:hover .leaf-app-icon {
+  background: var(--accent-green-hover);
+  transform: scale(1.05);
 }
 
 .leaf-app-info {
-  margin-left: var(--space-organic-sm);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-width: 0;
+  gap: var(--space-xs);
 }
 
 .leaf-app-name {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .leaf-app-url {
   font-size: 0.75rem;
   color: var(--color-text-tertiary);
-  margin-top: 0.125rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: var(--font-mono);
   line-height: 1.2;
+  word-break: break-all;
 }
 
 /* ===============================================
-   SERVER BRANCHES - DISTINCT PRESENTATION
+   SERVER SECTION - ENHANCED METRICS DESIGN
    =============================================== */
 
 .b-server {
-  padding: var(--space-organic-md);
-  margin: 0 var(--space-organic-xs);
-  margin-bottom: var(--space-organic-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-medium);
+  padding: var(--space-lg);
   cursor: pointer;
   position: relative;
-}
-
-.b-server:hover {
-  background: var(--color-surface-elevated);
-  border-color: var(--color-border-medium);
-  box-shadow: var(--shadow-medium);
-  transform: translateY(-1px);
-}
-
-/* Geometric accent for servers - Brutalist structure */
-.b-server::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--wabi-amber-600);
-  border-radius: 4px 0 0 4px;
-  opacity: 0.6;
-}
-
-/* Server expanded state */
-.b-server.expanded {
-  padding-bottom: var(--space-organic-lg);
-  margin-bottom: calc(var(--space-organic-xl) + var(--space-organic-md));
-}
-
-.b-server.expanded::after {
-  content: '';
-  position: absolute;
-  bottom: var(--space-organic-md);
-  left: var(--space-organic-lg);
-  right: var(--space-organic-lg);
-  height: 1px;
-  background: var(--color-border-light);
-  opacity: 0.4;
-}
-
-/* Progress bars in server stats */
-.b-server .progress-bar {
-  height: 2px;
-  background: var(--color-surface-elevated);
-  border-radius: 1px;
+  transition: all 0.3s ease;
+  border-radius: 4px;
   overflow: hidden;
-  margin-top: var(--space-organic-xs);
+}
+
+.b-server:hover::before {
+  transform: scaleX(1);
+}
+
+/* Server metrics styling */
+.b-server .progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  overflow: hidden;
 }
 
 .b-server .progress-bar-fill {
   height: 100%;
-  background: var(--wabi-amber-600);
-  border-radius: 1px;
+  background: var(--accent-green);
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
 
-/* Stats grid layout */
 .b-server .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-organic-md);
-  margin-top: var(--space-organic-md);
-  padding-top: var(--space-organic-md);
-  border-top: 1px solid var(--color-border-light);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
 }
 
 .b-server .stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-organic-xs);
+  text-align: center;
+  padding: var(--space-sm);
+  background: var(--gray-50);
+  border-radius: 2px;
 }
 
 .b-server .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-tertiary);
-  font-weight: 500;
+  margin-bottom: var(--space-xs);
 }
 
 .b-server .stat-value {
   font-size: 0.875rem;
+  font-weight: 600;
   color: var(--color-text-primary);
-  font-weight: 500;
   font-family: var(--font-mono);
 }
 
-/* Status indicators */
 .b-server .status-indicator {
   display: flex;
   align-items: center;
-  gap: var(--space-organic-xs);
-  padding: var(--space-organic-xs) var(--space-organic-sm);
-  border-radius: 2px;
-  background: var(--color-surface-elevated);
-  border: 1px solid var(--color-border-light);
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
 }
 
 .b-server .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  background: var(--accent-green);
 }
 
 .b-server .status-text {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
-}
-
-/* Connect button */
-.b-server .connect-button {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: var(--space-organic-xs) var(--space-organic-sm);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: 2px;
-  color: var(--color-text-tertiary);
-  transition: all 0.2s ease;
-}
-
-.b-server .connect-button:hover:not(:disabled) {
-  background: var(--color-surface-elevated);
-  border-color: var(--color-border-medium);
-  color: var(--color-text-primary);
-}
-
-.b-server .connect-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  color: var(--color-text-secondary);
 }
 
 .branch-icon {
-  width: 2.188rem; /* 35px */
-  height: 2.188rem; /* 35px */
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--accent-green-subtle);
+  border-radius: 2px;
+  margin-right: var(--space-sm);
   flex-shrink: 0;
-  border-radius: 4px;
-  background: var(--color-accent-subtle);
 }
 
 .branch-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  fill: var(--color-text-secondary);
+  width: 20px;
+  height: 20px;
+  fill: var(--accent-green);
 }
 
 .branch-info {
-  margin-left: var(--space-organic-sm);
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-width: 0;
+  gap: var(--space-xs);
 }
 
 .b-server .branch-name {
+  font-size: 1rem;
   font-weight: 600;
-  font-size: 0.875rem;
   color: var(--color-text-primary);
-  line-height: 1.2;
   margin: 0;
-  padding: 0;
+  line-height: 1.2;
 }
 
 .b-server .branch-name::after {
@@ -528,12 +440,9 @@
 .branch-url {
   font-size: 0.75rem;
   color: var(--color-text-tertiary);
-  margin-top: 0.25rem;
   font-family: var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1.2;
+  word-break: break-all;
 }
 
 /* ===============================================
@@ -542,12 +451,12 @@
 
 #tune {
   position: fixed;
-  bottom: var(--space-organic-lg);
-  right: var(--space-organic-lg);
+  bottom: var(--space-lg);
+  right: var(--space-lg);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--space-organic-xs);
+  gap: var(--space-xs);
   z-index: 100;
 }
 
@@ -559,7 +468,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 500;
-  padding: var(--space-organic-xs) var(--space-organic-sm);
+  padding: var(--space-xs) var(--space-sm);
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: 2px;
@@ -582,7 +491,7 @@
 @media (max-width: 768px) {
   .tree {
     flex-direction: column;
-    gap: var(--space-organic-md);
+    gap: var(--space-md);
   }
   
   .root {
@@ -597,7 +506,7 @@
   
   .trunk {
     width: 100%;
-    padding: 0 var(--space-organic-md);
+    padding: 0 var(--space-md);
     grid-template-columns: 1fr;
   }
   
@@ -606,8 +515,8 @@
   }
   
   #tune {
-    bottom: var(--space-organic-md);
-    right: var(--space-organic-md);
+    bottom: var(--space-md);
+    right: var(--space-md);
   }
 }
 

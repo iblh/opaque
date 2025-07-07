@@ -1,39 +1,13 @@
 import React, { useState, useEffect } from 'react'
+import { ServerBranch, ServerStats } from '@/lib/types'
 
-interface ServerStats {
-  status: 'online' | 'offline';
-  uptime: string;
-  cpu: number;
-  memory: {
-    used: number;
-    total: number;
-  };
-  disk: {
-    used: number;
-    total: number;
-  };
-  network: {
-    in: number;
-    out: number;
-  };
-  temperature: number;
-}
-
-interface Branch {
-  id: string;
-  name: string;
-  url: string;
-  icon: string;
-  stats: ServerStats;
-}
-
-interface Tree {
+interface ServerTree {
   root: string;
-  branches: Branch[];
+  branches: ServerBranch[];
 }
 
 interface TrunkServerProps {
-  tree: Tree;
+  tree: ServerTree;
 }
 
 const generateMockStats = (baseStats: ServerStats): ServerStats => {
@@ -69,7 +43,6 @@ const generateMockStats = (baseStats: ServerStats): ServerStats => {
 }
 
 const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
-  const [expandedServer, setExpandedServer] = useState<string | null>(null)
   const [serverStats, setServerStats] = useState<Record<string, ServerStats>>({})
 
   useEffect(() => {
@@ -128,13 +101,13 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
   }
 
   const getStatusColor = (status: ServerStats['status']): string => {
-    return status === 'online' ? 'bg-emerald-400/80' : 'bg-stone-400/60'
+    return status === 'online' ? 'bg-green-500' : 'bg-gray-400'
   }
 
   const getTemperatureColor = (temp: number): string => {
-    if (temp < 50) return 'text-emerald-500'
-    if (temp < 70) return 'text-amber-500'
-    return 'text-red-500'
+    if (temp < 50) return 'text-green-600'
+    if (temp < 70) return 'text-yellow-600'
+    return 'text-red-600'
   }
 
   return (
@@ -146,149 +119,111 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
         return (
           <div
             key={branch.id}
-            className={`branch b-server ${expandedServer === branch.id ? 'expanded' : ''}`}
+            className="branch b-server expanded"
             style={{ '--branch-index': branchIndex } as React.CSSProperties}
-            onClick={() => setExpandedServer(expandedServer === branch.id ? null : branch.id)}
           >
-            {/* Server header */}
-            <div className="flex items-center justify-between w-full">
+            {/* Server header - more compact */}
+            <div className="flex items-center justify-between w-full mb-4">
               <div className="flex items-center min-w-0">
                 <div className="branch-icon">
                   <div dangerouslySetInnerHTML={{ __html: branch.icon }} />
                 </div>
                 <div className="branch-info">
-                  <div className="branch-name">
+                  <div className="branch-name text-sm">
                     {branch.name}
                   </div>
-                  <div className="branch-url">
+                  <div className="branch-url text-xs">
                     {removeProtocol(branch.url)}
                   </div>
                 </div>
               </div>
-
-              {/* Quick stats */}
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(stats.status)}`}></div>
-                  <span className="text-xs uppercase tracking-wider text-stone-600/80">
-                    {stats.status}
-                  </span>
-                </div>
-                <div className="text-sm font-mono">
-                  <span className="text-stone-600/80">CPU: </span>
-                  <span className={`font-medium ${stats.cpu > 80 ? 'text-red-500' : 'text-stone-700'}`}>
-                    {stats.cpu}%
-                  </span>
-                </div>
-                <div className="text-sm font-mono">
-                  <span className="text-stone-600/80">MEM: </span>
-                  <span className="font-medium text-stone-700">
-                    {Math.round((stats.memory.used / stats.memory.total) * 100)}%
-                  </span>
-                </div>
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${getStatusColor(stats.status)}`}></div>
+                <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                  {stats.status}
+                </span>
               </div>
             </div>
 
-            {/* Expanded server stats */}
-            {expandedServer === branch.id && (
-              <div className="mt-6 pt-4 border-t border-stone-200/40">
-                {/* Main metrics grid */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  {/* CPU Usage */}
-                  <div className="space-y-1">
-                    <div className="text-xs uppercase tracking-wider text-stone-500/70">CPU Usage</div>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-stone-700/90">{stats.cpu}%</div>
-                      <div className="w-full h-1 bg-stone-100/60 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            stats.cpu > 80 ? 'bg-red-500/80' : 
-                            stats.cpu > 60 ? 'bg-amber-500/80' : 
-                            'bg-emerald-500/80'
-                          }`}
-                          style={{ width: `${stats.cpu}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Memory Usage */}
-                  <div className="space-y-1">
-                    <div className="text-xs uppercase tracking-wider text-stone-500/70">Memory</div>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium text-stone-700/90">
-                        {formatBytes(stats.memory.used)} / {formatBytes(stats.memory.total)}
-                      </div>
-                      <div className="w-full h-1 bg-stone-100/60 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-stone-600/80 rounded-full transition-all duration-300"
-                          style={{ width: `${(stats.memory.used / stats.memory.total) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Network Traffic */}
-                  <div className="space-y-1">
-                    <div className="text-xs uppercase tracking-wider text-stone-500/70">Network</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="text-xs text-stone-500/70">↓ IN</div>
-                        <div className="text-sm font-medium text-stone-700/90">
-                          {formatBandwidth(stats.network.in)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-stone-500/70">↑ OUT</div>
-                        <div className="text-sm font-medium text-stone-700/90">
-                          {formatBandwidth(stats.network.out)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Temperature & Uptime */}
-                  <div className="space-y-1">
-                    <div className="text-xs uppercase tracking-wider text-stone-500/70">System</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="text-xs text-stone-500/70">TEMP</div>
-                        <div className={`text-sm font-medium ${getTemperatureColor(stats.temperature)}`}>
-                          {stats.temperature}°C
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-stone-500/70">UPTIME</div>
-                        <div className="text-sm font-medium text-stone-700/90">
-                          {stats.uptime}
-                        </div>
-                      </div>
-                    </div>
+            {/* Compact server stats - always visible */}
+            <div className="space-y-3">
+              {/* CPU and Memory in one row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>CPU</div>
+                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>{stats.cpu.toFixed(1)}%</div>
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                    <div 
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        stats.cpu > 80 ? 'bg-red-500' : 
+                        stats.cpu > 60 ? 'bg-yellow-500' : 
+                        'bg-green-500'
+                      }`}
+                      style={{ width: `${stats.cpu}%` }}
+                    ></div>
                   </div>
                 </div>
-
-                {/* Disk Usage */}
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider text-stone-500/70">Storage</div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-stone-700/90">
-                        {formatBytes(stats.disk.used)} / {formatBytes(stats.disk.total)}
-                      </span>
-                      <span className="text-stone-500/70">
-                        {Math.round((stats.disk.used / stats.disk.total) * 100)}% used
-                      </span>
-                    </div>
-                    <div className="w-full h-1 bg-stone-100/60 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-stone-600/80 rounded-full transition-all duration-300"
-                        style={{ width: `${(stats.disk.used / stats.disk.total) * 100}%` }}
-                      ></div>
-                    </div>
+                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Memory</div>
+                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                    {Math.round((stats.memory.used / stats.memory.total) * 100)}%
+                  </div>
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                    <div 
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${(stats.memory.used / stats.memory.total) * 100}%`,
+                        backgroundColor: 'var(--accent-green)'
+                      }}
+                    ></div>
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Network and Storage in one row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Network</div>
+                  <div className="text-xs font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                    ↓ {formatBandwidth(stats.network.in)}
+                  </div>
+                  <div className="text-xs font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                    ↑ {formatBandwidth(stats.network.out)}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Storage</div>
+                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                    {Math.round((stats.disk.used / stats.disk.total) * 100)}%
+                  </div>
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                    <div 
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${(stats.disk.used / stats.disk.total) * 100}%`,
+                        backgroundColor: 'var(--accent-green)'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom row - Temperature and Uptime */}
+              <div className="grid grid-cols-2 gap-3 pt-2" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Temperature</div>
+                  <div className={`text-sm font-medium ${getTemperatureColor(stats.temperature)}`}>
+                    {stats.temperature.toFixed(1)}°C
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Uptime</div>
+                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                    {stats.uptime}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )
       })}

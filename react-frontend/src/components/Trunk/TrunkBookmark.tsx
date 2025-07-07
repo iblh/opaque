@@ -1,25 +1,13 @@
 import React from 'react'
+import { BookmarkBranch, Leaf } from '@/lib/types'
 
-interface Leaf {
-  id: string;
-  name: string;
-  url: string;
-  icon: string;
-}
-
-interface Branch {
-  id: string;
-  name: string;
-  leaves: Leaf[];
-}
-
-interface Tree {
+interface BookmarkTree {
   root: string;
-  branches: Branch[];
+  branches: BookmarkBranch[];
 }
 
 interface TrunkBookmarkProps {
-  tree: Tree;
+  tree: BookmarkTree;
 }
 
 const TrunkBookmark: React.FC<TrunkBookmarkProps> = ({ tree }) => {
@@ -59,7 +47,6 @@ const TrunkBookmark: React.FC<TrunkBookmarkProps> = ({ tree }) => {
                     </div>
                   </div>
                 </div>
-                <div className="leaf-placeholder" />
               </a>
             ))}
           </div>

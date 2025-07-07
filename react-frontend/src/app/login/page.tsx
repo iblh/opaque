@@ -82,16 +82,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100 relative overflow-hidden">
-            {/* Wabi-Sabi backdrop elements */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-100/20 via-transparent to-stone-200/10"></div>
-            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-200/5 blur-3xl rounded-full"></div>
-            <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-stone-300/8 blur-2xl rounded-full"></div>
-
-            {/* Brutalist geometric accents */}
-            <div className="absolute top-6 right-8 w-12 h-0.5 bg-stone-400/60"></div>
-            <div className="absolute bottom-8 left-2/3 w-0.5 h-12 bg-amber-600/40"></div>
-
+        <div className="relative overflow-hidden">
             <div className="relative z-10 flex min-h-screen">
                 {/* Left side - Aesthetic space */}
                 <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
