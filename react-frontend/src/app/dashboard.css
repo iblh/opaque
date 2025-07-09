@@ -10,56 +10,6 @@
   position: relative;
 }
 
-/* Subtle backdrop elements - Minimalist */
-#dashboard::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 30%;
-  width: 24rem;
-  height: 24rem;
-  background: radial-gradient(circle, var(--gray-100) 0%, transparent 70%);
-  opacity: 0.2;
-  border-radius: 50%;
-  filter: blur(60px);
-  pointer-events: none;
-}
-
-#dashboard::after {
-  content: '';
-  position: absolute;
-  bottom: 30%;
-  right: 25%;
-  width: 16rem;
-  height: 16rem;
-  background: radial-gradient(circle, var(--accent-green-subtle) 0%, transparent 70%);
-  opacity: 0.3;
-  border-radius: 50%;
-  filter: blur(40px);
-  pointer-events: none;
-}
-
-/* Brutalist geometric accents */
-.dashboard-accent-top {
-  position: absolute;
-  top: 1.5rem;
-  right: 2rem;
-  width: 3rem;
-  height: 1px;
-  background: var(--color-border-medium);
-  opacity: 0.6;
-}
-
-.dashboard-accent-bottom {
-  position: absolute;
-  bottom: 2rem;
-  left: 65%;
-  width: 1px;
-  height: 3rem;
-  background: var(--accent-green);
-  opacity: 0.4;
-}
-
 /* ===============================================
    TREE STRUCTURE - SECTION ORGANIZATION
    =============================================== */

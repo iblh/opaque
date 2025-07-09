@@ -124,13 +124,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Minimalist backdrop elements */}
-      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-gray-50 blur-3xl rounded-full opacity-30"></div>
-      <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-gray-100 blur-2xl rounded-full opacity-20"></div>
-
-      {/* Brutalist geometric accents */}
-      <div className="dashboard-accent-top"></div>
-      <div className="dashboard-accent-bottom"></div>
 
       <div className="relative z-10">
         <div id="dashboard">

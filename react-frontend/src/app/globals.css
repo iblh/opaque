@@ -75,7 +75,7 @@
     /* Layout */
     --column-width: 42rem;
     --column-margin-top: 4rem;
-    --section-spacing: var(--space-3xl);
+    --section-spacing: var(--space-xl);
 }
 
 /* ===============================================
