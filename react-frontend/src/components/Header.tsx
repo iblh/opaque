@@ -6,7 +6,7 @@ export default function Header() {
     const pathname = usePathname()
 
     return (
-        <header className="flex justify-between items-center p-7">
+        <header className="flex justify-between items-center p-4 bg-white">
             {pathname === '/login' && (
                 <div id="logo" className="font-bold text-lg">OPAQUE</div>
             )}

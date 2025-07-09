@@ -82,8 +82,8 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="relative overflow-hidden">
-            <div className="relative z-10 flex min-h-screen">
+        <div className="h-full bg-white relative overflow-hidden">
+            <div className="relative z-10 flex h-full w-full">
                 {/* Left side - Aesthetic space */}
                 <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
                     <div className="absolute inset-0 flex items-center justify-center">
