@@ -8,7 +8,6 @@ import TrunkApplication from '@/components/Trunk/TrunkApplication'
 import TrunkServer from '@/components/Trunk/TrunkServer'
 import Tune from '@/components/Tune'
 import { Dashboard, Tree } from '@/lib/types'
-import '@/app/dashboard.css'
 
 const trunkMapping = {
   bookmarks: TrunkBookmark,
@@ -63,11 +62,11 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <div className="w-8 h-0.5 bg-gray-400 mx-auto animate-pulse"></div>
-            <div className="text-sm text-gray-600 font-light tracking-wide animate-fade-in">
+      <div className="relative min-h-screen overflow-hidden bg-white">
+        <div className="relative z-10 flex min-h-screen items-center justify-center">
+          <div className="space-y-4 text-center">
+            <div className="mx-auto h-0.5 w-8 animate-pulse bg-gray-400"></div>
+            <div className="animate-fade-in text-sm font-light tracking-wide text-gray-600">
               Loading your workspace...
             </div>
           </div>
@@ -78,15 +77,15 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-6">
-            <div className="w-12 h-0.5 bg-red-400 mx-auto"></div>
+      <div className="relative min-h-screen overflow-hidden bg-white">
+        <div className="relative z-10 flex min-h-screen items-center justify-center">
+          <div className="space-y-6 text-center">
+            <div className="mx-auto h-0.5 w-12 bg-red-400"></div>
             <div className="space-y-2">
               <div className="text-sm font-medium text-gray-800">
                 Unable to connect
               </div>
-              <div className="text-xs text-gray-600 max-w-xs">
+              <div className="max-w-xs text-xs text-gray-600">
                 {error}
               </div>
             </div>
@@ -104,15 +103,15 @@ export default function HomePage() {
 
   if (!dashboard) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-6">
-            <div className="w-8 h-0.5 bg-gray-400 mx-auto"></div>
+      <div className="relative min-h-screen overflow-hidden bg-white">
+        <div className="relative z-10 flex min-h-screen items-center justify-center">
+          <div className="space-y-6 text-center">
+            <div className="mx-auto h-0.5 w-8 bg-gray-400"></div>
             <div className="space-y-2">
               <div className="text-sm font-medium text-gray-800">
                 Your canvas awaits
               </div>
-              <div className="text-xs text-gray-600 max-w-xs leading-relaxed">
+              <div className="max-w-xs text-xs leading-relaxed text-gray-600">
                 No data found. Your creative space is ready to be filled.
               </div>
             </div>
@@ -123,14 +122,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-white">
 
       <div className="relative z-10">
-        <div id="dashboard">
+        <div id="dashboard" className="relative flex min-h-screen flex-col py-16">
           {/* Header - Minimalist welcome */}
-          <div className="absolute top-6 left-8 space-y-2 animate-fade-in">
-            <div className="w-6 h-0.5 bg-gray-400"></div>
-            <div className="text-xs uppercase tracking-widest text-gray-600 font-medium">
+          <div className="animate-fade-in absolute top-6 left-8 space-y-2">
+            <div className="h-0.5 w-6 bg-gray-400"></div>
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-600">
               Welcome back, {dashboard.username}
             </div>
           </div>
@@ -139,10 +138,10 @@ export default function HomePage() {
             return (
               <div 
                 key={index} 
-                className="tree"
+                className="relative my-8 flex animate-fade-in-up flex-row justify-between"
                 style={{ '--tree-index': index } as React.CSSProperties}
               >
-                <div className="root">{tree.root}</div>
+                <div className="relative flex w-[12.5rem] items-start justify-end py-2 pt-4 text-xs font-medium uppercase tracking-widest text-text-tertiary after:absolute after:right-[-1rem] after:top-1/2 after:h-px after:w-3 after:-translate-y-1/2 after:bg-border-light">{tree.root}</div>
                 
                 {tree.root === 'bookmarks' && (
                   <TrunkBookmark tree={tree as any} />
@@ -154,22 +153,22 @@ export default function HomePage() {
                   <TrunkServer tree={tree as any} />
                 )}
                 
-                <div className="placeholder" />
+                <div className="relative w-[12.5rem]" />
               </div>
             )
           })}
 
           {/* Empty state with mindful messaging */}
           {(!dashboard.forest || dashboard.forest.length === 0) && (
-            <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-              <div className="text-center space-y-8 animate-fade-in-up">
+            <div className="flex min-h-[60vh] flex-1 items-center justify-center">
+              <div className="animate-fade-in-up space-y-8 text-center">
                 <div className="space-y-4">
-                  <div className="w-16 h-0.5 bg-stone-300/60 mx-auto"></div>
+                  <div className="mx-auto h-0.5 w-16 bg-stone-300/60"></div>
                   <div>
-                    <h2 className="text-lg font-light text-stone-800/90 mb-2 tracking-tight">
+                    <h2 className="mb-2 text-lg font-light tracking-tight text-stone-800/90">
                       Your mindful workspace
                     </h2>
-                    <p className="text-xs text-stone-600/70 leading-relaxed max-w-sm">
+                    <p className="max-w-sm text-xs leading-relaxed text-stone-600/70">
                       A clean canvas awaits. Begin by organizing your bookmarks, applications, 
                       and servers into meaningful collections.
                     </p>
@@ -178,15 +177,15 @@ export default function HomePage() {
                 
                 <div className="flex items-center justify-center space-x-6 text-xs text-stone-500/60">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-stone-300/40 rounded-full"></div>
+                    <div className="h-2 w-2 rounded-full bg-stone-300/40"></div>
                     <span>Bookmarks</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-amber-300/40 rounded-full"></div>
+                    <div className="h-2 w-2 rounded-full bg-amber-300/40"></div>
                     <span>Applications</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-stone-400/40 rounded-full"></div>
+                    <div className="h-2 w-2 rounded-full bg-stone-400/40"></div>
                     <span>Servers</span>
                   </div>
                 </div>

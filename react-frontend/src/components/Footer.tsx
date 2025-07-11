@@ -1,7 +1,7 @@
 export default function Footer() {
     return (
-        <footer className="flex flex-col justify-end items-end p-4 bg-white">
-            <p id="copyright" className="text-sm cursor-default">
+        <footer className="flex flex-col items-end justify-end bg-white p-4">
+            <p className="cursor-default text-sm text-text-secondary">
                 © OPAQUE
             </p>
         </footer>

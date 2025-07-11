@@ -111,7 +111,7 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
   }
 
   return (
-    <div className="trunk">
+    <div className="relative grid max-w-[90rem] grid-cols-[repeat(auto-fill,minmax(280px,280px))] gap-6 px-8">
       {tree.branches.map((branch, branchIndex) => {
         const stats = serverStats[branch.id]
         if (!stats) return null
@@ -119,27 +119,27 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
         return (
           <div
             key={branch.id}
-            className="branch b-server expanded"
+            className="relative h-full w-full cursor-pointer overflow-hidden rounded-md border border-border-medium bg-surface-elevated p-6 transition-all duration-300 ease-in-out"
             style={{ '--branch-index': branchIndex } as React.CSSProperties}
           >
             {/* Server header - more compact */}
-            <div className="flex items-center justify-between w-full mb-4">
-              <div className="flex items-center min-w-0">
-                <div className="branch-icon">
-                  <div dangerouslySetInnerHTML={{ __html: branch.icon }} />
+            <div className="mb-4 flex w-full items-center justify-between">
+              <div className="flex min-w-0 items-center">
+                <div className="mr-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm bg-accent-green-subtle">
+                  <div dangerouslySetInnerHTML={{ __html: branch.icon.replace(/svg/g, `svg class="h-5 w-5 fill-accent-green"`) }} />
                 </div>
-                <div className="branch-info">
-                  <div className="branch-name text-sm">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="m-0 text-base font-semibold leading-tight text-text-primary">
                     {branch.name}
                   </div>
-                  <div className="branch-url text-xs">
+                  <div className="break-all font-mono text-xs leading-tight text-text-tertiary">
                     {removeProtocol(branch.url)}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
-                <div className={`w-2 h-2 rounded-full ${getStatusColor(stats.status)}`}></div>
-                <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                <div className={`h-2 w-2 rounded-full ${getStatusColor(stats.status)}`}></div>
+                <span className="text-xs text-text-tertiary">
                   {stats.status}
                 </span>
               </div>
@@ -150,9 +150,9 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               {/* CPU and Memory in one row */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>CPU</div>
-                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>{stats.cpu.toFixed(1)}%</div>
-                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                  <div className="text-xs uppercase tracking-wider text-text-tertiary">CPU</div>
+                  <div className="font-mono text-sm font-medium text-text-primary">{stats.cpu.toFixed(1)}%</div>
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
                     <div 
                       className={`h-full rounded-full transition-all duration-300 ${
                         stats.cpu > 80 ? 'bg-red-500' : 
@@ -164,16 +164,15 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Memory</div>
-                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Memory</div>
+                  <div className="font-mono text-sm font-medium text-text-primary">
                     {Math.round((stats.memory.used / stats.memory.total) * 100)}%
                   </div>
-                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
                     <div 
-                      className="h-full rounded-full transition-all duration-300"
+                      className="h-full rounded-full bg-accent-green transition-all duration-300"
                       style={{ 
                         width: `${(stats.memory.used / stats.memory.total) * 100}%`,
-                        backgroundColor: 'var(--accent-green)'
                       }}
                     ></div>
                   </div>
@@ -183,25 +182,24 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               {/* Network and Storage in one row */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Network</div>
-                  <div className="text-xs font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Network</div>
+                  <div className="font-mono text-xs text-text-primary">
                     ↓ {formatBandwidth(stats.network.in)}
                   </div>
-                  <div className="text-xs font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                  <div className="font-mono text-xs text-text-primary">
                     ↑ {formatBandwidth(stats.network.out)}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>Storage</div>
-                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Storage</div>
+                  <div className="font-mono text-sm font-medium text-text-primary">
                     {Math.round((stats.disk.used / stats.disk.total) * 100)}%
                   </div>
-                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--gray-200)' }}>
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
                     <div 
-                      className="h-full rounded-full transition-all duration-300"
+                      className="h-full rounded-full bg-accent-green transition-all duration-300"
                       style={{ 
                         width: `${(stats.disk.used / stats.disk.total) * 100}%`,
-                        backgroundColor: 'var(--accent-green)'
                       }}
                     ></div>
                   </div>
@@ -209,16 +207,16 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               </div>
 
               {/* Bottom row - Temperature and Uptime */}
-              <div className="grid grid-cols-2 gap-3 pt-2" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+              <div className="grid grid-cols-2 gap-3 border-t border-border-light pt-2">
                 <div>
-                  <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Temperature</div>
+                  <div className="text-xs text-text-tertiary">Temperature</div>
                   <div className={`text-sm font-medium ${getTemperatureColor(stats.temperature)}`}>
                     {stats.temperature.toFixed(1)}°C
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Uptime</div>
-                  <div className="text-sm font-medium font-mono" style={{ color: 'var(--color-text-primary)' }}>
+                  <div className="text-xs text-text-tertiary">Uptime</div>
+                  <div className="font-mono text-sm font-medium text-text-primary">
                     {stats.uptime}
                   </div>
                 </div>

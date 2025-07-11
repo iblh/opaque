@@ -6,9 +6,9 @@ export default function Header() {
     const pathname = usePathname()
 
     return (
-        <header className="flex justify-between items-center p-4 bg-white">
+        <header className="flex items-center justify-between bg-white p-4">
             {pathname === '/login' && (
-                <div id="logo" className="font-bold text-lg">OPAQUE</div>
+                <div className="text-lg font-bold">OPAQUE</div>
             )}
             {pathname === '/' && (
                 <nav>
@@ -17,7 +17,7 @@ export default function Header() {
                         type="text" 
                         placeholder="OPAQUE" 
                         autoComplete="off"
-                        className="h-8 border-0 border-b border-gray-300 w-50 outline-none"
+                        className="h-8 w-50 border-0 border-b border-gray-300 outline-none focus:border-accent-green focus:ring-0"
                     />
                 </nav>
             )}
