@@ -6,7 +6,7 @@ interface ServerTree {
   branches: ServerBranch[];
 }
 
-interface TrunkServerProps {
+interface TreeServerProps {
   tree: ServerTree;
 }
 
@@ -42,7 +42,7 @@ const generateMockStats = (baseStats: ServerStats): ServerStats => {
   }
 }
 
-const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
+const TreeServer: React.FC<TreeServerProps> = ({ tree }) => {
   const [serverStats, setServerStats] = useState<Record<string, ServerStats>>({})
 
   useEffect(() => {
@@ -105,9 +105,15 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
   }
 
   const getTemperatureColor = (temp: number): string => {
-    if (temp < 50) return 'text-green-600'
-    if (temp < 70) return 'text-yellow-600'
-    return 'text-red-600'
+    if (temp < 50) return 'text-green-500'
+    if (temp < 70) return 'text-amber-500'
+    return 'text-red-500'
+  }
+
+  const getCpuColor = (cpu: number): string => {
+    if (cpu < 50) return 'bg-green-500'
+    if (cpu < 80) return 'bg-amber-500'
+    return 'bg-red-500'
   }
 
   return (
@@ -119,25 +125,25 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
         return (
           <div
             key={branch.id}
-            className="relative h-full w-full cursor-pointer overflow-hidden rounded-md border border-border-medium bg-surface-elevated p-6 transition-all duration-300 ease-in-out"
+            className="linear-card relative h-full w-full cursor-pointer overflow-hidden p-5 transition-all duration-300 ease-in-out hover:shadow-elevated"
             style={{ '--branch-index': branchIndex } as React.CSSProperties}
           >
-            {/* Server header - more compact */}
+            {/* Server header */}
             <div className="mb-4 flex w-full items-center justify-between">
               <div className="flex min-w-0 items-center">
-                <div className="mr-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm bg-accent-green-subtle">
-                  <div dangerouslySetInnerHTML={{ __html: branch.icon.replace(/svg/g, `svg class="h-5 w-5 fill-accent-green"`) }} />
+                <div className="mr-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-surface-sunken">
+                  <div dangerouslySetInnerHTML={{ __html: branch.icon.replace(/svg/g, `svg class="h-4 w-4 fill-text-secondary"`) }} />
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="m-0 text-base font-semibold leading-tight text-text-primary">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="m-0 text-base font-medium leading-tight text-text-primary">
                     {branch.name}
                   </div>
-                  <div className="break-all font-mono text-xs leading-tight text-text-tertiary">
+                  <div className="font-mono text-xs leading-tight text-text-tertiary">
                     {removeProtocol(branch.url)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1.5">
                 <div className={`h-2 w-2 rounded-full ${getStatusColor(stats.status)}`}></div>
                 <span className="text-xs text-text-tertiary">
                   {stats.status}
@@ -145,32 +151,32 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               </div>
             </div>
 
-            {/* Compact server stats - always visible */}
-            <div className="space-y-3">
+            {/* Server stats */}
+            <div className="space-y-4">
               {/* CPU and Memory in one row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider text-text-tertiary">CPU</div>
-                  <div className="font-mono text-sm font-medium text-text-primary">{stats.cpu.toFixed(1)}%</div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-text-tertiary">CPU</div>
+                    <div className="font-mono text-xs font-medium text-text-primary">{stats.cpu.toFixed(1)}%</div>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
                     <div 
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        stats.cpu > 80 ? 'bg-red-500' : 
-                        stats.cpu > 60 ? 'bg-yellow-500' : 
-                        'bg-green-500'
-                      }`}
+                      className={`h-full rounded-full transition-all duration-300 ${getCpuColor(stats.cpu)}`}
                       style={{ width: `${stats.cpu}%` }}
                     ></div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Memory</div>
-                  <div className="font-mono text-sm font-medium text-text-primary">
-                    {Math.round((stats.memory.used / stats.memory.total) * 100)}%
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Memory</div>
+                    <div className="font-mono text-xs font-medium text-text-primary">
+                      {Math.round((stats.memory.used / stats.memory.total) * 100)}%
+                    </div>
                   </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
                     <div 
-                      className="h-full rounded-full bg-accent-green transition-all duration-300"
+                      className="h-full rounded-full bg-accent-blue transition-all duration-300"
                       style={{ 
                         width: `${(stats.memory.used / stats.memory.total) * 100}%`,
                       }}
@@ -180,22 +186,34 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               </div>
 
               {/* Network and Storage in one row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Network</div>
-                  <div className="font-mono text-xs text-text-primary">
-                    ↓ {formatBandwidth(stats.network.in)}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Network</div>
                   </div>
-                  <div className="font-mono text-xs text-text-primary">
-                    ↑ {formatBandwidth(stats.network.out)}
+                  <div className="flex flex-col space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <div className="font-mono text-xs text-text-tertiary">↓</div>
+                      <div className="font-mono text-xs text-text-secondary">
+                        {formatBandwidth(stats.network.in)}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="font-mono text-xs text-text-tertiary">↑</div>
+                      <div className="font-mono text-xs text-text-secondary">
+                        {formatBandwidth(stats.network.out)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wider text-text-tertiary">Storage</div>
-                  <div className="font-mono text-sm font-medium text-text-primary">
-                    {Math.round((stats.disk.used / stats.disk.total) * 100)}%
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Storage</div>
+                    <div className="font-mono text-xs font-medium text-text-primary">
+                      {Math.round((stats.disk.used / stats.disk.total) * 100)}%
+                    </div>
                   </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
                     <div 
                       className="h-full rounded-full bg-accent-green transition-all duration-300"
                       style={{ 
@@ -207,17 +225,21 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
               </div>
 
               {/* Bottom row - Temperature and Uptime */}
-              <div className="grid grid-cols-2 gap-3 border-t border-border-light pt-2">
+              <div className="grid grid-cols-2 gap-4 border-t border-border-light pt-3">
                 <div>
-                  <div className="text-xs text-text-tertiary">Temperature</div>
-                  <div className={`text-sm font-medium ${getTemperatureColor(stats.temperature)}`}>
-                    {stats.temperature.toFixed(1)}°C
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-text-tertiary">Temperature</div>
+                    <div className={`font-mono text-xs font-medium ${getTemperatureColor(stats.temperature)}`}>
+                      {stats.temperature.toFixed(1)}°C
+                    </div>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Uptime</div>
-                  <div className="font-mono text-sm font-medium text-text-primary">
-                    {stats.uptime}
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-text-tertiary">Uptime</div>
+                    <div className="font-mono text-xs font-medium text-text-primary">
+                      {stats.uptime}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -229,4 +251,4 @@ const TrunkServer: React.FC<TrunkServerProps> = ({ tree }) => {
   )
 }
 
-export default TrunkServer 
+export default TreeServer 

@@ -6,6 +6,11 @@
     body {
         @apply min-h-screen bg-background font-body text-text-primary;
     }
+    
+    /* Linear-inspired focus styles */
+    *:focus-visible {
+        @apply outline-none ring-2 ring-accent-blue ring-opacity-50;
+    }
 }
 
 /* ===============================================
@@ -14,7 +19,7 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(12px);
     }
     to {
         opacity: 1;
@@ -31,10 +36,48 @@
     }
 }
 
+@keyframes subtleFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
 .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out forwards;
+    animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
+    animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-float {
+    animation: subtleFloat 6s ease-in-out infinite;
+}
+
+/* ===============================================
+   CUSTOM COMPONENTS
+   =============================================== */
+@layer components {
+    .linear-card {
+        @apply bg-surface-elevated border border-border-light rounded shadow-subtle transition-all duration-200;
+    }
+    
+    .linear-input {
+        @apply bg-surface-sunken border-0 rounded px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:ring-1 focus:ring-accent-green focus:bg-surface-elevated transition-all duration-200;
+    }
+    
+    .linear-button-primary {
+        @apply bg-accent-green hover:bg-accent-green-dark text-white rounded px-4 py-2 text-sm font-medium transition-all duration-200;
+    }
+    
+    .linear-button-secondary {
+        @apply bg-surface-sunken hover:bg-border-light text-text-primary rounded px-4 py-2 text-sm font-medium transition-all duration-200;
+    }
+    
+    .linear-divider {
+        @apply h-px w-full bg-border-light my-4;
+    }
 }

@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
-import TrunkBookmark from '@/components/Trunk/TrunkBookmark'
-import TrunkApplication from '@/components/Trunk/TrunkApplication'
-import TrunkServer from '@/components/Trunk/TrunkServer'
+import TreeBookmark from '@/components/Tree/TreeBookmark'
+import TreeApplication from '@/components/Tree/TreeApplication'
+import TreeServer from '@/components/Tree/TreeServer'
 import Tune from '@/components/Tune'
 import { Dashboard, Tree } from '@/lib/types'
 
-const trunkMapping = {
-  bookmarks: TrunkBookmark,
-  applications: TrunkApplication,
-  servers: TrunkServer,
+const treeMapping = {
+  bookmarks: TreeBookmark,
+  applications: TreeApplication,
+  servers: TreeServer,
 }
 
 export default function HomePage() {
@@ -62,11 +62,11 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-white">
+      <div className="relative min-h-screen overflow-hidden bg-background">
         <div className="relative z-10 flex min-h-screen items-center justify-center">
           <div className="space-y-4 text-center">
-            <div className="mx-auto h-0.5 w-8 animate-pulse bg-gray-400"></div>
-            <div className="animate-fade-in text-sm font-light tracking-wide text-gray-600">
+            <div className="mx-auto h-0.5 w-8 animate-pulse bg-ink-400"></div>
+            <div className="animate-fade-in text-sm font-light tracking-wide text-text-tertiary">
               Loading your workspace...
             </div>
           </div>
@@ -77,21 +77,21 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-white">
+      <div className="relative min-h-screen overflow-hidden bg-background">
         <div className="relative z-10 flex min-h-screen items-center justify-center">
           <div className="space-y-6 text-center">
             <div className="mx-auto h-0.5 w-12 bg-red-400"></div>
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-800">
+              <div className="text-sm font-medium text-text-primary">
                 Unable to connect
               </div>
-              <div className="max-w-xs text-xs text-gray-600">
+              <div className="max-w-xs text-xs text-text-tertiary">
                 {error}
               </div>
             </div>
             <button
               onClick={() => window.location.reload()}
-              className="btn-secondary text-xs"
+              className="linear-button-secondary text-xs"
             >
               Try Again
             </button>
@@ -103,15 +103,15 @@ export default function HomePage() {
 
   if (!dashboard) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-white">
+      <div className="relative min-h-screen overflow-hidden bg-background">
         <div className="relative z-10 flex min-h-screen items-center justify-center">
           <div className="space-y-6 text-center">
-            <div className="mx-auto h-0.5 w-8 bg-gray-400"></div>
+            <div className="mx-auto h-0.5 w-8 bg-ink-300"></div>
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-800">
+              <div className="text-sm font-medium text-text-primary">
                 Your canvas awaits
               </div>
-              <div className="max-w-xs text-xs leading-relaxed text-gray-600">
+              <div className="max-w-xs text-xs leading-relaxed text-text-tertiary">
                 No data found. Your creative space is ready to be filled.
               </div>
             </div>
@@ -122,14 +122,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white">
-
+    <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="relative z-10">
         <div id="dashboard" className="relative flex min-h-screen flex-col py-16">
           {/* Header - Minimalist welcome */}
           <div className="animate-fade-in absolute top-6 left-8 space-y-2">
-            <div className="h-0.5 w-6 bg-gray-400"></div>
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-600">
+            <div className="h-0.5 w-6 bg-ink-300"></div>
+            <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
               Welcome back, {dashboard.username}
             </div>
           </div>
@@ -141,16 +140,16 @@ export default function HomePage() {
                 className="relative my-8 flex animate-fade-in-up flex-row justify-between"
                 style={{ '--tree-index': index } as React.CSSProperties}
               >
-                <div className="relative flex w-[12.5rem] items-start justify-end py-2 pt-4 text-xs font-medium uppercase tracking-widest text-text-tertiary after:absolute after:right-[-1rem] after:top-1/2 after:h-px after:w-3 after:-translate-y-1/2 after:bg-border-light">{tree.root}</div>
+                <div className="relative flex w-[12.5rem] items-start justify-end py-2 pt-4 text-xs font-medium uppercase tracking-wider text-text-tertiary after:absolute after:right-[-1rem] after:top-1/2 after:h-px after:w-3 after:-translate-y-1/2 after:bg-border-light">{tree.root}</div>
                 
                 {tree.root === 'bookmarks' && (
-                  <TrunkBookmark tree={tree as any} />
+                  <TreeBookmark tree={tree as any} />
                 )}
                 {tree.root === 'applications' && (
-                  <TrunkApplication tree={tree as any} />
+                  <TreeApplication tree={tree as any} />
                 )}
                 {tree.root === 'servers' && (
-                  <TrunkServer tree={tree as any} />
+                  <TreeServer tree={tree as any} />
                 )}
                 
                 <div className="relative w-[12.5rem]" />
@@ -163,29 +162,29 @@ export default function HomePage() {
             <div className="flex min-h-[60vh] flex-1 items-center justify-center">
               <div className="animate-fade-in-up space-y-8 text-center">
                 <div className="space-y-4">
-                  <div className="mx-auto h-0.5 w-16 bg-stone-300/60"></div>
+                  <div className="mx-auto h-0.5 w-16 bg-ink-200"></div>
                   <div>
-                    <h2 className="mb-2 text-lg font-light tracking-tight text-stone-800/90">
+                    <h2 className="mb-2 text-lg font-light tracking-tight text-text-primary">
                       Your mindful workspace
                     </h2>
-                    <p className="max-w-sm text-xs leading-relaxed text-stone-600/70">
+                    <p className="max-w-sm text-xs leading-relaxed text-text-tertiary">
                       A clean canvas awaits. Begin by organizing your bookmarks, applications, 
                       and servers into meaningful collections.
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-center space-x-6 text-xs text-stone-500/60">
+                <div className="flex items-center justify-center space-x-6 text-xs text-text-tertiary">
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 rounded-full bg-stone-300/40"></div>
+                    <div className="h-2 w-2 rounded-full bg-accent-green-subtle"></div>
                     <span>Bookmarks</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 rounded-full bg-amber-300/40"></div>
+                    <div className="h-2 w-2 rounded-full bg-accent-blue-subtle"></div>
                     <span>Applications</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 rounded-full bg-stone-400/40"></div>
+                    <div className="h-2 w-2 rounded-full bg-ink-200"></div>
                     <span>Servers</span>
                   </div>
                 </div>
