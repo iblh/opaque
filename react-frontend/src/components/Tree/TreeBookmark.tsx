@@ -34,14 +34,14 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({ tree }) => {
                 rel="noopener noreferrer"
                 className="group block text-inherit no-underline transition-all duration-200 ease-in-out"
               >
-                <div className="relative rounded bg-surface-elevated border border-transparent hover:border-border-light p-2 transition-all duration-200 ease-in-out hover:shadow-subtle">
+                <div className="relative rounded border border-transparent hover:border-border-light p-2 transition-all duration-200 ease-in-out hover:shadow-subtle hover:bg-surface-elevated">
                   <div className="flex flex-row items-start gap-2 text-left items-center">
                     <div 
                       className="flex h-6 w-6 items-center justify-center opacity-75 group-hover:opacity-100"
                       dangerouslySetInnerHTML={{ __html: leaf.icon.replace(/svg/g, `svg class="h-4 w-4 fill-text-secondary transition-colors duration-200 ease-in-out group-hover:fill-accent-green"`) }}
                     />
                     <div className="flex flex-col items-center gap-0.5">
-                      <div className="leaf-bm-name text-center text-xs font-normal leading-tight text-text-primary group-hover:text-accent-green transition-all duration-200 ease-in-out" style={{ wordBreak: 'break-word' }}>
+                      <div className="leaf-bm-name text-center text-xs font-normal leading-tight text-text-primary transition-all duration-200 ease-in-out" style={{ wordBreak: 'break-word' }}>
                         {leaf.name}
                       </div>
                     </div>

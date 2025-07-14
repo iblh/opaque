@@ -6,7 +6,7 @@ export default function Header() {
     const pathname = usePathname()
 
     return (
-        <header className="flex items-center justify-between bg-surface-elevated px-6 py-4 border-b border-border-light">
+        <header className="flex items-center justify-between px-6 py-4 border-b border-border-light">
             {pathname === '/login' && (
                 <div className="text-lg font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}
@@ -14,8 +14,6 @@ export default function Header() {
                 <nav className="w-full flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
-                        <div className="h-4 w-px bg-border-light mx-2"></div>
-                        <div className="text-xs text-text-tertiary">workspace</div>
                     </div>
                     <div className="relative">
                         <input 
