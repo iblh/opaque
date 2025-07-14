@@ -7,13 +7,7 @@ import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
 import TreeServer from '@/components/Tree/TreeServer'
 import Tune from '@/components/Tune'
-import { Dashboard, Tree } from '@/lib/types'
-
-const treeMapping = {
-  bookmarks: TreeBookmark,
-  applications: TreeApplication,
-  servers: TreeServer,
-}
+import { Dashboard } from '@/lib/types'
 
 export default function HomePage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)

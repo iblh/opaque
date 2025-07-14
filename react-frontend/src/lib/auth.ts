@@ -11,7 +11,8 @@ export async function jwt_verify({ jwt_token }: { jwt_token: string }) {
 
 export async function jwt_sign(payload: object, expires_in: string | number) {
     try {
-        const options: SignOptions = { expiresIn: expires_in };
+        // Cast expires_in to a proper type that SignOptions accepts
+        const options: SignOptions = { expiresIn: expires_in as number };
         const token = jwt.sign(
             payload, 
             process.env.JWT_SECRET || 'your-secret-key-here',

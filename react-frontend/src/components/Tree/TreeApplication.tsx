@@ -1,5 +1,5 @@
 import React from 'react'
-import { ApplicationBranch, Leaf } from '@/lib/types'
+import { ApplicationBranch } from '@/lib/types'
 
 interface ApplicationTree {
   root: string;
