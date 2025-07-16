@@ -20,7 +20,7 @@ module.exports = {
         'text-secondary': 'rgba(26, 29, 31, 0.75)',
         'text-tertiary': 'rgba(26, 29, 31, 0.55)',
         'text-muted': 'rgba(26, 29, 31, 0.4)',
-        'background': '#FAFAFA',
+        'background': '#FFFFFF',
         'surface': 'rgba(250, 250, 250, 0.8)',
         'surface-elevated': '#FFFFFF',
         'surface-sunken': '#F5F5F5',
