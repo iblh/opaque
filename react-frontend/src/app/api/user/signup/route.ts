@@ -6,12 +6,12 @@ import { jwt_sign } from '@/lib/auth';
 export async function POST(request: NextRequest) {
     try {
         const db = await getDb();
-        const { username, password, name, expires_in } = await request.json();
+        const { email, password, name, expires_in } = await request.json();
 
         // basic validation
-        if (!username || !password) {
+        if (!email || !password) {
             return NextResponse.json(
-                { error: 'username and password are required' }, 
+                { error: 'email and password are required' }, 
                 { status: 400 }
             );
         }
@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
         }
 
         // check if the user already exists
-        const existingUser = await db.collection('users').findOne({ username });
+        const existingUser = await db.collection('users').findOne({ email });
         if (existingUser) {
             return NextResponse.json(
-                { error: 'username already exists' }, 
+                { error: 'email already exists' }, 
                 { status: 409 }
             );
         }
@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
 
         // create new user object
         const newUser = {
-            username,
+            email,
             password: hash,
-            name: name || username,
+            name: name || email,
             createdAt: new Date(),
         };
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
         // create empty dashboard for the new user
         const newDashboard = {
-            username,
+            email,
             branches: [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         await db.collection('dashboards').insertOne(newDashboard);
 
         // create JWT token for automatic login
-        const payload = { username };
+        const payload = { email };
         const jwt_token = await jwt_sign(payload, expires_in || '3d');
 
         // return success response with JWT token

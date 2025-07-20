@@ -4,7 +4,7 @@ import Cookies from 'js-cookie'
 
 interface Dashboard {
   forest: any[];
-  username: string;
+  email: string;
 }
 
 interface TuneProps {

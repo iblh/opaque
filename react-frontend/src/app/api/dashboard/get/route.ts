@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
         if ((decoded as any).error) {
             return NextResponse.json({ error: 'invalid token' }, { status: 401 });
         } else {
-            const username = (decoded as any).username;
-            // find dashboard by username
-            const dashboard = await db.collection('dashboards').findOne({ username });
+            const email = (decoded as any).email;
+            // find dashboard by email
+            const dashboard = await db.collection('dashboards').findOne({ email });
 
             return NextResponse.json({ dashboard }, { status: 200 });
         }

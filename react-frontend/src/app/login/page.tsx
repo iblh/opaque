@@ -17,15 +17,15 @@ export default function LoginPage() {
         setIsLoading(true);
 
         const formData = new FormData(event.currentTarget);
-        const username = formData.get('username') as string;
+        const email = formData.get('email') as string;
         const password = formData.get('password') as string;
         const name = formData.get('name') as string;
         const confirmPassword = formData.get('confirm-password') as string;
         const remember = formData.get('remember') as string;
 
         // Basic validation
-        if (!username || !password) {
-            setError('Username and password are required');
+        if (!email || !password) {
+            setError('email and password are required');
             setIsLoading(false);
             return;
         }
@@ -55,8 +55,8 @@ export default function LoginPage() {
         try {
             const endpoint = isLogin ? '/api/user/login' : '/api/user/signup';
             const requestBody = isLogin
-                ? { username, password, expires_in }
-                : { username, password, name, expires_in };
+                ? { email, password, expires_in }
+                : { email, password, name, expires_in };
 
             const res = await fetch(endpoint, {
                 method: 'POST',
@@ -134,14 +134,14 @@ export default function LoginPage() {
                                 <div className="space-y-1">
                                     <label
                                         className="block text-sm lowercase tracking-wide text-black"
-                                        htmlFor="username"
+                                        htmlFor="email"
                                     >
-                                        Username
+                                        Email
                                     </label>
                                     <input
-                                        type="text"
-                                        id="username"
-                                        name="username"
+                                        type="email"
+                                        id="email"
+                                        name="email"
                                         required
                                         className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
                                     />

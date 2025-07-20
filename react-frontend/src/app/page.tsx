@@ -138,7 +138,7 @@ export default function HomePage() {
             <div className="animate-fade-in absolute top-6 left-8 space-y-2">
               <div className="h-0.5 w-6 bg-ink-300"></div>
               <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-                Welcome back, {dashboard.username}
+                Welcome back, {dashboard.name}
               </div>
             </div>
 

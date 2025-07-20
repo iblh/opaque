@@ -55,5 +55,6 @@ export interface Tree {
 
 export interface Dashboard {
   forest: Tree[];
-  username: string;
+  email: string;
+  name: string;
 } 
