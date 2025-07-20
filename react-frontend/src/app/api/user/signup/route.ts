@@ -60,11 +60,24 @@ export async function POST(request: NextRequest) {
         const payload = { email };
         const jwt_token = await jwt_sign(payload, expires_in || '3d');
 
-        // return success response with JWT token
-        return NextResponse.json(
-            { jwt_token, message: 'account created successfully' }, 
+        if (typeof jwt_token !== 'string') {
+            return NextResponse.json({ error: 'failed to create token' }, { status: 500 });
+        }
+
+        const response = NextResponse.json(
+            { success: true, message: 'account created successfully' },
             { status: 201 }
         );
+
+        response.cookies.set('jwt_token', jwt_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== 'development',
+            sameSite: 'strict',
+            path: '/',
+        });
+
+        // return success response with JWT token
+        return response;
     } catch (error) {
         console.error('Signup error:', error);
         return NextResponse.json(

@@ -1,15 +1,14 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import Cookies from 'js-cookie'
 
 export default function Header() {
     const pathname = usePathname()
     const router = useRouter()
 
-    const handleLogout = () => {
-        Cookies.remove('jwt_token')
-        router.push('/login')
+    const handleLogout = async () => {
+        await fetch('/api/user/logout', { method: 'POST' });
+        router.push('/login');
     }
 
     const handleEditDashboard = () => {
@@ -18,7 +17,7 @@ export default function Header() {
     }
 
     return (
-        <header className="flex items-center justify-between px-6 py-4 border-b border-border-light">
+        <header className="flex items-center justify-between px-6 py-4">
             {pathname === '/login' && (
                 <div className="text-lg font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}
@@ -41,12 +40,6 @@ export default function Header() {
                             </svg>
                         </div>
                         <div className="flex items-center space-x-4">
-                            <button
-                                onClick={handleEditDashboard}
-                                className="text-xs uppercase tracking-wider text-text-tertiary hover:text-text-primary transition-colors duration-200"
-                            >
-                                Edit
-                            </button>
                             <button
                                 onClick={handleLogout}
                                 className="text-xs uppercase tracking-wider text-text-tertiary hover:text-text-primary transition-colors duration-200"

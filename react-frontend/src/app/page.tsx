@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Cookies from 'js-cookie'
 import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
 import TreeServer from '@/components/Tree/TreeServer'
@@ -20,22 +19,12 @@ export default function HomePage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const jwt_token = Cookies.get('jwt_token')
-        if (!jwt_token) {
-          router.push('/login')
-          return
-        }
-
         const res = await fetch('/api/dashboard/get', {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${jwt_token}`,
-          },
         })
 
         if (res.status === 401) {
           // Token invalid, redirect to login
-          Cookies.remove('jwt_token')
           router.push('/login')
           return
         }
@@ -93,7 +82,7 @@ export default function HomePage() {
               </div>
               <button
                 onClick={() => window.location.reload()}
-                className="linear-button-secondary text-xs"
+                className="text-xs"
               >
                 Try Again
               </button>
@@ -138,7 +127,7 @@ export default function HomePage() {
             <div className="animate-fade-in absolute top-6 left-8 space-y-2">
               <div className="h-0.5 w-6 bg-ink-300"></div>
               <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-                Welcome back, {dashboard.name}
+                Welcome back, {dashboard?.name}
               </div>
             </div>
 

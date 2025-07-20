@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import Tick from '@/components/Tick';
 
 export default function LoginPage() {
@@ -25,7 +24,7 @@ export default function LoginPage() {
 
         // Basic validation
         if (!email || !password) {
-            setError('email and password are required');
+            setError('Email and password are required');
             setIsLoading(false);
             return;
         }
@@ -69,8 +68,6 @@ export default function LoginPage() {
             const result = await res.json();
 
             if (res.status === 200 || res.status === 201) {
-                // store the JWT token in cookie
-                Cookies.set('jwt_token', result.jwt_token, { expires: expires_time });
                 router.push('/');
             } else {
                 setError(result.error);
