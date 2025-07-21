@@ -75,10 +75,6 @@ input:-webkit-autofill:active {
         @apply bg-surface-elevated border border-border-light rounded shadow-subtle transition-all duration-200;
     }
     
-    .linear-input {
-        @apply bg-surface-sunken border-0 rounded px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:ring-1 focus:ring-accent-green focus:bg-surface-elevated transition-all duration-200;
-    }
-    
     .linear-divider {
         @apply h-px w-full bg-border-light my-4;
     }
