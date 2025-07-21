@@ -82,7 +82,7 @@ export default function HomePage() {
               </div>
               <button
                 onClick={() => window.location.reload()}
-                className="text-xs"
+                className="linear-button-secondary text-xs"
               >
                 Try Again
               </button>

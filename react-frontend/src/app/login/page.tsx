@@ -85,175 +85,160 @@ export default function LoginPage() {
             <div className="absolute top-0 left-0 px-6 py-4 z-20">
                 <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
             </div>
-            
+
             <div className="relative z-10 flex h-full w-full">
                 {/* Left side - Form area */}
-                <div className="flex w-full lg:w-2/5 h-full items-center justify-center p-6">
-                    <div className="w-full max-w-sm">
-                        {/* Form container with minimal styling */}
-                        <div className="space-y-10 px-2">
-                            {/* Brutalist header line */}
-                            <div className="w-10 h-3 bg-[#5f7161]"></div>
+                <div className="flex w-full lg:w-3/5 h-full items-center justify-center p-6">
+                    <div className="w-full max-w-[300px]">
+                        {/* Brutalist header line */}
+                        {/* <div className="w-10 h-0 bg-[#5f7161]"></div> */}
 
-                            {/* Mode toggle */}
-                            <div className="flex">
-                                {isLogin && (
+                        {/* Header */}
+                        <div className="flex">
+                            {isLogin && (
                                 <div className="relative py-2 px-0 mr-6 text-xl tracking-widest">
                                     Sign in
                                 </div>
-                                )}
-                                {!isLogin && (
+                            )}
+                            {!isLogin && (
                                 <div className="relative py-2 px-0 mr-6 text-xl tracking-widest">
                                     Sign up
                                 </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
 
-                            {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-8">
-                                {!isLogin && (
-                                    <div className="space-y-1">
-                                        <label
-                                            className="block text-sm lowercase tracking-wide text-black"
-                                            htmlFor="name"
-                                        >
-                                            full name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                        />
-                                    </div>
-                                )}
+                        {/* Mode toggle */}
+                        <div className="pb-10 pt-2">
+                            <p className="text-xs text-gray-600">
+                                {isLogin ? 'New here? ' : 'Have an account? '}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsLogin(!isLogin);
+                                        setError('');
+                                    }}
+                                    className="text-[#5f7161] font-medium hover:underline hover:underline-offset-4"
+                                >
+                                    {isLogin ? 'Create account' : 'Sign in'}
+                                </button>
+                            </p>
+                        </div>
 
+                        {/* Form */}
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            {!isLogin && (
                                 <div className="space-y-1">
-                                    <label
-                                        className="block text-sm lowercase tracking-wide text-black"
-                                        htmlFor="email"
-                                    >
-                                        Email
-                                    </label>
                                     <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        required
+                                        type="text"
+                                        id="name"
+                                        name="name"
+                                        placeholder="full name"
                                         className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
                                     />
                                 </div>
+                            )}
 
+                            <div className="space-y-1">
+                                {/* <label
+                                    className="block text-sm lowercase tracking-wide text-black"
+                                    htmlFor="email"
+                                >
+                                    Email
+                                </label> */}
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    placeholder="email"
+                                    required
+                                    className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="password"
+                                    required
+                                    className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
+                                />
+                            </div>
+
+                            {!isLogin && (
                                 <div className="space-y-1">
-                                    <label
-                                        className="block text-sm lowercase tracking-wide text-black"
-                                        htmlFor="password"
-                                    >
-                                        Password
-                                    </label>
                                     <input
                                         type="password"
-                                        id="password"
-                                        name="password"
+                                        id="confirm-password"
+                                        name="confirm-password"
+                                        placeholder="confirm password"
                                         required
                                         className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
                                     />
                                 </div>
+                            )}
 
-                                {!isLogin && (
-                                    <div className="space-y-1">
-                                        <label
-                                            className="block text-sm lowercase tracking-wide text-black"
-                                            htmlFor="confirm-password"
-                                        >
-                                            confirm password
-                                        </label>
-                                        <input
-                                            type="password"
-                                            id="confirm-password"
-                                            name="confirm-password"
-                                            required
-                                            className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                        />
-                                    </div>
-                                )}
+                            {isLogin && (
+                                <Tick
+                                    id="remember"
+                                    name="remember"
+                                    label="Remember me"
+                                    className="mt-4"
+                                />
+                            )}
 
-                                {isLogin && (
-                                    <Tick
-                                        id="remember"
-                                        name="remember"
-                                        label="Remember me"
-                                        className="mt-4"
-                                    />
-                                )}
-
-                                {error && (
-                                    <div className="border-l-4 border-black bg-gray-100 p-3 text-xs text-black">
-                                        {error}
-                                    </div>
-                                )}
-
-                                <div className="pt-6">
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="relative w-full border border-black rounded-sm py-3 text-xs uppercase tracking-widest text-black transition-all duration-200 hover:bg-black hover:text-white focus:outline-none focus:ring-1 focus:ring-[#5f7161] focus:ring-offset-1 disabled:opacity-50"
-                                    >
-                                        {isLoading ? (
-                                            <span className="flex items-center justify-center">
-                                                <svg
-                                                    className="-ml-1 mr-2 h-3 w-3 animate-spin text-current"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <circle
-                                                        className="opacity-25"
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                        stroke="currentColor"
-                                                        strokeWidth="4"
-                                                    ></circle>
-                                                    <path
-                                                        className="opacity-75"
-                                                        fill="currentColor"
-                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                    ></path>
-                                                </svg>
-                                                {isLogin ? 'Signing in' : 'Creating account'}
-                                            </span>
-                                        ) : isLogin ? (
-                                            'Enter'
-                                        ) : (
-                                            'Create'
-                                        )}
-                                    </button>
+                            {error && (
+                                <div className="border-l-4 border-black bg-gray-100 p-3 text-xs text-black">
+                                    {error}
                                 </div>
-                            </form>
+                            )}
 
-                            {/* Footer */}
-                            <div className="pt-8">
-                                <p className="text-xs text-gray-600">
-                                    {isLogin ? 'New here? ' : 'Have an account? '}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsLogin(!isLogin);
-                                            setError('');
-                                        }}
-                                        className="text-[#5f7161] font-medium hover:underline hover:underline-offset-4"
-                                    >
-                                        {isLogin ? 'Create account' : 'Sign in'}
-                                    </button>
-                                </p>
+                            <div className="pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="relative w-full border border-black rounded-sm py-2 text-xs uppercase tracking-widest text-black transition-all duration-200 hover:bg-black hover:text-white focus:outline-none focus:ring-1 focus:ring-[#5f7161] focus:ring-offset-1 disabled:opacity-50"
+                                >
+                                    {isLoading ? (
+                                        <span className="flex items-center justify-center">
+                                            <svg
+                                                className="-ml-1 mr-2 h-3 w-3 animate-spin text-current"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            {isLogin ? 'Signing in' : 'Creating account'}
+                                        </span>
+                                    ) : isLogin ? (
+                                        'Enter'
+                                    ) : (
+                                        'Create'
+                                    )}
+                                </button>
                             </div>
-                        </div>
+
+                            {isLogin && <div className="h-[54px]"></div>}
+                        </form>
                     </div>
                 </div>
 
                 {/* Right side - Minimalist, wabi-sabi, soft aesthetic */}
-                <div className="hidden lg:block lg:w-3/5 h-full relative bg-[#f7f7f5]">
+                <div className="hidden lg:block lg:w-2/5 h-full relative bg-[#f7f7f5]">
                     {/* Soft, organic, blurred shapes for wabi-sabi effect */}
                     <div className="absolute inset-0 overflow-hidden">
                         {/* Large soft blob 1 */}
