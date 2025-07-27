@@ -23,9 +23,9 @@ module.exports = {
         'background': '#FFFFFF',
         'surface': 'rgba(250, 250, 250, 0.8)',
         'surface-elevated': '#FFFFFF',
-        'surface-sunken': '#F5F5F5',
-        'border-light': '#EBEBEB',
-        'border-medium': '#E0E0E0',
+        'surface-sunken': '#F7F7F7',
+        'border-light': '#EDEDED',
+        'border-medium': '#DEDEDE',
         'border-strong': '#D0D0D0',
         'ink': {
           100: '#F7F7F7',

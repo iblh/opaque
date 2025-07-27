@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
 import TreeServer from '@/components/Tree/TreeServer'
-import Tune from '@/components/Tune'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Dashboard } from '@/lib/types'
@@ -119,12 +118,12 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header dashboard={dashboard} setDashboard={setDashboard} />
       <div className="relative flex-1 overflow-hidden bg-background">
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
             {/* Header - Minimalist welcome */}
-            <div className="animate-fade-in absolute top-6 left-8 space-y-2">
+            <div className="animate-fade-in pl-20">
               <div className="h-0.5 w-6 bg-ink-300"></div>
               <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
                 Welcome back, {dashboard?.name}
@@ -190,8 +189,6 @@ export default function HomePage() {
               </div>
             )}
           </div>
-
-          <Tune dashboard={dashboard} setDashboard={setDashboard} />
         </div>
       </div>
       <Footer />
