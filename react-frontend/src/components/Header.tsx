@@ -60,7 +60,7 @@ export default function Header({ dashboard, setDashboard }: HeaderProps) {
             )}
             {pathname === '/' && (
                 <nav className="w-full flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 ">
                         <div className="text-sm font-medium tracking-tight text-text-primary">
                             OPAQUE
                         </div>
@@ -93,74 +93,72 @@ export default function Header({ dashboard, setDashboard }: HeaderProps) {
                             </svg>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-6">
-                        <div className="flex items-center space-x-4">
-                            {/* Settings button */}
-                            <div className="relative" ref={settingsRef}>
-                                <button
-                                    onClick={() => setShowSettings(v => !v)}
-                                    className="text-xs bg-surface-sunken rounded-sm px-3 py-1 tracking-wider font-bold hover:ring-1 hover:ring-neutral-200 duration-200"
-                                >
-                                    Settings
-                                </button>
-                                {/* Settings panel */}
-                                {showSettings && (
-                                    <div className="absolute right-0 top-full mt-2 z-50">
-                                        <div className="bg-white border border-neutral-200 rounded-sm shadow-lg p-3 min-w-[120px]">
-                                            <button
-                                                onClick={cancelSettings}
-                                                className="w-full text-left text-xs py-1.5 mb-1 hover:bg-surface-sunken px-2 rounded-sm"
-                                            >
-                                                Reset
-                                            </button>
-                                            <button
-                                                onClick={saveSettings}
-                                                className="w-full text-left text-xs py-1.5 mb-1 hover:bg-surface-sunken px-2 rounded-sm font-medium"
-                                            >
-                                                Save
-                                            </button>
-                                            <div className="h-px bg-neutral-200 my-1"></div>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full text-left text-xs py-1.5 hover:bg-surface-sunken px-2 rounded-sm text-red-500"
-                                            >
-                                                Logout
-                                            </button>
-                                        </div>
+                    <div className="flex items-center space-x-4">
+                        {/* Settings button */}
+                        <div className="relative" ref={settingsRef}>
+                            <button
+                                onClick={() => setShowSettings(v => !v)}
+                                className="flex items-center justify-center text-xs leading-none bg-surface-sunken rounded-sm px-3 h-6 tracking-wider font-bold hover:ring-1 hover:ring-neutral-200 duration-200"
+                            >
+                                Settings
+                            </button>
+                            {/* Settings panel */}
+                            {showSettings && (
+                                <div className="absolute right-0 top-full mt-2 z-50">
+                                    <div className="bg-white border border-neutral-200 rounded-sm shadow-lg p-3 min-w-[120px]">
+                                        <button
+                                            onClick={cancelSettings}
+                                            className="w-full text-left text-xs py-1.5 mb-1 hover:bg-surface-sunken px-2 rounded-sm"
+                                        >
+                                            Reset
+                                        </button>
+                                        <button
+                                            onClick={saveSettings}
+                                            className="w-full text-left text-xs py-1.5 mb-1 hover:bg-surface-sunken px-2 rounded-sm font-medium"
+                                        >
+                                            Save
+                                        </button>
+                                        <div className="h-px bg-neutral-200 my-1"></div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full text-left text-xs py-1.5 hover:bg-surface-sunken px-2 rounded-sm text-red-500"
+                                        >
+                                            Logout
+                                        </button>
                                     </div>
-                                )}
-                            </div>
-                            {/* Avatar button */}
-                            <div className="relative" ref={avatarRef}>
-                                <button
-                                    onClick={() => setShowAvatarDropdown(v => !v)}
-                                    className="flex items-center justify-center w-6 h-6 rounded-full bg-ink-200 text-sm text-text-primary"
-                                    aria-label="User menu"
-                                >
-                                    {dashboard?.name ? dashboard.name.charAt(0).toUpperCase() : '?'}
-                                </button>
-                                {showAvatarDropdown && (
-                                    <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px]">
-                                        <div className="bg-white border border-neutral-200 rounded-sm shadow-lg p-4 flex flex-col items-start">
-                                            <div className="mb-2 w-full">
-                                                <div className="text-sm font-semibold text-text-primary">
-                                                    {dashboard?.name || 'User'}
-                                                </div>
-                                                <div className="text-xs text-text-tertiary break-all">
-                                                    {dashboard?.email || ''}
-                                                </div>
+                                </div>
+                            )}
+                        </div>
+                        {/* Avatar button */}
+                        <div className="relative" ref={avatarRef}>
+                            <button
+                                onClick={() => setShowAvatarDropdown(v => !v)}
+                                className="flex items-center justify-center w-6 h-6 rounded-full bg-ink-200 text-sm text-text-primary"
+                                aria-label="User menu"
+                            >
+                                {dashboard?.name ? dashboard.name.charAt(0).toUpperCase() : '?'}
+                            </button>
+                            {showAvatarDropdown && (
+                                <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px]">
+                                    <div className="bg-white border border-neutral-200 rounded-sm shadow-lg p-4 flex flex-col items-start">
+                                        <div className="mb-2 w-full">
+                                            <div className="text-sm font-semibold text-text-primary">
+                                                {dashboard?.name || 'User'}
                                             </div>
-                                            <div className="w-full border-t border-neutral-200 my-2"></div>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full text-left text-xs py-1.5 hover:bg-surface-sunken px-2 rounded-sm text-red-500"
-                                            >
-                                                Logout
-                                            </button>
+                                            <div className="text-xs text-text-tertiary break-all">
+                                                {dashboard?.email || ''}
+                                            </div>
                                         </div>
+                                        <div className="w-full border-t border-neutral-200 my-2"></div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full text-left text-xs py-1.5 hover:bg-surface-sunken px-2 rounded-sm text-red-500"
+                                        >
+                                            Logout
+                                        </button>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </nav>
