@@ -8,6 +8,8 @@ export interface Leaf {
 export interface ServerStats {
   status: 'online' | 'offline';
   uptime: string;
+  cores?: number;
+  load?: number[];
   cpu: number;
   memory: {
     used: number;
@@ -22,6 +24,7 @@ export interface ServerStats {
     out: number;
   };
   temperature: number;
+  updatedAt?: string | Date;
 }
 
 export interface BaseBranch {

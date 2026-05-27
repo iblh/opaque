@@ -35,6 +35,9 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   const [newBranchName, setNewBranchName] = useState('');
   const draggedBranchId = useRef<string | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
+  const bookmarkInputClass =
+    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-accent-green focus:ring-0';
+  const monoBookmarkInputClass = `${bookmarkInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: BookmarkBranch[]) => {
     onTreeChange?.({ ...tree, branches });
@@ -150,11 +153,11 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   };
 
   return (
-    <div className="relative grid max-w-[90rem] grid-cols-[repeat(auto-fill,minmax(280px,280px))] gap-6 px-8">
+    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4 px-4 md:px-8">
       {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
-          className={`relative flex w-[280px] animate-fade-in flex-col p-5 transition-all duration-200 ease-in-out ${
+          className={`relative flex w-full animate-fade-in flex-col p-5 transition-all duration-200 ease-in-out ${
             isEditing ? 'rounded-sm border border-border-light bg-white shadow-subtle' : ''
           }`}
           style={{ '--branch-index': branchIndex } as React.CSSProperties}
@@ -222,7 +225,11 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                 return (
                   <div
                     key={leaf.id}
-                    className="group rounded-sm border border-transparent p-2 transition-all duration-200 hover:border-border-light hover:bg-surface-elevated"
+                    className={`group rounded-sm border p-2 transition-all duration-200 ${
+                      isLeafEditing
+                        ? 'border-border-strong bg-white shadow-subtle'
+                        : 'border-border-light bg-white/70 hover:bg-surface-elevated hover:shadow-subtle'
+                    }`}
                     onDragOver={(event) => {
                       if (draggedLeaf.current) event.preventDefault();
                     }}
@@ -240,7 +247,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                             name: event.target.value,
                           }))}
                           placeholder="Name"
-                          className="w-full border-0 border-b border-border-light bg-transparent px-0 py-1 text-xs text-text-primary focus:border-accent-green focus:ring-0"
+                          className={bookmarkInputClass}
                         />
                         <input
                           value={leaf.url}
@@ -253,17 +260,17 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                             url: normalizeUrl(item.url),
                           }))}
                           placeholder="URL"
-                          className="w-full border-0 border-b border-border-light bg-transparent px-0 py-1 font-mono text-xs text-text-primary focus:border-accent-green focus:ring-0"
+                          className={monoBookmarkInputClass}
                         />
-                        <textarea
+                        <input
+                          type="text"
                           value={leaf.icon}
                           onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
                             ...item,
                             icon: event.target.value,
                           }))}
                           placeholder="SVG icon"
-                          rows={2}
-                          className="w-full resize-none border-0 border-b border-border-light bg-transparent px-0 py-1 font-mono text-[11px] leading-relaxed text-text-tertiary focus:border-accent-green focus:ring-0"
+                          className={monoBookmarkInputClass}
                         />
                         <div className="flex items-center justify-between">
                           <button
@@ -368,7 +375,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
       ))}
 
       {isEditing && (
-        <div className="relative flex w-[280px] animate-fade-in flex-col rounded-sm border border-dashed border-border-medium p-5">
+        <div className="relative flex w-full animate-fade-in flex-col rounded-sm border border-dashed border-border-medium p-5">
           <div className="mb-3 text-xs uppercase tracking-wider text-text-tertiary">
             New group
           </div>

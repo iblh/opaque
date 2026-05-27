@@ -1,7 +1,14 @@
-import React from 'react'
-import { ApplicationBranch } from '@/lib/types'
-import SvgIcon from '@/components/SvgIcon'
-import { DEFAULT_APPLICATION_ICON } from '@/lib/svg'
+import React, { useRef, useState } from 'react';
+import {
+  IconGripVertical,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
+import { ApplicationBranch, Leaf } from '@/lib/types';
+import SvgIcon from '@/components/SvgIcon';
+import { DEFAULT_APPLICATION_ICON } from '@/lib/svg';
 
 interface ApplicationTree {
   root: string;
@@ -10,56 +17,406 @@ interface ApplicationTree {
 
 interface TreeApplicationProps {
   tree: ApplicationTree;
+  isEditing?: boolean;
+  onTreeChange?: (tree: ApplicationTree) => void;
 }
 
-const TreeApplication: React.FC<TreeApplicationProps> = ({ tree }) => {
-  const removeProtocol = (url: string) => {
-    return url.replace(/(^\w+:|^)\/\//, '')
+type DraggedApplication = {
+  branchId: string;
+  leafId: string;
+};
+
+const TreeApplication: React.FC<TreeApplicationProps> = ({
+  tree,
+  isEditing = false,
+  onTreeChange,
+}) => {
+  const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
+  const [newShelfName, setNewShelfName] = useState('');
+  const draggedApplication = useRef<DraggedApplication | null>(null);
+  const applicationInputClass =
+    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-accent-blue focus:ring-0';
+  const monoApplicationInputClass = `${applicationInputClass} font-mono text-[11px]`;
+
+  const updateBranches = (branches: ApplicationBranch[]) => {
+    onTreeChange?.({ ...tree, branches });
+  };
+
+  const updateBranch = (
+    branchId: string,
+    updater: (branch: ApplicationBranch) => ApplicationBranch,
+  ) => {
+    updateBranches(tree.branches.map((branch) => (
+      branch.id === branchId ? updater(branch) : branch
+    )));
+  };
+
+  const updateLeaf = (
+    branchId: string,
+    leafId: string,
+    updater: (leaf: Leaf) => Leaf,
+  ) => {
+    updateBranch(branchId, (branch) => ({
+      ...branch,
+      leaves: branch.leaves.map((leaf) => (leaf.id === leafId ? updater(leaf) : leaf)),
+    }));
+  };
+
+  const addShelf = () => {
+    const name = newShelfName.trim();
+    if (!name) return;
+
+    updateBranches([
+      ...tree.branches,
+      {
+        id: newId(),
+        name,
+        leaves: [],
+      },
+    ]);
+    setNewShelfName('');
+  };
+
+  const removeShelf = (branchId: string) => {
+    updateBranches(tree.branches.filter((branch) => branch.id !== branchId));
+  };
+
+  const addApplication = (branchId?: string) => {
+    const leafId = newId();
+    const application = {
+      id: leafId,
+      name: 'New application',
+      url: 'https://',
+      icon: DEFAULT_APPLICATION_ICON,
+    };
+
+    if (!branchId) {
+      updateBranches([
+        {
+          id: newId(),
+          name: 'Applications',
+          leaves: [application],
+        },
+      ]);
+      setEditingLeafId(leafId);
+      return;
+    }
+
+    updateBranch(branchId, (branch) => ({
+      ...branch,
+      leaves: [...branch.leaves, application],
+    }));
+    setEditingLeafId(leafId);
+  };
+
+  const removeApplication = (branchId: string, leafId: string) => {
+    updateBranch(branchId, (branch) => ({
+      ...branch,
+      leaves: branch.leaves.filter((leaf) => leaf.id !== leafId),
+    }));
+  };
+
+  const moveApplication = (targetBranchId: string, targetLeafId?: string) => {
+    const source = draggedApplication.current;
+    draggedApplication.current = null;
+    if (!source) return;
+
+    const sourceBranch = tree.branches.find((branch) => branch.id === source.branchId);
+    const movedLeaf = sourceBranch?.leaves.find((leaf) => leaf.id === source.leafId);
+    if (!sourceBranch || !movedLeaf) return;
+
+    const nextBranches = tree.branches.map((branch) => {
+      if (branch.id === source.branchId) {
+        return {
+          ...branch,
+          leaves: branch.leaves.filter((leaf) => leaf.id !== source.leafId),
+        };
+      }
+
+      return branch;
+    });
+
+    const targetBranchIndex = nextBranches.findIndex((branch) => branch.id === targetBranchId);
+    if (targetBranchIndex < 0) return;
+
+    const targetBranch = nextBranches[targetBranchIndex];
+    const insertIndex = targetLeafId
+      ? Math.max(0, targetBranch.leaves.findIndex((leaf) => leaf.id === targetLeafId))
+      : targetBranch.leaves.length;
+
+    const nextLeaves = [...targetBranch.leaves];
+    nextLeaves.splice(insertIndex < 0 ? targetBranch.leaves.length : insertIndex, 0, movedLeaf);
+    nextBranches[targetBranchIndex] = {
+      ...targetBranch,
+      leaves: nextLeaves,
+    };
+
+    updateBranches(nextBranches);
+  };
+
+  const applications = tree.branches.flatMap((branch) => (
+    branch.leaves.map((leaf) => ({ branch, leaf }))
+  ));
+
+  if (!isEditing) {
+    return (
+      <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4 px-4 md:px-8">
+        {applications.map(({ branch, leaf }) => (
+          <a
+            key={leaf.id}
+            href={leaf.url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block min-w-0 text-inherit no-underline"
+          >
+            <div className="flex min-h-[72px] items-center gap-3 rounded-sm border border-border-light bg-white p-3 transition-all duration-200 hover:border-border-medium hover:bg-surface-elevated hover:shadow-subtle">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-accent-blue transition-colors duration-200 group-hover:border-accent-blue group-hover:bg-accent-blue-subtle">
+                <SvgIcon svg={leaf.icon} fallback={DEFAULT_APPLICATION_ICON} className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium leading-tight text-text-primary transition-colors duration-200 group-hover:text-accent-blue">
+                  {leaf.name}
+                </div>
+                <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
+                  {removeProtocol(leaf.url)}
+                </div>
+                {tree.branches.length > 1 && (
+                  <div className="mt-2 truncate text-[10px] uppercase tracking-wider text-text-muted">
+                    {branch.name}
+                  </div>
+                )}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    );
   }
 
   return (
-    <div className="relative grid max-w-[90rem] grid-cols-[repeat(auto-fill,minmax(280px,280px))] gap-6 px-8">
-      {tree.branches.map((branch, branchIndex) => (
-        <div 
-          key={branch.id} 
-          className="relative flex w-[280px] animate-fade-in flex-col p-5 transition-all duration-200 ease-in-out"
-          style={{ '--branch-index': branchIndex } as React.CSSProperties}
+    <div className="relative flex w-full max-w-[90rem] flex-1 flex-col gap-4 px-4 md:px-8">
+      {tree.branches.map((branch) => (
+        <section
+          key={branch.id}
+          className="rounded-sm border border-border-light bg-white p-4 shadow-subtle"
+          onDragOver={(event) => {
+            if (draggedApplication.current) event.preventDefault();
+          }}
+          onDrop={() => moveApplication(branch.id)}
         >
-          <div className="relative mb-4 flex flex-col">
-            <div className="relative text-sm font-medium tracking-tight text-text-primary">
-              {branch.name}
-              <div className="absolute -bottom-1 left-0 h-[2px] w-6 bg-accent-blue"></div>
-            </div>
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              value={branch.name}
+              onChange={(event) => updateBranch(branch.id, (item) => ({
+                ...item,
+                name: event.target.value,
+              }))}
+              className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-xs font-medium uppercase tracking-wider text-text-tertiary focus:border-accent-blue focus:ring-0"
+            />
+            <button
+              type="button"
+              onClick={() => addApplication(branch.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary hover:text-text-primary"
+              aria-label={`Add application to ${branch.name}`}
+              title="Add application"
+            >
+              <IconPlus className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => removeShelf(branch.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+              aria-label={`Delete ${branch.name}`}
+              title="Delete shelf"
+            >
+              <IconTrash className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="relative grid flex-1 grid-cols-1 gap-4">
-            {branch.leaves && branch.leaves.map((leaf) => (
-              <a
-                key={leaf.id}
-                href={leaf.url || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block text-inherit no-underline transition-all duration-200 ease-in-out"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-accent-blue-subtle text-accent-blue transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:bg-accent-blue-hover">
-                    <SvgIcon svg={leaf.icon} fallback={DEFAULT_APPLICATION_ICON} className="h-5 w-5" />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <div className="text-sm font-medium leading-tight text-text-primary group-hover:text-accent-blue transition-all duration-200">
-                      {leaf.name}
+
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3">
+            {branch.leaves.map((leaf) => {
+              const isLeafEditing = editingLeafId === leaf.id;
+
+              return (
+                <div
+                  key={leaf.id}
+                  className={`group rounded-sm border p-3 transition-all duration-200 ${
+                    isLeafEditing
+                      ? 'border-border-strong bg-white shadow-subtle'
+                      : 'border-border-light bg-white/70 hover:bg-surface-elevated hover:shadow-subtle'
+                  }`}
+                  onDragOver={(event) => {
+                    if (draggedApplication.current) event.preventDefault();
+                  }}
+                  onDrop={(event) => {
+                    event.stopPropagation();
+                    moveApplication(branch.id, leaf.id);
+                  }}
+                >
+                  {isLeafEditing ? (
+                    <div className="space-y-2">
+                      <input
+                        value={leaf.name}
+                        onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                          ...item,
+                          name: event.target.value,
+                        }))}
+                        placeholder="Name"
+                        className={applicationInputClass}
+                      />
+                      <input
+                        value={leaf.url}
+                        onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                          ...item,
+                          url: event.target.value,
+                        }))}
+                        onBlur={() => updateLeaf(branch.id, leaf.id, (item) => ({
+                          ...item,
+                          url: normalizeUrl(item.url),
+                        }))}
+                        placeholder="URL"
+                        className={monoApplicationInputClass}
+                      />
+                      <input
+                        type="text"
+                        value={leaf.icon}
+                        onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                          ...item,
+                          icon: event.target.value,
+                        }))}
+                        placeholder="SVG icon"
+                        className={monoApplicationInputClass}
+                      />
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setEditingLeafId(null)}
+                          className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
+                        >
+                          <IconX className="h-3.5 w-3.5" />
+                          Close
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeApplication(branch.id, leaf.id)}
+                          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                          aria-label={`Delete ${leaf.name}`}
+                          title="Delete application"
+                        >
+                          <IconTrash className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="font-mono text-xs leading-tight text-text-tertiary">
-                      {removeProtocol(leaf.url)}
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        draggable
+                        onDragStart={() => {
+                          draggedApplication.current = { branchId: branch.id, leafId: leaf.id };
+                        }}
+                        className="flex h-8 w-4 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+                        aria-label={`Move ${leaf.name}`}
+                        title="Move application"
+                      >
+                        <IconGripVertical className="h-4 w-4" />
+                      </button>
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-accent-blue">
+                        <SvgIcon
+                          svg={leaf.icon}
+                          fallback={DEFAULT_APPLICATION_ICON}
+                          className="h-5 w-5"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium leading-tight text-text-primary">
+                          {leaf.name}
+                        </div>
+                        <div className="mt-1 truncate font-mono text-[11px] leading-tight text-text-tertiary">
+                          {removeProtocol(leaf.url)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingLeafId(leaf.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-sm text-text-muted opacity-0 transition-opacity hover:bg-surface-sunken hover:text-text-primary group-hover:opacity-100"
+                        aria-label={`Edit ${leaf.name}`}
+                        title="Edit application"
+                      >
+                        <IconPencil className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  </div>
+                  )}
                 </div>
-              </a>
-            ))}
+              );
+            })}
+
+            {branch.leaves.length === 0 && (
+              <button
+                type="button"
+                onClick={() => addApplication(branch.id)}
+                className="flex h-[72px] items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
+              >
+                <IconPlus className="h-3.5 w-3.5" />
+                Add application
+              </button>
+            )}
           </div>
-        </div>
+        </section>
       ))}
+
+      {tree.branches.length === 0 && (
+        <button
+          type="button"
+          onClick={() => addApplication()}
+          className="flex h-[88px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
+        >
+          <IconPlus className="h-3.5 w-3.5" />
+          Add first application
+        </button>
+      )}
+
+      <div className="flex w-full max-w-[320px] items-center gap-2 rounded-sm border border-dashed border-border-medium p-4">
+        <input
+          value={newShelfName}
+          onChange={(event) => setNewShelfName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') addShelf();
+          }}
+          placeholder="New shelf"
+          className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-sm text-text-primary focus:border-accent-blue focus:ring-0"
+        />
+        <button
+          type="button"
+          onClick={addShelf}
+          className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary hover:text-text-primary"
+          aria-label="Add shelf"
+          title="Add shelf"
+        >
+          <IconPlus className="h-4 w-4" />
+        </button>
+      </div>
     </div>
-  )
+  );
+};
+
+function newId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return Math.random().toString(36).slice(2);
 }
 
-export default TreeApplication 
+function normalizeUrl(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'https://') return trimmed;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function removeProtocol(url: string) {
+  return url.replace(/(^\w+:|^)\/\//, '');
+}
+
+export default TreeApplication;

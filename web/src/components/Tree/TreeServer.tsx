@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { ServerBranch, ServerStats } from '@/lib/types'
-import SvgIcon from '@/components/SvgIcon'
-import { DEFAULT_SERVER_ICON } from '@/lib/svg'
+import React, { useState } from 'react';
+import {
+  IconCopy,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react';
+import { ServerBranch, ServerStats } from '@/lib/types';
+import SvgIcon from '@/components/SvgIcon';
+import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 
 interface ServerTree {
   root: string;
@@ -10,247 +17,345 @@ interface ServerTree {
 
 interface TreeServerProps {
   tree: ServerTree;
+  isEditing?: boolean;
+  onTreeChange?: (tree: ServerTree) => void;
 }
 
-const generateMockStats = (baseStats: ServerStats): ServerStats => {
-  // Simulate CPU fluctuation (±5%)
-  const cpuDelta = Math.random() * 10 - 5
-  const newCpu = Math.max(0, Math.min(100, baseStats.cpu + cpuDelta))
+const emptyStats: ServerStats = {
+  status: 'offline',
+  uptime: 'unknown',
+  cpu: 0,
+  memory: {
+    used: 0,
+    total: 0,
+  },
+  disk: {
+    used: 0,
+    total: 0,
+  },
+  network: {
+    in: 0,
+    out: 0,
+  },
+  temperature: 0,
+};
 
-  // Simulate memory usage fluctuation (±2%)
-  const memoryUsedDelta = baseStats.memory.total * (Math.random() * 0.04 - 0.02)
-  const newMemoryUsed = Math.max(0, Math.min(baseStats.memory.total, baseStats.memory.used + memoryUsedDelta))
+const TreeServer: React.FC<TreeServerProps> = ({
+  tree,
+  isEditing = false,
+  onTreeChange,
+}) => {
+  const [editingServerId, setEditingServerId] = useState<string | null>(null);
+  const serverInputClass =
+    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-ink-700 focus:ring-0';
+  const monoServerInputClass = `${serverInputClass} font-mono text-[11px]`;
 
-  // Simulate network traffic fluctuation
-  const networkInDelta = Math.random() * 1000000 // ±1MB/s
-  const networkOutDelta = Math.random() * 1000000 // ±1MB/s
+  const updateBranches = (branches: ServerBranch[]) => {
+    onTreeChange?.({ ...tree, branches });
+  };
 
-  // Simulate temperature fluctuation (±2°C)
-  const tempDelta = Math.random() * 4 - 2
-  const newTemp = Math.max(20, Math.min(90, baseStats.temperature + tempDelta))
+  const updateServer = (
+    serverId: string,
+    updater: (server: ServerBranch) => ServerBranch,
+  ) => {
+    updateBranches(tree.branches.map((server) => (
+      server.id === serverId ? updater(server) : server
+    )));
+  };
 
-  return {
-    ...baseStats,
-    cpu: Number(newCpu.toFixed(1)),
-    memory: {
-      ...baseStats.memory,
-      used: Math.floor(newMemoryUsed)
-    },
-    network: {
-      in: Math.max(0, baseStats.network.in + networkInDelta),
-      out: Math.max(0, baseStats.network.out + networkOutDelta)
-    },
-    temperature: Number(newTemp.toFixed(1))
-  }
-}
+  const addServer = () => {
+    const id = newId();
 
-const TreeServer: React.FC<TreeServerProps> = ({ tree }) => {
-  const [serverStats, setServerStats] = useState<Record<string, ServerStats>>({})
+    updateBranches([
+      ...tree.branches,
+      {
+        id,
+        name: 'New server',
+        url: 'ssh://',
+        icon: DEFAULT_SERVER_ICON,
+        stats: emptyStats,
+      },
+    ]);
+    setEditingServerId(id);
+  };
 
-  useEffect(() => {
-    // Initialize mock stats for each server
-    const initialStats: Record<string, ServerStats> = {}
-    tree.branches.forEach(branch => {
-      initialStats[branch.id] = {
-        status: 'online',
-        uptime: '5d 12h 30m',
-        cpu: 45 + Math.random() * 20,
-        memory: {
-          used: 8589934592 + Math.random() * 4294967296, // 8-12GB
-          total: 17179869184 // 16GB
-        },
-        disk: {
-          used: 107374182400, // 100GB
-          total: 214748364800 // 200GB
-        },
-        network: {
-          in: 5000000, // 5MB/s
-          out: 2000000 // 2MB/s
-        },
-        temperature: 45 + Math.random() * 10 // 45-55°C
-      }
-    })
-    setServerStats(initialStats)
+  const removeServer = (serverId: string) => {
+    updateBranches(tree.branches.filter((server) => server.id !== serverId));
+  };
 
-    // Update stats every 2 seconds
-    const interval = setInterval(() => {
-      setServerStats(prevStats => {
-        const newStats: Record<string, ServerStats> = {}
-        Object.entries(prevStats).forEach(([id, stats]) => {
-          newStats[id] = generateMockStats(stats)
-        })
-        return newStats
-      })
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [tree.branches])
-
-  const removeProtocol = (url: string) => {
-    return url.replace(/(^\w+:|^)\/\//, '')
-  }
-
-  const formatBytes = (bytes: number, decimals = 1): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
-  }
-
-  const formatBandwidth = (bytesPerSecond: number): string => {
-    return `${formatBytes(bytesPerSecond)}/s`
-  }
-
-  const getStatusColor = (status: ServerStats['status']): string => {
-    return status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-  }
-
-  const getTemperatureColor = (temp: number): string => {
-    if (temp < 50) return 'text-green-500'
-    if (temp < 70) return 'text-amber-500'
-    return 'text-red-500'
-  }
-
-  const getCpuColor = (cpu: number): string => {
-    if (cpu < 50) return 'bg-green-500'
-    if (cpu < 80) return 'bg-amber-500'
-    return 'bg-red-500'
-  }
+  const copyAgentId = async (serverId: string) => {
+    if (!navigator.clipboard) return;
+    await navigator.clipboard.writeText(serverId);
+  };
 
   return (
-    <div className="relative grid max-w-[90rem] grid-cols-[repeat(auto-fill,minmax(280px,280px))] gap-6 px-8">
-      {tree.branches.map((branch, branchIndex) => {
-        const stats = serverStats[branch.id]
-        if (!stats) return null
+    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-4 px-4 md:px-8">
+      {tree.branches.map((server) => {
+        const stats = resolveStats(server.stats);
+        const memoryPercent = percent(stats.memory.used, stats.memory.total);
+        const diskPercent = percent(stats.disk.used, stats.disk.total);
+        const isServerEditing = editingServerId === server.id;
+        const isStale = isStatsStale(stats);
 
         return (
           <div
-            key={branch.id}
-            className="linear-card relative h-full w-full cursor-pointer overflow-hidden p-5 transition-all duration-300 ease-in-out hover:shadow-elevated"
-            style={{ '--branch-index': branchIndex } as React.CSSProperties}
+            key={server.id}
+            className={`relative overflow-hidden rounded-sm border bg-white p-4 transition-all duration-200 ${
+              isServerEditing
+                ? 'border-border-strong shadow-subtle'
+                : 'border-border-light hover:border-border-medium hover:shadow-subtle'
+            }`}
           >
-            {/* Server header */}
-            <div className="mb-4 flex w-full items-center justify-between">
-              <div className="flex min-w-0 items-center">
-                <div className="mr-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-surface-sunken">
-                  <SvgIcon svg={branch.icon} fallback={DEFAULT_SERVER_ICON} className="h-4 w-4 text-text-secondary" />
+            {isEditing && isServerEditing ? (
+              <div className="space-y-2">
+                <input
+                  value={server.name}
+                  onChange={(event) => updateServer(server.id, (item) => ({
+                    ...item,
+                    name: event.target.value,
+                  }))}
+                  placeholder="Name"
+                  className={serverInputClass}
+                />
+                <input
+                  value={server.url}
+                  onChange={(event) => updateServer(server.id, (item) => ({
+                    ...item,
+                    url: event.target.value,
+                  }))}
+                  placeholder="URL"
+                  className={monoServerInputClass}
+                />
+                <input
+                  value={server.icon}
+                  onChange={(event) => updateServer(server.id, (item) => ({
+                    ...item,
+                    icon: event.target.value,
+                  }))}
+                  placeholder="SVG icon"
+                  className={monoServerInputClass}
+                />
+                <div className="rounded-sm border border-border-light bg-surface-sunken px-2 py-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent id</div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-secondary">
+                      {server.id}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyAgentId(server.id)}
+                      className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-white hover:text-text-primary"
+                      aria-label="Copy agent id"
+                      title="Copy agent id"
+                    >
+                      <IconCopy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <div className="m-0 text-base font-medium leading-tight text-text-primary">
-                    {branch.name}
-                  </div>
-                  <div className="font-mono text-xs leading-tight text-text-tertiary">
-                    {removeProtocol(branch.url)}
-                  </div>
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setEditingServerId(null)}
+                    className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
+                  >
+                    <IconX className="h-3.5 w-3.5" />
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeServer(server.id)}
+                    className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                    aria-label={`Delete ${server.name}`}
+                    title="Delete server"
+                  >
+                    <IconTrash className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center space-x-1.5">
-                <div className={`h-2 w-2 rounded-full ${getStatusColor(stats.status)}`}></div>
-                <span className="text-xs text-text-tertiary">
-                  {stats.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Server stats */}
-            <div className="space-y-4">
-              {/* CPU and Memory in one row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wider text-text-tertiary">CPU</div>
-                    <div className="font-mono text-xs font-medium text-text-primary">{stats.cpu.toFixed(1)}%</div>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-300 ${getCpuColor(stats.cpu)}`}
-                      style={{ width: `${stats.cpu}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Memory</div>
-                    <div className="font-mono text-xs font-medium text-text-primary">
-                      {Math.round((stats.memory.used / stats.memory.total) * 100)}%
+            ) : (
+              <>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-text-secondary">
+                      <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
                     </div>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-                    <div 
-                      className="h-full rounded-full bg-accent-blue transition-all duration-300"
-                      style={{ 
-                        width: `${(stats.memory.used / stats.memory.total) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Network and Storage in one row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Network</div>
-                  </div>
-                  <div className="flex flex-col space-y-0.5">
-                    <div className="flex items-center justify-between">
-                      <div className="font-mono text-xs text-text-tertiary">↓</div>
-                      <div className="font-mono text-xs text-text-secondary">
-                        {formatBandwidth(stats.network.in)}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium leading-tight text-text-primary">
+                        {server.name}
+                      </div>
+                      <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
+                        {removeProtocol(server.url)}
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-2 w-2 rounded-full ${stats.status === 'online' && !isStale ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      <span className="text-xs text-text-tertiary">
+                        {stats.status === 'online' && !isStale ? 'online' : 'stale'}
+                      </span>
+                    </div>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingServerId(server.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+                        aria-label={`Edit ${server.name}`}
+                        title="Edit server"
+                      >
+                        <IconPencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <MetricBar label="CPU" valueLabel={`${stats.cpu.toFixed(1)}%`} percent={stats.cpu} />
+                  <MetricBar label="Memory" valueLabel={`${memoryPercent}%`} percent={memoryPercent} />
+                  <MetricBar label="Storage" valueLabel={`${diskPercent}%`} percent={diskPercent} />
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <div className="font-mono text-xs text-text-tertiary">↑</div>
-                      <div className="font-mono text-xs text-text-secondary">
-                        {formatBandwidth(stats.network.out)}
+                      <div className="text-xs uppercase tracking-wider text-text-tertiary">Cores</div>
+                      <div className="font-mono text-xs font-medium text-text-primary">
+                        {stats.cores || '-'}
                       </div>
                     </div>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wider text-text-tertiary">Storage</div>
-                    <div className="font-mono text-xs font-medium text-text-primary">
-                      {Math.round((stats.disk.used / stats.disk.total) * 100)}%
+                    <div className="font-mono text-[11px] text-text-tertiary">
+                      load {stats.load?.slice(0, 3).join(' / ') || '-'}
                     </div>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
-                    <div 
-                      className="h-full rounded-full bg-accent-green transition-all duration-300"
-                      style={{ 
-                        width: `${(stats.disk.used / stats.disk.total) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
                 </div>
-              </div>
 
-              {/* Bottom row - Temperature and Uptime */}
-              <div className="grid grid-cols-2 gap-4 border-t border-border-light pt-3">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-text-tertiary">Temperature</div>
-                    <div className={`font-mono text-xs font-medium ${getTemperatureColor(stats.temperature)}`}>
-                      {stats.temperature.toFixed(1)}°C
-                    </div>
-                  </div>
+                <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border-light pt-3">
+                  <StatPair label="Memory" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} />
+                  <StatPair label="Storage" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} />
+                  <StatPair label="Network in" value={formatBandwidth(stats.network.in)} />
+                  <StatPair label="Network out" value={formatBandwidth(stats.network.out)} />
+                  <StatPair label="Uptime" value={stats.uptime || '-'} />
+                  <StatPair label="Updated" value={formatLastSeen(stats.updatedAt)} />
                 </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-text-tertiary">Uptime</div>
-                    <div className="font-mono text-xs font-medium text-text-primary">
-                      {stats.uptime}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
-        )
+        );
       })}
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={addServer}
+          className="flex min-h-[220px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
+        >
+          <IconPlus className="h-3.5 w-3.5" />
+          Add server
+        </button>
+      )}
     </div>
-  )
+  );
+};
+
+function MetricBar({
+  label,
+  valueLabel,
+  percent: rawPercent,
+}: {
+  label: string;
+  valueLabel: string;
+  percent: number;
+}) {
+  const normalized = Math.max(0, Math.min(100, rawPercent));
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wider text-text-tertiary">{label}</div>
+        <div className="font-mono text-xs font-medium text-text-primary">{valueLabel}</div>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${normalized < 70 ? 'bg-accent-green' : normalized < 90 ? 'bg-amber-500' : 'bg-red-500'}`}
+          style={{ width: `${normalized}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
-export default TreeServer 
+function StatPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[11px] text-text-tertiary">{label}</div>
+      <div className="mt-0.5 truncate font-mono text-[11px] text-text-secondary">{value}</div>
+    </div>
+  );
+}
+
+function resolveStats(stats?: ServerStats): ServerStats {
+  return {
+    ...emptyStats,
+    ...stats,
+    memory: {
+      ...emptyStats.memory,
+      ...stats?.memory,
+    },
+    disk: {
+      ...emptyStats.disk,
+      ...stats?.disk,
+    },
+    network: {
+      ...emptyStats.network,
+      ...stats?.network,
+    },
+  };
+}
+
+function isStatsStale(stats: ServerStats) {
+  if (!stats.updatedAt) return true;
+  const updatedAt = new Date(stats.updatedAt).getTime();
+  if (Number.isNaN(updatedAt)) return true;
+  return Date.now() - updatedAt > 2 * 60 * 1000;
+}
+
+function percent(used: number, total: number) {
+  if (!total) return 0;
+  return Math.round((used / total) * 100);
+}
+
+function formatBytes(bytes: number, decimals = 1): string {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+}
+
+function formatBandwidth(bytesPerSecond: number): string {
+  return `${formatBytes(bytesPerSecond)}/s`;
+}
+
+function formatLastSeen(updatedAt?: string | Date) {
+  if (!updatedAt) return '-';
+  const date = new Date(updatedAt);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
+function newId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return Math.random().toString(36).slice(2);
+}
+
+function removeProtocol(url: string) {
+  return url.replace(/(^\w+:|^)\/\//, '');
+}
+
+export default TreeServer;

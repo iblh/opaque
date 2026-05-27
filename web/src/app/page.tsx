@@ -222,10 +222,10 @@ export default function HomePage() {
             {visibleDashboard.forest.map((tree, index) => (
               <div
                 key={tree.root}
-                className="relative my-8 flex animate-fade-in-up flex-row justify-between"
+                className="relative my-8 flex animate-fade-in-up flex-col gap-4 md:flex-row md:justify-between md:gap-0"
                 style={{ '--tree-index': index } as React.CSSProperties}
               >
-                <div className="relative flex w-[12.5rem] items-start justify-end py-2 pt-4 text-xs font-medium uppercase tracking-wider text-text-tertiary after:absolute after:right-[-1rem] after:top-1/2 after:h-px after:w-3 after:-translate-y-1/2 after:bg-border-light">{tree.root}</div>
+                <div className="relative flex w-full items-start justify-start px-4 py-2 text-xs font-medium uppercase tracking-wider text-text-tertiary after:hidden md:w-[12.5rem] md:justify-end md:px-0 md:pt-4 md:after:absolute md:after:right-[-1rem] md:after:top-1/2 md:after:block md:after:h-px md:after:w-3 md:after:-translate-y-1/2 md:after:bg-border-light">{tree.root}</div>
 
                 {tree.root === 'bookmarks' && (
                   <TreeBookmark
@@ -235,13 +235,21 @@ export default function HomePage() {
                   />
                 )}
                 {tree.root === 'applications' && (
-                  <TreeApplication tree={tree as any} />
+                  <TreeApplication
+                    tree={tree as any}
+                    isEditing={isEditing}
+                    onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                  />
                 )}
                 {tree.root === 'servers' && (
-                  <TreeServer tree={tree as any} />
+                  <TreeServer
+                    tree={tree as any}
+                    isEditing={isEditing}
+                    onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                  />
                 )}
 
-                <div className="relative w-[12.5rem]" />
+                <div className="relative hidden w-[12.5rem] md:block" />
               </div>
             ))}
 

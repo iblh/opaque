@@ -6,10 +6,8 @@ import {
     IconDeviceFloppy,
     IconEdit,
     IconLoader2,
-    IconLogout,
     IconRefresh,
     IconSearch,
-    IconSettings,
 } from '@tabler/icons-react';
 import { Dashboard } from '@/lib/types';
 
@@ -40,37 +38,27 @@ export default function Header({
 }: HeaderProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [showSettings, setShowSettings] = useState(false);
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
-    const settingsRef = useRef<HTMLDivElement>(null);
     const avatarRef = useRef<HTMLDivElement>(null);
     const displayName = dashboard?.name || dashboard?.username || dashboard?.email || 'User';
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-                setShowSettings(false);
-            }
             if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
                 setShowAvatarDropdown(false);
             }
         }
 
-        if (showSettings || showAvatarDropdown) {
+        if (showAvatarDropdown) {
             document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showSettings, showAvatarDropdown]);
+    }, [showAvatarDropdown]);
 
     const handleLogout = async () => {
         await fetch('/api/user/logout', { method: 'POST' });
         router.push('/login');
-    };
-
-    const closeAndRun = (callback?: () => void) => {
-        setShowSettings(false);
-        callback?.();
     };
 
     return (
@@ -112,64 +100,39 @@ export default function Header({
                             </div>
                         )}
 
-                        <div className="relative" ref={settingsRef}>
+                        {!isEditing && (
                             <button
-                                onClick={() => setShowSettings((value) => !value)}
-                                className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary duration-200 hover:ring-1 hover:ring-neutral-200"
-                                aria-label="Settings"
+                                onClick={onEdit}
+                                className="flex h-7 items-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs text-text-secondary transition-colors duration-200 hover:border-border-medium hover:text-text-primary"
                             >
-                                <IconSettings className="h-4 w-4" />
+                                <IconEdit className="h-3.5 w-3.5" />
+                                Edit
                             </button>
+                        )}
 
-                            {showSettings && (
-                                <div className="absolute right-0 top-full z-50 mt-2">
-                                    <div className="min-w-[160px] rounded-sm border border-neutral-200 bg-white p-2 shadow-lg">
-                                        {!isEditing && (
-                                            <button
-                                                onClick={() => closeAndRun(onEdit)}
-                                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-surface-sunken"
-                                            >
-                                                <IconEdit className="h-3.5 w-3.5" />
-                                                Edit dashboard
-                                            </button>
-                                        )}
-
-                                        {isEditing && (
-                                            <>
-                                                <button
-                                                    onClick={() => closeAndRun(onSave)}
-                                                    disabled={!isDirty || isSaving}
-                                                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs font-medium hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-45"
-                                                >
-                                                    {isSaving ? (
-                                                        <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
-                                                    ) : (
-                                                        <IconDeviceFloppy className="h-3.5 w-3.5" />
-                                                    )}
-                                                    Save changes
-                                                </button>
-                                                <button
-                                                    onClick={() => closeAndRun(onReset)}
-                                                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-surface-sunken"
-                                                >
-                                                    <IconRefresh className="h-3.5 w-3.5" />
-                                                    Reset
-                                                </button>
-                                            </>
-                                        )}
-
-                                        <div className="my-1 h-px bg-neutral-200" />
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-red-500 hover:bg-surface-sunken"
-                                        >
-                                            <IconLogout className="h-3.5 w-3.5" />
-                                            Logout
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        {isEditing && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={onReset}
+                                    className="flex h-7 items-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs text-text-secondary transition-colors duration-200 hover:border-border-medium hover:text-text-primary"
+                                >
+                                    <IconRefresh className="h-3.5 w-3.5" />
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={onSave}
+                                    disabled={!isDirty || isSaving}
+                                    className="flex h-7 items-center gap-1.5 rounded-sm border border-text-primary bg-text-primary px-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted"
+                                >
+                                    {isSaving ? (
+                                        <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <IconDeviceFloppy className="h-3.5 w-3.5" />
+                                    )}
+                                    Save
+                                </button>
+                            </div>
+                        )}
 
                         <div className="relative" ref={avatarRef}>
                             <button
