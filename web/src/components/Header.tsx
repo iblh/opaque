@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+    IconCheck,
     IconDeviceFloppy,
     IconEdit,
     IconLoader2,
@@ -62,7 +63,7 @@ export default function Header({
     };
 
     return (
-        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-white px-6 py-3">
+        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-white/95 px-6 py-3">
             {pathname === '/login' && (
                 <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}
@@ -81,7 +82,7 @@ export default function Header({
                                 onChange={(event) => onSearchTermChange?.(event.target.value)}
                                 placeholder="Search"
                                 autoComplete="off"
-                                className="peer h-8 w-[min(22rem,34vw)] rounded-sm border-0 bg-transparent px-3 pr-8 text-sm text-text-primary placeholder-text-tertiary hover:bg-surface-sunken hover:ring-1 hover:ring-neutral-200 focus:bg-surface-sunken focus:ring-1 focus:ring-neutral-200"
+                                className="peer arena-input w-[min(22rem,34vw)] pr-8"
                             />
                             <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
                         </div>
@@ -103,7 +104,7 @@ export default function Header({
                         {!isEditing && (
                             <button
                                 onClick={onEdit}
-                                className="flex h-7 items-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs text-text-secondary transition-colors duration-200 hover:border-border-medium hover:text-text-primary"
+                                className="arena-button"
                             >
                                 <IconEdit className="h-3.5 w-3.5" />
                                 Edit
@@ -114,15 +115,19 @@ export default function Header({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={onReset}
-                                    className="flex h-7 items-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs text-text-secondary transition-colors duration-200 hover:border-border-medium hover:text-text-primary"
+                                    className="arena-button"
                                 >
-                                    <IconRefresh className="h-3.5 w-3.5" />
-                                    Reset
+                                    {isDirty ? (
+                                        <IconRefresh className="h-3.5 w-3.5" />
+                                    ) : (
+                                        <IconCheck className="h-3.5 w-3.5" />
+                                    )}
+                                    {isDirty ? 'Discard' : 'Done'}
                                 </button>
                                 <button
                                     onClick={onSave}
                                     disabled={!isDirty || isSaving}
-                                    className="flex h-7 items-center gap-1.5 rounded-sm border border-text-primary bg-text-primary px-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted"
+                                    className="arena-button-primary"
                                 >
                                     {isSaving ? (
                                         <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
@@ -137,14 +142,14 @@ export default function Header({
                         <div className="relative" ref={avatarRef}>
                             <button
                                 onClick={() => setShowAvatarDropdown((value) => !value)}
-                                className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-200 text-sm text-text-primary"
+                                className="flex h-7 w-7 items-center justify-center rounded-sm border border-border-light bg-white text-sm text-text-primary transition-colors duration-200 hover:bg-surface-sunken"
                                 aria-label="User menu"
                             >
                                 {displayName.charAt(0).toUpperCase()}
                             </button>
                             {showAvatarDropdown && (
                                 <div className="absolute right-0 top-full z-50 mt-2 min-w-[190px]">
-                                    <div className="flex flex-col items-start rounded-sm border border-neutral-200 bg-white p-4 shadow-lg">
+                                    <div className="flex flex-col items-start rounded-sm border border-border-light bg-white p-4 shadow-none">
                                         <div className="mb-2 w-full">
                                             <div className="text-sm font-semibold text-text-primary">
                                                 {displayName}

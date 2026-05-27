@@ -6,7 +6,8 @@
     "dev": "NODE_OPTIONS=--no-experimental-webstorage next dev",
     "build": "NODE_OPTIONS=--no-experimental-webstorage next build",
     "start": "NODE_OPTIONS=--no-experimental-webstorage next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "mock:server-agent": "node scripts/mock-server-agent.mjs"
   },
   "dependencies": {
     "@tabler/icons-react": "^3.34.0",

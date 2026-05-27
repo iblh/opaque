@@ -1,6 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { ServerStats } from '@/lib/types';
+import { jwt_verify } from '@/lib/auth';
+import { normalizeDashboard } from '@/lib/dashboard';
+import { DashboardIdentity, ServerBranch, ServerStats } from '@/lib/types';
+
+export async function GET(request: NextRequest) {
+  try {
+    const jwt_token = request.cookies.get('jwt_token')?.value;
+
+    if (!jwt_token) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const decoded = await jwt_verify({ jwt_token });
+    if ((decoded as any).error) {
+      return NextResponse.json({ error: 'invalid token' }, { status: 401 });
+    }
+
+    const identity = identityFromDecoded(decoded);
+    const filter = identityFilter(identity);
+
+    if (!filter) {
+      return NextResponse.json({ error: 'invalid token payload' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const rawDashboard = await db.collection('dashboards').findOne(filter, {
+      projection: { forest: 1, email: 1, username: 1, name: 1 },
+    });
+
+    if (!rawDashboard) {
+      return NextResponse.json({ servers: [] }, { status: 200 });
+    }
+
+    const dashboard = normalizeDashboard(rawDashboard as any, identity);
+    const serverTree = dashboard.forest.find((tree) => tree.root === 'servers');
+    const servers = (serverTree?.branches || [])
+      .map((server) => ({
+        id: server.id,
+        stats: (server as ServerBranch).stats,
+      }))
+      .filter((server): server is { id: string; stats: ServerStats } => Boolean(server.id && server.stats));
+
+    return NextResponse.json({ servers }, { status: 200 });
+  } catch (error) {
+    console.error('Server metrics fetch error:', error);
+    return NextResponse.json({ error: 'failed to fetch metrics' }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +101,24 @@ function bearerToken(request: NextRequest) {
   const authorization = request.headers.get('authorization');
   const match = authorization?.match(/^Bearer\s+(.+)$/i);
   return match?.[1];
+}
+
+function identityFromDecoded(decoded: unknown): DashboardIdentity {
+  return {
+    email: typeof (decoded as any).email === 'string' ? (decoded as any).email : undefined,
+    username: typeof (decoded as any).username === 'string' ? (decoded as any).username : undefined,
+    name: typeof (decoded as any).name === 'string' ? (decoded as any).name : undefined,
+  };
+}
+
+function identityFilter(identity: DashboardIdentity) {
+  const filters = [];
+
+  if (identity.email) filters.push({ email: identity.email });
+  if (identity.username) filters.push({ username: identity.username });
+
+  if (filters.length === 0) return null;
+  return filters.length === 1 ? filters[0] : { $or: filters };
 }
 
 function normalizeStats(input: any): ServerStats {

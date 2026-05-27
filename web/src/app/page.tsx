@@ -8,7 +8,9 @@ import TreeServer from '@/components/Tree/TreeServer'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
-import { Dashboard, Tree } from '@/lib/types'
+import { Dashboard, ServerStats, Tree } from '@/lib/types'
+
+const SERVER_STATS_POLL_INTERVAL_MS = 5000
 
 export default function HomePage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
@@ -51,6 +53,54 @@ export default function HomePage() {
 
     fetchDashboard()
   }, [router])
+
+  useEffect(() => {
+    if (loading || isEditing) return
+
+    let isCancelled = false
+
+    const fetchServerStats = async () => {
+      try {
+        const res = await fetch('/api/server/metrics', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        if (res.status === 401) {
+          router.push('/login')
+          return
+        }
+
+        if (!res.ok) return
+
+        const data = await res.json()
+        const servers = Array.isArray(data.servers) ? data.servers : []
+        const statsByServerId = new Map<string, ServerStats>()
+
+        servers.forEach((server: any) => {
+          if (typeof server?.id === 'string' && server.stats) {
+            statsByServerId.set(server.id, server.stats)
+          }
+        })
+
+        if (isCancelled || statsByServerId.size === 0) return
+
+        setDashboard((current) => (
+          current ? mergeServerStats(current, statsByServerId) : current
+        ))
+      } catch (err) {
+        // Keep the last known metrics when a polling request fails.
+      }
+    }
+
+    fetchServerStats()
+    const intervalId = window.setInterval(fetchServerStats, SERVER_STATS_POLL_INTERVAL_MS)
+
+    return () => {
+      isCancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [isEditing, loading, router])
 
   const activeDashboard = isEditing ? draftDashboard : dashboard
   const visibleDashboard = useMemo(() => {
@@ -313,5 +363,25 @@ function filterDashboard(dashboard: Dashboard, query: string): Dashboard {
         }
       }),
     })),
+  }
+}
+
+function mergeServerStats(
+  dashboard: Dashboard,
+  statsByServerId: Map<string, ServerStats>,
+): Dashboard {
+  return {
+    ...dashboard,
+    forest: dashboard.forest.map((tree) => {
+      if (tree.root !== 'servers') return tree
+
+      return {
+        ...tree,
+        branches: tree.branches.map((branch) => {
+          const stats = statsByServerId.get(branch.id)
+          return stats ? { ...branch, stats } : branch
+        }),
+      }
+    }),
   }
 }

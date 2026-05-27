@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import {
+  IconCheck,
   IconGripVertical,
   IconPencil,
   IconPlus,
   IconTrash,
-  IconX,
 } from '@tabler/icons-react';
 import { BookmarkBranch, Leaf } from '@/lib/types';
 import { DEFAULT_BOOKMARK_ICON } from '@/lib/svg';
@@ -26,6 +26,8 @@ type DraggedLeaf = {
   leafId: string;
 };
 
+type DropPlacement = 'before' | 'after';
+
 const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   tree,
   isEditing = false,
@@ -36,7 +38,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   const draggedBranchId = useRef<string | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
   const bookmarkInputClass =
-    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-accent-green focus:ring-0';
+    'arena-input w-full focus:border-accent-green';
   const monoBookmarkInputClass = `${bookmarkInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: BookmarkBranch[]) => {
@@ -102,7 +104,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     }));
   };
 
-  const moveBranch = (targetBranchId: string) => {
+  const moveBranch = (targetBranchId: string, placement: DropPlacement) => {
     const sourceBranchId = draggedBranchId.current;
     draggedBranchId.current = null;
     if (!sourceBranchId || sourceBranchId === targetBranchId) return;
@@ -111,13 +113,18 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     const targetIndex = tree.branches.findIndex((branch) => branch.id === targetBranchId);
     if (sourceIndex < 0 || targetIndex < 0) return;
 
-    updateBranches(reorder(tree.branches, sourceIndex, targetIndex));
+    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
   };
 
-  const moveLeaf = (targetBranchId: string, targetLeafId?: string) => {
+  const moveLeaf = (
+    targetBranchId: string,
+    targetLeafId?: string,
+    placement: DropPlacement = 'before',
+  ) => {
     const source = draggedLeaf.current;
     draggedLeaf.current = null;
     if (!source) return;
+    if (source.branchId === targetBranchId && source.leafId === targetLeafId) return;
 
     const sourceBranch = tree.branches.find((branch) => branch.id === source.branchId);
     const movedLeaf = sourceBranch?.leaves.find((leaf) => leaf.id === source.leafId);
@@ -138,12 +145,15 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     if (targetBranchIndex < 0) return;
 
     const targetBranch = nextBranches[targetBranchIndex];
-    const insertIndex = targetLeafId
-      ? Math.max(0, targetBranch.leaves.findIndex((leaf) => leaf.id === targetLeafId))
+    const targetIndex = targetLeafId
+      ? targetBranch.leaves.findIndex((leaf) => leaf.id === targetLeafId)
+      : -1;
+    const insertIndex = targetIndex >= 0
+      ? targetIndex + (placement === 'after' ? 1 : 0)
       : targetBranch.leaves.length;
 
     const nextLeaves = [...targetBranch.leaves];
-    nextLeaves.splice(insertIndex < 0 ? targetBranch.leaves.length : insertIndex, 0, movedLeaf);
+    nextLeaves.splice(insertIndex, 0, movedLeaf);
     nextBranches[targetBranchIndex] = {
       ...targetBranch,
       leaves: nextLeaves,
@@ -157,8 +167,8 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
       {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
-          className={`relative flex w-full animate-fade-in flex-col p-5 transition-all duration-200 ease-in-out ${
-            isEditing ? 'rounded-sm border border-border-light bg-white shadow-subtle' : ''
+          className={`relative flex w-full animate-fade-in flex-col p-4 transition-all duration-200 ease-in-out ${
+            isEditing ? 'arena-card' : ''
           }`}
           style={{ '--branch-index': branchIndex } as React.CSSProperties}
           onDragOver={(event) => {
@@ -166,26 +176,33 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
               event.preventDefault();
             }
           }}
-          onDrop={() => {
+          onDrop={(event) => {
+            event.preventDefault();
             if (!isEditing) return;
-            if (draggedBranchId.current) moveBranch(branch.id);
+            if (draggedBranchId.current) moveBranch(branch.id, getDropPlacement(event, 'both'));
             if (draggedLeaf.current) moveLeaf(branch.id);
           }}
         >
           <div className="relative mb-4 flex items-center gap-2">
             {isEditing && (
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 draggable
-                onDragStart={() => {
+                onDragStart={(event) => {
                   draggedBranchId.current = branch.id;
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', `bookmark-branch:${branch.id}`);
+                }}
+                onDragEnd={() => {
+                  draggedBranchId.current = null;
                 }}
                 className="flex h-6 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                 aria-label={`Move ${branch.name}`}
                 title="Move group"
               >
                 <IconGripVertical className="h-4 w-4" />
-              </button>
+              </div>
             )}
 
             {isEditing ? (
@@ -217,7 +234,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             )}
           </div>
 
-          <div className="relative grid flex-1 grid-cols-1 gap-1.5">
+          <div className="relative grid flex-1 grid-cols-1 gap-0">
             {branch.leaves.map((leaf) => {
               const isLeafEditing = editingLeafId === leaf.id;
 
@@ -227,15 +244,16 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                     key={leaf.id}
                     className={`group rounded-sm border p-2 transition-all duration-200 ${
                       isLeafEditing
-                        ? 'border-border-strong bg-white shadow-subtle'
-                        : 'border-border-light bg-white/70 hover:bg-surface-elevated hover:shadow-subtle'
+                        ? 'border-border-strong bg-white'
+                        : 'border-border-light bg-white/70 hover:bg-white'
                     }`}
                     onDragOver={(event) => {
                       if (draggedLeaf.current) event.preventDefault();
                     }}
                     onDrop={(event) => {
+                      event.preventDefault();
                       event.stopPropagation();
-                      moveLeaf(branch.id, leaf.id);
+                      moveLeaf(branch.id, leaf.id, getDropPlacement(event, 'y'));
                     }}
                   >
                     {isLeafEditing ? (
@@ -278,8 +296,8 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                             onClick={() => setEditingLeafId(null)}
                             className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
                           >
-                            <IconX className="h-3.5 w-3.5" />
-                            Close
+                            <IconCheck className="h-3.5 w-3.5" />
+                            Done
                           </button>
                           <button
                             type="button"
@@ -294,18 +312,24 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
+                        <div
+                          role="button"
+                          tabIndex={0}
                           draggable
-                          onDragStart={() => {
+                          onDragStart={(event) => {
                             draggedLeaf.current = { branchId: branch.id, leafId: leaf.id };
+                            event.dataTransfer.effectAllowed = 'move';
+                            event.dataTransfer.setData('text/plain', `bookmark-leaf:${branch.id}:${leaf.id}`);
+                          }}
+                          onDragEnd={() => {
+                            draggedLeaf.current = null;
                           }}
                           className="flex h-6 w-4 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                           aria-label={`Move ${leaf.name}`}
                           title="Move bookmark"
                         >
                           <IconGripVertical className="h-4 w-4" />
-                        </button>
+                        </div>
                         <SvgIcon
                           svg={leaf.icon}
                           fallback={DEFAULT_BOOKMARK_ICON}
@@ -342,7 +366,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   rel="noopener noreferrer"
                   className="group block text-inherit no-underline transition-all duration-200 ease-in-out"
                 >
-                  <div className="relative rounded-sm border border-transparent p-2 transition-all duration-200 ease-in-out hover:border-border-light hover:bg-surface-elevated hover:shadow-subtle">
+                  <div className="relative px-1 py-2 transition-colors duration-200 hover:bg-white">
                     <div className="flex items-center gap-2 text-left">
                       <SvgIcon
                         svg={leaf.icon}
@@ -364,7 +388,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
               <button
                 type="button"
                 onClick={() => addLeaf(branch.id)}
-                className="mt-2 flex h-8 items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium text-xs text-text-tertiary hover:border-accent-green hover:text-text-primary"
+                className="mt-3 flex h-8 items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium text-xs text-text-tertiary hover:border-accent-green hover:text-text-primary"
               >
                 <IconPlus className="h-3.5 w-3.5" />
                 Add bookmark
@@ -375,7 +399,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
       ))}
 
       {isEditing && (
-        <div className="relative flex w-full animate-fade-in flex-col rounded-sm border border-dashed border-border-medium p-5">
+        <div className="relative flex w-full animate-fade-in flex-col rounded-sm border border-dashed border-border-medium bg-white p-4">
           <div className="mb-3 text-xs uppercase tracking-wider text-text-tertiary">
             New group
           </div>
@@ -392,7 +416,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             <button
               type="button"
               onClick={addBranch}
-              className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary hover:text-text-primary"
+              className="arena-icon-button"
               aria-label="Add group"
               title="Add group"
             >
@@ -405,10 +429,33 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   );
 };
 
-function reorder<T>(items: T[], fromIndex: number, toIndex: number) {
+function getDropPlacement(
+  event: React.DragEvent<HTMLElement>,
+  axis: 'x' | 'y' | 'both',
+): DropPlacement {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const xDelta = event.clientX - (rect.left + rect.width / 2);
+  const yDelta = event.clientY - (rect.top + rect.height / 2);
+
+  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
+  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
+  return Math.abs(yDelta) >= Math.abs(xDelta)
+    ? yDelta > 0 ? 'after' : 'before'
+    : xDelta > 0 ? 'after' : 'before';
+}
+
+function reorder<T>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number,
+  placement: DropPlacement,
+) {
   const next = [...items];
   const [item] = next.splice(fromIndex, 1);
-  next.splice(toIndex, 0, item);
+  let insertIndex = placement === 'after' ? toIndex + 1 : toIndex;
+
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
   return next;
 }
 

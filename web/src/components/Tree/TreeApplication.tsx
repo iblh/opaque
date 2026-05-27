@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import {
+  IconCheck,
   IconGripVertical,
   IconPencil,
   IconPlus,
   IconTrash,
-  IconX,
 } from '@tabler/icons-react';
 import { ApplicationBranch, Leaf } from '@/lib/types';
 import SvgIcon from '@/components/SvgIcon';
@@ -26,6 +26,8 @@ type DraggedApplication = {
   leafId: string;
 };
 
+type DropPlacement = 'before' | 'after';
+
 const TreeApplication: React.FC<TreeApplicationProps> = ({
   tree,
   isEditing = false,
@@ -33,9 +35,10 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 }) => {
   const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
   const [newShelfName, setNewShelfName] = useState('');
+  const draggedShelfId = useRef<string | null>(null);
   const draggedApplication = useRef<DraggedApplication | null>(null);
   const applicationInputClass =
-    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-accent-blue focus:ring-0';
+    'arena-input w-full focus:border-accent-blue';
   const monoApplicationInputClass = `${applicationInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: ApplicationBranch[]) => {
@@ -81,6 +84,18 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     updateBranches(tree.branches.filter((branch) => branch.id !== branchId));
   };
 
+  const moveShelf = (targetBranchId: string, placement: DropPlacement) => {
+    const sourceBranchId = draggedShelfId.current;
+    draggedShelfId.current = null;
+    if (!sourceBranchId || sourceBranchId === targetBranchId) return;
+
+    const sourceIndex = tree.branches.findIndex((branch) => branch.id === sourceBranchId);
+    const targetIndex = tree.branches.findIndex((branch) => branch.id === targetBranchId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
+  };
+
   const addApplication = (branchId?: string) => {
     const leafId = newId();
     const application = {
@@ -116,10 +131,15 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     }));
   };
 
-  const moveApplication = (targetBranchId: string, targetLeafId?: string) => {
+  const moveApplication = (
+    targetBranchId: string,
+    targetLeafId?: string,
+    placement: DropPlacement = 'before',
+  ) => {
     const source = draggedApplication.current;
     draggedApplication.current = null;
     if (!source) return;
+    if (source.branchId === targetBranchId && source.leafId === targetLeafId) return;
 
     const sourceBranch = tree.branches.find((branch) => branch.id === source.branchId);
     const movedLeaf = sourceBranch?.leaves.find((leaf) => leaf.id === source.leafId);
@@ -140,12 +160,15 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     if (targetBranchIndex < 0) return;
 
     const targetBranch = nextBranches[targetBranchIndex];
-    const insertIndex = targetLeafId
-      ? Math.max(0, targetBranch.leaves.findIndex((leaf) => leaf.id === targetLeafId))
+    const targetIndex = targetLeafId
+      ? targetBranch.leaves.findIndex((leaf) => leaf.id === targetLeafId)
+      : -1;
+    const insertIndex = targetIndex >= 0
+      ? targetIndex + (placement === 'after' ? 1 : 0)
       : targetBranch.leaves.length;
 
     const nextLeaves = [...targetBranch.leaves];
-    nextLeaves.splice(insertIndex < 0 ? targetBranch.leaves.length : insertIndex, 0, movedLeaf);
+    nextLeaves.splice(insertIndex, 0, movedLeaf);
     nextBranches[targetBranchIndex] = {
       ...targetBranch,
       leaves: nextLeaves,
@@ -160,17 +183,17 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 
   if (!isEditing) {
     return (
-      <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4 px-4 md:px-8">
+      <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-4 px-4 md:px-8">
         {applications.map(({ branch, leaf }) => (
           <a
             key={leaf.id}
             href={leaf.url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block min-w-0 text-inherit no-underline"
+            className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
           >
-            <div className="flex min-h-[72px] items-center gap-3 rounded-sm border border-border-light bg-white p-3 transition-all duration-200 hover:border-border-medium hover:bg-surface-elevated hover:shadow-subtle">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-accent-blue transition-colors duration-200 group-hover:border-accent-blue group-hover:bg-accent-blue-subtle">
+            <div className="arena-card flex min-h-[72px] items-center gap-3 p-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-accent-blue transition-colors duration-200 group-hover:border-accent-blue">
                 <SvgIcon svg={leaf.icon} fallback={DEFAULT_APPLICATION_ICON} className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -198,13 +221,35 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
       {tree.branches.map((branch) => (
         <section
           key={branch.id}
-          className="rounded-sm border border-border-light bg-white p-4 shadow-subtle"
+          className="arena-card p-4"
           onDragOver={(event) => {
-            if (draggedApplication.current) event.preventDefault();
+            if (draggedShelfId.current || draggedApplication.current) event.preventDefault();
           }}
-          onDrop={() => moveApplication(branch.id)}
+          onDrop={(event) => {
+            event.preventDefault();
+            if (draggedShelfId.current) moveShelf(branch.id, getDropPlacement(event, 'both'));
+            if (draggedApplication.current) moveApplication(branch.id);
+          }}
         >
           <div className="mb-4 flex items-center gap-2">
+            <div
+              role="button"
+              tabIndex={0}
+              draggable
+              onDragStart={(event) => {
+                draggedShelfId.current = branch.id;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', `application-shelf:${branch.id}`);
+              }}
+              onDragEnd={() => {
+                draggedShelfId.current = null;
+              }}
+              className="flex h-7 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+              aria-label={`Move ${branch.name}`}
+              title="Move shelf"
+            >
+              <IconGripVertical className="h-4 w-4" />
+            </div>
             <input
               value={branch.name}
               onChange={(event) => updateBranch(branch.id, (item) => ({
@@ -216,7 +261,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => addApplication(branch.id)}
-              className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary hover:text-text-primary"
+              className="arena-icon-button"
               aria-label={`Add application to ${branch.name}`}
               title="Add application"
             >
@@ -225,7 +270,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => removeShelf(branch.id)}
-              className="flex h-7 w-7 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+              className="arena-icon-button hover:text-red-500"
               aria-label={`Delete ${branch.name}`}
               title="Delete shelf"
             >
@@ -233,24 +278,25 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             {branch.leaves.map((leaf) => {
               const isLeafEditing = editingLeafId === leaf.id;
 
               return (
                 <div
                   key={leaf.id}
-                  className={`group rounded-sm border p-3 transition-all duration-200 ${
+                  className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all duration-200 ${
                     isLeafEditing
-                      ? 'border-border-strong bg-white shadow-subtle'
-                      : 'border-border-light bg-white/70 hover:bg-surface-elevated hover:shadow-subtle'
+                      ? 'border-border-strong bg-white'
+                      : 'border-border-light bg-white/70 hover:bg-white'
                   }`}
                   onDragOver={(event) => {
                     if (draggedApplication.current) event.preventDefault();
                   }}
                   onDrop={(event) => {
+                    event.preventDefault();
                     event.stopPropagation();
-                    moveApplication(branch.id, leaf.id);
+                    moveApplication(branch.id, leaf.id, getDropPlacement(event, 'both'));
                   }}
                 >
                   {isLeafEditing ? (
@@ -293,8 +339,8 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                           onClick={() => setEditingLeafId(null)}
                           className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
                         >
-                          <IconX className="h-3.5 w-3.5" />
-                          Close
+                          <IconCheck className="h-3.5 w-3.5" />
+                          Done
                         </button>
                         <button
                           type="button"
@@ -309,19 +355,25 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         draggable
-                        onDragStart={() => {
+                        onDragStart={(event) => {
                           draggedApplication.current = { branchId: branch.id, leafId: leaf.id };
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', `application-leaf:${branch.id}:${leaf.id}`);
+                        }}
+                        onDragEnd={() => {
+                          draggedApplication.current = null;
                         }}
                         className="flex h-8 w-4 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                         aria-label={`Move ${leaf.name}`}
                         title="Move application"
                       >
                         <IconGripVertical className="h-4 w-4" />
-                      </button>
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-accent-blue">
+                      </div>
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-accent-blue">
                         <SvgIcon
                           svg={leaf.icon}
                           fallback={DEFAULT_APPLICATION_ICON}
@@ -355,7 +407,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
               <button
                 type="button"
                 onClick={() => addApplication(branch.id)}
-                className="flex h-[72px] items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
+                className="flex h-[72px] w-full max-w-[320px] items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
               >
                 <IconPlus className="h-3.5 w-3.5" />
                 Add application
@@ -369,14 +421,14 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
         <button
           type="button"
           onClick={() => addApplication()}
-          className="flex h-[88px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
+          className="flex h-[88px] w-full max-w-[320px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
         >
           <IconPlus className="h-3.5 w-3.5" />
           Add first application
         </button>
       )}
 
-      <div className="flex w-full max-w-[320px] items-center gap-2 rounded-sm border border-dashed border-border-medium p-4">
+      <div className="flex w-full max-w-[320px] items-center gap-2 rounded-sm border border-dashed border-border-medium bg-white p-4">
         <input
           value={newShelfName}
           onChange={(event) => setNewShelfName(event.target.value)}
@@ -389,7 +441,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
         <button
           type="button"
           onClick={addShelf}
-          className="flex h-7 w-7 items-center justify-center rounded-sm bg-surface-sunken text-text-secondary hover:text-text-primary"
+          className="arena-icon-button"
           aria-label="Add shelf"
           title="Add shelf"
         >
@@ -417,6 +469,36 @@ function normalizeUrl(url: string) {
 
 function removeProtocol(url: string) {
   return url.replace(/(^\w+:|^)\/\//, '');
+}
+
+function getDropPlacement(
+  event: React.DragEvent<HTMLElement>,
+  axis: 'x' | 'y' | 'both',
+): DropPlacement {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const xDelta = event.clientX - (rect.left + rect.width / 2);
+  const yDelta = event.clientY - (rect.top + rect.height / 2);
+
+  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
+  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
+  return Math.abs(yDelta) >= Math.abs(xDelta)
+    ? yDelta > 0 ? 'after' : 'before'
+    : xDelta > 0 ? 'after' : 'before';
+}
+
+function reorder<T>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number,
+  placement: DropPlacement,
+) {
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+  let insertIndex = placement === 'after' ? toIndex + 1 : toIndex;
+
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
+  return next;
 }
 
 export default TreeApplication;

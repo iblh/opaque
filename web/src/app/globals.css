@@ -4,7 +4,7 @@
 
 @layer base {
     body {
-        @apply min-h-screen bg-background font-body text-text-primary;
+        @apply min-h-screen bg-[#fafafa] font-body text-text-primary;
     }
     
     /* Linear-inspired focus styles */
@@ -77,5 +77,45 @@ input:-webkit-autofill:active {
     
     .linear-divider {
         @apply h-px w-full bg-border-light my-4;
+    }
+
+    .arena-card {
+        @apply rounded-sm border border-border-light bg-white shadow-none transition-colors duration-200;
+    }
+
+    .arena-card:hover {
+        @apply border-border-medium bg-[#fcfcfc];
+    }
+
+    .arena-button {
+        @apply inline-flex h-7 items-center justify-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs font-medium text-text-secondary transition-colors duration-200 hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
+    }
+
+    .arena-button-primary {
+        @apply inline-flex h-7 items-center justify-center gap-1.5 rounded-sm border border-text-primary bg-text-primary px-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
+    }
+
+    .arena-icon-button {
+        @apply inline-flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-text-muted transition-colors duration-200 hover:border-border-light hover:bg-surface-sunken hover:text-text-primary;
+    }
+
+    .arena-input {
+        @apply h-8 rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-border-strong focus:ring-0;
+    }
+
+    .arena-meta-table {
+        @apply divide-y divide-border-light border-t border-border-light;
+    }
+
+    .arena-meta-row {
+        @apply grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 py-1.5 text-[11px];
+    }
+
+    .arena-meta-label {
+        @apply truncate text-text-tertiary;
+    }
+
+    .arena-meta-value {
+        @apply min-w-0 truncate text-right font-mono text-text-secondary;
     }
 }

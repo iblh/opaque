@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  IconCheck,
   IconCopy,
+  IconGripVertical,
   IconPencil,
   IconPlus,
   IconTrash,
-  IconX,
 } from '@tabler/icons-react';
 import { ServerBranch, ServerStats } from '@/lib/types';
 import SvgIcon from '@/components/SvgIcon';
@@ -20,6 +21,8 @@ interface TreeServerProps {
   isEditing?: boolean;
   onTreeChange?: (tree: ServerTree) => void;
 }
+
+type DropPlacement = 'before' | 'after';
 
 const emptyStats: ServerStats = {
   status: 'offline',
@@ -46,8 +49,9 @@ const TreeServer: React.FC<TreeServerProps> = ({
   onTreeChange,
 }) => {
   const [editingServerId, setEditingServerId] = useState<string | null>(null);
+  const draggedServerId = useRef<string | null>(null);
   const serverInputClass =
-    'h-8 w-full rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-ink-700 focus:ring-0';
+    'arena-input w-full focus:border-ink-700';
   const monoServerInputClass = `${serverInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: ServerBranch[]) => {
@@ -83,13 +87,25 @@ const TreeServer: React.FC<TreeServerProps> = ({
     updateBranches(tree.branches.filter((server) => server.id !== serverId));
   };
 
+  const moveServer = (targetServerId: string, placement: DropPlacement) => {
+    const sourceServerId = draggedServerId.current;
+    draggedServerId.current = null;
+    if (!sourceServerId || sourceServerId === targetServerId) return;
+
+    const sourceIndex = tree.branches.findIndex((server) => server.id === sourceServerId);
+    const targetIndex = tree.branches.findIndex((server) => server.id === targetServerId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
+  };
+
   const copyAgentId = async (serverId: string) => {
     if (!navigator.clipboard) return;
     await navigator.clipboard.writeText(serverId);
   };
 
   return (
-    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-4 px-4 md:px-8">
+    <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-4 px-4 md:px-8">
       {tree.branches.map((server) => {
         const stats = resolveStats(server.stats);
         const memoryPercent = percent(stats.memory.used, stats.memory.total);
@@ -100,11 +116,19 @@ const TreeServer: React.FC<TreeServerProps> = ({
         return (
           <div
             key={server.id}
-            className={`relative overflow-hidden rounded-sm border bg-white p-4 transition-all duration-200 ${
+            className={`relative w-full max-w-[360px] overflow-hidden rounded-sm border bg-white p-4 transition-colors duration-200 ${
               isServerEditing
-                ? 'border-border-strong shadow-subtle'
-                : 'border-border-light hover:border-border-medium hover:shadow-subtle'
+                ? 'border-border-strong'
+                : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
             }`}
+            onDragOver={(event) => {
+              if (isEditing && draggedServerId.current) event.preventDefault();
+            }}
+            onDrop={(event) => {
+              if (!isEditing || !draggedServerId.current) return;
+              event.preventDefault();
+              moveServer(server.id, getDropPlacement(event, 'both'));
+            }}
           >
             {isEditing && isServerEditing ? (
               <div className="space-y-2">
@@ -135,7 +159,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   placeholder="SVG icon"
                   className={monoServerInputClass}
                 />
-                <div className="rounded-sm border border-border-light bg-surface-sunken px-2 py-1.5">
+                <div className="rounded-sm border border-border-light bg-[#fcfcfc] px-2 py-1.5">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent id</div>
                   <div className="mt-1 flex items-center gap-2">
                     <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-secondary">
@@ -158,8 +182,8 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     onClick={() => setEditingServerId(null)}
                     className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
                   >
-                    <IconX className="h-3.5 w-3.5" />
-                    Close
+                    <IconCheck className="h-3.5 w-3.5" />
+                    Done
                   </button>
                   <button
                     type="button"
@@ -176,7 +200,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
               <>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-sunken text-text-secondary">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-secondary">
                       <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -189,6 +213,26 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {isEditing && (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        draggable
+                        onDragStart={(event) => {
+                          draggedServerId.current = server.id;
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', `server:${server.id}`);
+                        }}
+                        onDragEnd={() => {
+                          draggedServerId.current = null;
+                        }}
+                        className="flex h-7 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+                        aria-label={`Move ${server.name}`}
+                        title="Move server"
+                      >
+                        <IconGripVertical className="h-4 w-4" />
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <span className={`h-2 w-2 rounded-full ${stats.status === 'online' && !isStale ? 'bg-green-500' : 'bg-gray-400'}`} />
                       <span className="text-xs text-text-tertiary">
@@ -226,13 +270,13 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border-light pt-3">
-                  <StatPair label="Memory" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} />
-                  <StatPair label="Storage" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} />
-                  <StatPair label="Network in" value={formatBandwidth(stats.network.in)} />
-                  <StatPair label="Network out" value={formatBandwidth(stats.network.out)} />
-                  <StatPair label="Uptime" value={stats.uptime || '-'} />
-                  <StatPair label="Updated" value={formatLastSeen(stats.updatedAt)} />
+                <div className="arena-meta-table mt-4">
+                  <MetaRow label="Memory" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} />
+                  <MetaRow label="Storage" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} />
+                  <MetaRow label="Network in" value={formatBandwidth(stats.network.in)} />
+                  <MetaRow label="Network out" value={formatBandwidth(stats.network.out)} />
+                  <MetaRow label="Uptime" value={stats.uptime || '-'} />
+                  <MetaRow label="Updated" value={formatLastSeen(stats.updatedAt)} />
                 </div>
               </>
             )}
@@ -244,7 +288,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
         <button
           type="button"
           onClick={addServer}
-          className="flex min-h-[220px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
+          className="flex min-h-[220px] w-full max-w-[360px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
         >
           <IconPlus className="h-3.5 w-3.5" />
           Add server
@@ -281,11 +325,11 @@ function MetricBar({
   );
 }
 
-function StatPair({ label, value }: { label: string; value: string }) {
+function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0">
-      <div className="text-[11px] text-text-tertiary">{label}</div>
-      <div className="mt-0.5 truncate font-mono text-[11px] text-text-secondary">{value}</div>
+    <div className="arena-meta-row">
+      <div className="arena-meta-label">{label}</div>
+      <div className="arena-meta-value">{value}</div>
     </div>
   );
 }
@@ -313,7 +357,7 @@ function isStatsStale(stats: ServerStats) {
   if (!stats.updatedAt) return true;
   const updatedAt = new Date(stats.updatedAt).getTime();
   if (Number.isNaN(updatedAt)) return true;
-  return Date.now() - updatedAt > 2 * 60 * 1000;
+  return Date.now() - updatedAt > 30 * 1000;
 }
 
 function percent(used: number, total: number) {
@@ -344,6 +388,36 @@ function formatLastSeen(updatedAt?: string | Date) {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
+}
+
+function getDropPlacement(
+  event: React.DragEvent<HTMLElement>,
+  axis: 'x' | 'y' | 'both',
+): DropPlacement {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const xDelta = event.clientX - (rect.left + rect.width / 2);
+  const yDelta = event.clientY - (rect.top + rect.height / 2);
+
+  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
+  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
+  return Math.abs(yDelta) >= Math.abs(xDelta)
+    ? yDelta > 0 ? 'after' : 'before'
+    : xDelta > 0 ? 'after' : 'before';
+}
+
+function reorder<T>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number,
+  placement: DropPlacement,
+) {
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+  let insertIndex = placement === 'after' ? toIndex + 1 : toIndex;
+
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
+  return next;
 }
 
 function newId() {
