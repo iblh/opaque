@@ -38,7 +38,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   const draggedBranchId = useRef<string | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
   const bookmarkInputClass =
-    'arena-input w-full focus:border-accent-green';
+    'opaque-input w-full focus:border-accent-green';
   const monoBookmarkInputClass = `${bookmarkInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: BookmarkBranch[]) => {
@@ -168,7 +168,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
         <div
           key={branch.id}
           className={`relative flex w-full animate-fade-in flex-col p-4 transition-all duration-200 ease-in-out ${
-            isEditing ? 'arena-card' : ''
+            isEditing ? 'opaque-card' : ''
           }`}
           style={{ '--branch-index': branchIndex } as React.CSSProperties}
           onDragOver={(event) => {
@@ -416,7 +416,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             <button
               type="button"
               onClick={addBranch}
-              className="arena-icon-button"
+              className="opaque-icon-button"
               aria-label="Add group"
               title="Add group"
             >

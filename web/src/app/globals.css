@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+    :root {
+        --opaque-header-control-size: 24px;
+        --opaque-header-icon-size: 12px;
+        --opaque-menu-width: 272px;
+        --opaque-menu-icon-size: 14px;
+        --opaque-menu-avatar-size: 28px;
+    }
+
     body {
         @apply min-h-screen bg-[#fafafa] font-body text-text-primary;
     }
@@ -79,43 +87,126 @@ input:-webkit-autofill:active {
         @apply h-px w-full bg-border-light my-4;
     }
 
-    .arena-card {
+    .opaque-card {
         @apply rounded-sm border border-border-light bg-white shadow-none transition-colors duration-200;
     }
 
-    .arena-card:hover {
+    .opaque-card:hover {
         @apply border-border-medium bg-[#fcfcfc];
     }
 
-    .arena-button {
+    .opaque-button {
         @apply inline-flex h-7 items-center justify-center gap-1.5 rounded-sm border border-border-light bg-white px-2.5 text-xs font-medium text-text-secondary transition-colors duration-200 hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
     }
 
-    .arena-button-primary {
+    .opaque-button-primary {
         @apply inline-flex h-7 items-center justify-center gap-1.5 rounded-sm border border-text-primary bg-text-primary px-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
     }
 
-    .arena-icon-button {
+    .opaque-icon-button {
         @apply inline-flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-text-muted transition-colors duration-200 hover:border-border-light hover:bg-surface-sunken hover:text-text-primary;
     }
 
-    .arena-input {
+    .opaque-input {
         @apply h-8 rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-border-strong focus:ring-0;
     }
 
-    .arena-meta-table {
+    .opaque-toolbar-icon {
+        width: var(--opaque-header-control-size);
+        height: var(--opaque-header-control-size);
+        @apply inline-flex items-center justify-center rounded-sm border border-border-light bg-white text-text-muted transition-colors duration-200 hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary;
+    }
+
+    .opaque-toolbar-icon svg {
+        width: var(--opaque-header-icon-size);
+        height: var(--opaque-header-icon-size);
+    }
+
+    .opaque-toolbar-counter {
+        height: var(--opaque-header-control-size);
+        @apply hidden items-center gap-1 rounded-sm border border-border-light bg-[#f8f8f8] px-2 font-mono text-[11px] font-medium text-text-primary md:flex;
+    }
+
+    .opaque-toolbar-counter svg {
+        width: var(--opaque-header-icon-size);
+        height: var(--opaque-header-icon-size);
+        @apply text-text-tertiary;
+    }
+
+    .opaque-toolbar-avatar {
+        width: var(--opaque-header-control-size);
+        height: var(--opaque-header-control-size);
+        @apply flex items-center justify-center rounded-full border border-transparent bg-surface-sunken text-[11px] font-medium text-text-primary transition-colors duration-200 hover:bg-[#ededed];
+    }
+
+    .opaque-menu-popover {
+        width: var(--opaque-menu-width);
+        @apply absolute right-0 top-full z-50 mt-2 max-w-[calc(100vw-2rem)];
+    }
+
+    .opaque-menu-panel {
+        @apply overflow-hidden rounded-sm border border-border-light bg-white shadow-[0_16px_42px_rgba(0,0,0,0.08)];
+    }
+
+    .opaque-menu-summary {
+        @apply bg-ink-900 p-3.5 text-white;
+    }
+
+    .opaque-menu-profile {
+        @apply flex w-full items-center gap-2.5 border-b border-border-light px-3.5 py-3 text-left hover:bg-[#fafafa];
+    }
+
+    .opaque-menu-avatar {
+        width: var(--opaque-menu-avatar-size);
+        height: var(--opaque-menu-avatar-size);
+        @apply flex flex-shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-medium text-text-primary;
+    }
+
+    .opaque-menu-section {
+        @apply border-b border-border-light py-1.5;
+    }
+
+    .opaque-menu-item {
+        @apply flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-text-primary hover:bg-[#fafafa];
+    }
+
+    .opaque-menu-item-icon {
+        width: var(--opaque-menu-icon-size);
+        height: var(--opaque-menu-icon-size);
+        @apply flex flex-shrink-0 items-center justify-center text-text-tertiary;
+    }
+
+    .opaque-menu-item-icon svg,
+    .opaque-menu-item-trailing svg {
+        width: var(--opaque-menu-icon-size);
+        height: var(--opaque-menu-icon-size);
+    }
+
+    .opaque-menu-detail {
+        @apply font-mono text-[11px] text-text-tertiary;
+    }
+
+    .opaque-menu-badge {
+        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white;
+    }
+
+    .opaque-menu-account {
+        @apply px-3.5 py-2.5 text-[10px] text-text-tertiary;
+    }
+
+    .opaque-meta-table {
         @apply divide-y divide-border-light border-t border-border-light;
     }
 
-    .arena-meta-row {
+    .opaque-meta-row {
         @apply grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 py-1.5 text-[11px];
     }
 
-    .arena-meta-label {
+    .opaque-meta-label {
         @apply truncate text-text-tertiary;
     }
 
-    .arena-meta-value {
+    .opaque-meta-value {
         @apply min-w-0 truncate text-right font-mono text-text-secondary;
     }
 }

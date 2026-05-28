@@ -51,7 +51,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
   const [editingServerId, setEditingServerId] = useState<string | null>(null);
   const draggedServerId = useRef<string | null>(null);
   const serverInputClass =
-    'arena-input w-full focus:border-ink-700';
+    'opaque-input w-full focus:border-ink-700';
   const monoServerInputClass = `${serverInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: ServerBranch[]) => {
@@ -270,7 +270,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   </div>
                 </div>
 
-                <div className="arena-meta-table mt-4">
+                <div className="opaque-meta-table mt-4">
                   <MetaRow label="Memory" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} />
                   <MetaRow label="Storage" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} />
                   <MetaRow label="Network in" value={formatBandwidth(stats.network.in)} />
@@ -327,9 +327,9 @@ function MetricBar({
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="arena-meta-row">
-      <div className="arena-meta-label">{label}</div>
-      <div className="arena-meta-value">{value}</div>
+    <div className="opaque-meta-row">
+      <div className="opaque-meta-label">{label}</div>
+      <div className="opaque-meta-value">{value}</div>
     </div>
   );
 }

@@ -4,13 +4,22 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     IconCheck,
+    IconChevronRight,
     IconDeviceFloppy,
     IconEdit,
+    IconInfoCircle,
+    IconLayoutDashboard,
     IconLoader2,
+    IconLogout,
+    IconMessageCircle,
+    IconPalette,
     IconRefresh,
     IconSearch,
+    IconServer,
+    IconSettings,
+    IconUser,
 } from '@tabler/icons-react';
-import { Dashboard } from '@/lib/types';
+import { Dashboard, ServerBranch } from '@/lib/types';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -42,6 +51,9 @@ export default function Header({
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
     const avatarRef = useRef<HTMLDivElement>(null);
     const displayName = dashboard?.name || dashboard?.username || dashboard?.email || 'User';
+    const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
+    const avatarInitial = displayName.charAt(0).toUpperCase();
+    const serverSummary = getServerSummary(dashboard);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -82,13 +94,13 @@ export default function Header({
                                 onChange={(event) => onSearchTermChange?.(event.target.value)}
                                 placeholder="Search"
                                 autoComplete="off"
-                                className="peer arena-input w-[min(22rem,34vw)] pr-8"
+                                className="peer opaque-input w-[min(22rem,34vw)] pr-8"
                             />
                             <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         {isEditing && (
                             <div className="hidden items-center gap-2 text-xs text-text-tertiary sm:flex">
                                 <span className="h-1.5 w-1.5 rounded-full bg-accent-green" />
@@ -104,10 +116,11 @@ export default function Header({
                         {!isEditing && (
                             <button
                                 onClick={onEdit}
-                                className="arena-button"
+                                className="opaque-toolbar-icon"
+                                aria-label="Edit dashboard"
+                                title="Edit dashboard"
                             >
-                                <IconEdit className="h-3.5 w-3.5" />
-                                Edit
+                                <IconEdit />
                             </button>
                         )}
 
@@ -115,7 +128,7 @@ export default function Header({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={onReset}
-                                    className="arena-button"
+                                    className="opaque-button"
                                 >
                                     {isDirty ? (
                                         <IconRefresh className="h-3.5 w-3.5" />
@@ -127,7 +140,7 @@ export default function Header({
                                 <button
                                     onClick={onSave}
                                     disabled={!isDirty || isSaving}
-                                    className="arena-button-primary"
+                                    className="opaque-button-primary"
                                 >
                                     {isSaving ? (
                                         <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
@@ -139,31 +152,117 @@ export default function Header({
                             </div>
                         )}
 
+                        <div
+                            className="opaque-toolbar-counter"
+                            title="Online servers"
+                        >
+                            <IconServer />
+                            {serverSummary.online}/{serverSummary.total}
+                        </div>
+
                         <div className="relative" ref={avatarRef}>
                             <button
                                 onClick={() => setShowAvatarDropdown((value) => !value)}
-                                className="flex h-7 w-7 items-center justify-center rounded-sm border border-border-light bg-white text-sm text-text-primary transition-colors duration-200 hover:bg-surface-sunken"
+                                className="opaque-toolbar-avatar"
                                 aria-label="User menu"
+                                aria-expanded={showAvatarDropdown}
                             >
-                                {displayName.charAt(0).toUpperCase()}
+                                {avatarInitial}
                             </button>
                             {showAvatarDropdown && (
-                                <div className="absolute right-0 top-full z-50 mt-2 min-w-[190px]">
-                                    <div className="flex flex-col items-start rounded-sm border border-border-light bg-white p-4 shadow-none">
-                                        <div className="mb-2 w-full">
-                                            <div className="text-sm font-semibold text-text-primary">
-                                                {displayName}
+                                <div className="opaque-menu-popover">
+                                    <div className="opaque-menu-panel">
+                                        <div className="opaque-menu-summary">
+                                            <div className="text-xs font-medium leading-relaxed">
+                                                Server dashboard
                                             </div>
-                                            <div className="break-all text-xs text-text-tertiary">
-                                                {dashboard?.email || dashboard?.username || ''}
+                                            <div className="mt-2.5 h-0.5 rounded-full bg-white/80">
+                                                <div
+                                                    className="h-full rounded-full bg-accent-green"
+                                                    style={{
+                                                        width: `${serverSummary.total ? (serverSummary.online / serverSummary.total) * 100 : 0}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="mt-2.5 font-mono text-xs">
+                                                {serverSummary.online} / {serverSummary.total} servers online
                                             </div>
                                         </div>
-                                        <div className="my-2 w-full border-t border-neutral-200" />
+
                                         <button
-                                            onClick={handleLogout}
-                                            className="w-full rounded-sm px-2 py-1.5 text-left text-xs text-red-500 hover:bg-surface-sunken"
+                                            type="button"
+                                            className="opaque-menu-profile"
                                         >
-                                            Logout
+                                            <span className="opaque-menu-avatar">
+                                                {avatarInitial}
+                                            </span>
+                                            <span className="min-w-0">
+                                                <span className="block truncate text-xs font-semibold text-text-primary">
+                                                    {displayName}
+                                                </span>
+                                                <span className="mt-0.5 block truncate text-[11px] text-text-tertiary">
+                                                    View profile
+                                                </span>
+                                            </span>
+                                        </button>
+
+                                        <div className="opaque-menu-section">
+                                            <MenuItem
+                                                icon={<IconLayoutDashboard />}
+                                                label="Dashboard"
+                                                onClick={() => setShowAvatarDropdown(false)}
+                                            />
+                                            <MenuItem
+                                                icon={<IconUser />}
+                                                label="Personal settings"
+                                                badge="Soon"
+                                            />
+                                            <MenuItem
+                                                icon={<IconPalette />}
+                                                label="Theme"
+                                                trailing={<IconChevronRight />}
+                                            />
+                                        </div>
+
+                                        <div className="opaque-menu-section">
+                                            <MenuItem
+                                                icon={<IconServer />}
+                                                label="Server monitor"
+                                                detail={`${serverSummary.online}/${serverSummary.total}`}
+                                            />
+                                            <MenuItem
+                                                icon={<IconSettings />}
+                                                label="Workspace settings"
+                                                badge="Soon"
+                                            />
+                                            <MenuItem
+                                                icon={<IconMessageCircle />}
+                                                label="Send feedback"
+                                                onClick={() => {
+                                                    window.location.href = 'mailto:feedback@opaque.local?subject=OPAQUE feedback';
+                                                }}
+                                            />
+                                            <MenuItem
+                                                icon={<IconInfoCircle />}
+                                                label="About"
+                                            />
+                                        </div>
+
+                                        <div className="opaque-menu-account">
+                                            <div className="truncate">
+                                                {accountLabel}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleLogout}
+                                            className="opaque-menu-item border-t border-border-light"
+                                        >
+                                            <span className="opaque-menu-item-icon">
+                                                <IconLogout />
+                                            </span>
+                                            Log out
                                         </button>
                                     </div>
                                 </div>
@@ -174,4 +273,67 @@ export default function Header({
             )}
         </header>
     );
+}
+
+function MenuItem({
+    icon,
+    label,
+    detail,
+    badge,
+    trailing,
+    onClick,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    detail?: string;
+    badge?: string;
+    trailing?: React.ReactNode;
+    onClick?: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="opaque-menu-item"
+        >
+            <span className="opaque-menu-item-icon">
+                {icon}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            {detail && (
+                <span className="opaque-menu-detail">{detail}</span>
+            )}
+            {badge && (
+                <span className="opaque-menu-badge">
+                    {badge}
+                </span>
+            )}
+            {trailing && (
+                <span className="opaque-menu-item-trailing text-text-tertiary">{trailing}</span>
+            )}
+        </button>
+    );
+}
+
+function getServerSummary(dashboard?: Dashboard | null) {
+    const servers = dashboard?.forest
+        .find((tree) => tree.root === 'servers')
+        ?.branches as ServerBranch[] | undefined;
+
+    if (!Array.isArray(servers)) {
+        return { total: 0, online: 0 };
+    }
+
+    return {
+        total: servers.length,
+        online: servers.filter((server) => {
+            const updatedAt = server.stats?.updatedAt
+                ? new Date(server.stats.updatedAt).getTime()
+                : Number.NaN;
+
+            return server.stats?.status === 'online'
+                && Number.isFinite(updatedAt)
+                && Date.now() - updatedAt <= 30 * 1000;
+        }).length,
+    };
 }

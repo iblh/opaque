@@ -38,7 +38,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   const draggedShelfId = useRef<string | null>(null);
   const draggedApplication = useRef<DraggedApplication | null>(null);
   const applicationInputClass =
-    'arena-input w-full focus:border-accent-blue';
+    'opaque-input w-full focus:border-accent-blue';
   const monoApplicationInputClass = `${applicationInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: ApplicationBranch[]) => {
@@ -192,7 +192,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             rel="noopener noreferrer"
             className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
           >
-            <div className="arena-card flex min-h-[72px] items-center gap-3 p-3">
+            <div className="opaque-card flex min-h-[72px] items-center gap-3 p-3">
               <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-accent-blue transition-colors duration-200 group-hover:border-accent-blue">
                 <SvgIcon svg={leaf.icon} fallback={DEFAULT_APPLICATION_ICON} className="h-5 w-5" />
               </div>
@@ -221,7 +221,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
       {tree.branches.map((branch) => (
         <section
           key={branch.id}
-          className="arena-card p-4"
+          className="opaque-card p-4"
           onDragOver={(event) => {
             if (draggedShelfId.current || draggedApplication.current) event.preventDefault();
           }}
@@ -261,7 +261,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => addApplication(branch.id)}
-              className="arena-icon-button"
+              className="opaque-icon-button"
               aria-label={`Add application to ${branch.name}`}
               title="Add application"
             >
@@ -270,7 +270,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => removeShelf(branch.id)}
-              className="arena-icon-button hover:text-red-500"
+              className="opaque-icon-button hover:text-red-500"
               aria-label={`Delete ${branch.name}`}
               title="Delete shelf"
             >
@@ -441,7 +441,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
         <button
           type="button"
           onClick={addShelf}
-          className="arena-icon-button"
+          className="opaque-icon-button"
           aria-label="Add shelf"
           title="Add shelf"
         >
