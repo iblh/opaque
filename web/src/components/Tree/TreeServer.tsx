@@ -8,6 +8,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { ServerBranch, ServerStats } from '@/lib/types';
+import { setDragPreview } from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 
@@ -49,6 +50,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
   onTreeChange,
 }) => {
   const [editingServerId, setEditingServerId] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const draggedServerId = useRef<string | null>(null);
   const serverInputClass =
     'opaque-input w-full focus:border-ink-700';
@@ -89,14 +91,21 @@ const TreeServer: React.FC<TreeServerProps> = ({
 
   const moveServer = (targetServerId: string, placement: DropPlacement) => {
     const sourceServerId = draggedServerId.current;
-    draggedServerId.current = null;
     if (!sourceServerId || sourceServerId === targetServerId) return;
 
     const sourceIndex = tree.branches.findIndex((server) => server.id === sourceServerId);
     const targetIndex = tree.branches.findIndex((server) => server.id === targetServerId);
     if (sourceIndex < 0 || targetIndex < 0) return;
 
-    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
+    const nextBranches = reorder(tree.branches, sourceIndex, targetIndex, placement);
+    if (sameOrder(tree.branches, nextBranches)) return;
+
+    updateBranches(nextBranches);
+  };
+
+  const finishDrag = () => {
+    draggedServerId.current = null;
+    setActiveDragId(null);
   };
 
   const copyAgentId = async (serverId: string) => {
@@ -116,18 +125,25 @@ const TreeServer: React.FC<TreeServerProps> = ({
         return (
           <div
             key={server.id}
-            className={`relative w-full max-w-[360px] overflow-hidden rounded-sm border bg-white p-4 transition-colors duration-200 ${
+            data-drag-preview
+            className={`relative w-full max-w-[360px] overflow-hidden rounded-sm border bg-white p-4 transition-all duration-200 ${
               isServerEditing
                 ? 'border-border-strong'
                 : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
+            } ${
+              activeDragId === server.id ? 'scale-[0.98] opacity-45' : ''
             }`}
             onDragOver={(event) => {
-              if (isEditing && draggedServerId.current) event.preventDefault();
+              if (!isEditing || !draggedServerId.current) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              moveServer(server.id, getDropPlacement(event, 'both'));
             }}
             onDrop={(event) => {
               if (!isEditing || !draggedServerId.current) return;
               event.preventDefault();
               moveServer(server.id, getDropPlacement(event, 'both'));
+              finishDrag();
             }}
           >
             {isEditing && isServerEditing ? (
@@ -222,10 +238,10 @@ const TreeServer: React.FC<TreeServerProps> = ({
                           draggedServerId.current = server.id;
                           event.dataTransfer.effectAllowed = 'move';
                           event.dataTransfer.setData('text/plain', `server:${server.id}`);
+                          setDragPreview(event);
+                          setActiveDragId(server.id);
                         }}
-                        onDragEnd={() => {
-                          draggedServerId.current = null;
-                        }}
+                        onDragEnd={finishDrag}
                         className="flex h-7 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                         aria-label={`Move ${server.name}`}
                         title="Move server"
@@ -418,6 +434,11 @@ function reorder<T>(
   if (fromIndex < insertIndex) insertIndex -= 1;
   next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
   return next;
+}
+
+function sameOrder<T extends { id: string }>(current: T[], next: T[]) {
+  return current.length === next.length
+    && current.every((item, index) => item.id === next[index]?.id);
 }
 
 function newId() {

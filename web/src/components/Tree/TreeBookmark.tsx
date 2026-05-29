@@ -8,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import { BookmarkBranch, Leaf } from '@/lib/types';
 import { DEFAULT_BOOKMARK_ICON } from '@/lib/svg';
+import { setDragPreview } from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 
 interface BookmarkTree {
@@ -27,6 +28,7 @@ type DraggedLeaf = {
 };
 
 type DropPlacement = 'before' | 'after';
+type ActiveDrag = { type: 'branch' | 'leaf'; id: string } | null;
 
 const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   tree,
@@ -35,6 +37,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
 }) => {
   const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
   const [newBranchName, setNewBranchName] = useState('');
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedBranchId = useRef<string | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
   const bookmarkInputClass =
@@ -106,14 +109,16 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
 
   const moveBranch = (targetBranchId: string, placement: DropPlacement) => {
     const sourceBranchId = draggedBranchId.current;
-    draggedBranchId.current = null;
     if (!sourceBranchId || sourceBranchId === targetBranchId) return;
 
     const sourceIndex = tree.branches.findIndex((branch) => branch.id === sourceBranchId);
     const targetIndex = tree.branches.findIndex((branch) => branch.id === targetBranchId);
     if (sourceIndex < 0 || targetIndex < 0) return;
 
-    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
+    const nextBranches = reorder(tree.branches, sourceIndex, targetIndex, placement);
+    if (sameOrder(tree.branches, nextBranches)) return;
+
+    updateBranches(nextBranches);
   };
 
   const moveLeaf = (
@@ -122,16 +127,22 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     placement: DropPlacement = 'before',
   ) => {
     const source = draggedLeaf.current;
-    draggedLeaf.current = null;
     if (!source) return;
-    if (source.branchId === targetBranchId && source.leafId === targetLeafId) return;
 
-    const sourceBranch = tree.branches.find((branch) => branch.id === source.branchId);
+    const sourceBranch = tree.branches.find((branch) => (
+      branch.leaves.some((leaf) => leaf.id === source.leafId)
+    ));
     const movedLeaf = sourceBranch?.leaves.find((leaf) => leaf.id === source.leafId);
     if (!sourceBranch || !movedLeaf) return;
+    if (sourceBranch.id === targetBranchId && source.leafId === targetLeafId) return;
+    if (
+      !targetLeafId
+      && sourceBranch.id === targetBranchId
+      && sourceBranch.leaves[sourceBranch.leaves.length - 1]?.id === source.leafId
+    ) return;
 
     const nextBranches = tree.branches.map((branch) => {
-      if (branch.id === source.branchId) {
+      if (branch.id === sourceBranch.id) {
         return {
           ...branch,
           leaves: branch.leaves.filter((leaf) => leaf.id !== source.leafId),
@@ -159,7 +170,14 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
       leaves: nextLeaves,
     };
 
+    draggedLeaf.current = { branchId: targetBranchId, leafId: source.leafId };
     updateBranches(nextBranches);
+  };
+
+  const finishDrag = () => {
+    draggedBranchId.current = null;
+    draggedLeaf.current = null;
+    setActiveDrag(null);
   };
 
   return (
@@ -167,13 +185,21 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
       {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
+          data-drag-preview
           className={`relative flex w-full animate-fade-in flex-col p-4 transition-all duration-200 ease-in-out ${
             isEditing ? 'opaque-card' : ''
+          } ${
+            activeDrag?.type === 'branch' && activeDrag.id === branch.id
+              ? 'scale-[0.99] opacity-45'
+              : ''
           }`}
           style={{ '--branch-index': branchIndex } as React.CSSProperties}
           onDragOver={(event) => {
             if (isEditing && (draggedBranchId.current || draggedLeaf.current)) {
               event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              if (draggedBranchId.current) moveBranch(branch.id, getDropPlacement(event, 'both'));
+              if (draggedLeaf.current) moveLeaf(branch.id);
             }
           }}
           onDrop={(event) => {
@@ -181,6 +207,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             if (!isEditing) return;
             if (draggedBranchId.current) moveBranch(branch.id, getDropPlacement(event, 'both'));
             if (draggedLeaf.current) moveLeaf(branch.id);
+            finishDrag();
           }}
         >
           <div className="relative mb-4 flex items-center gap-2">
@@ -193,10 +220,10 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   draggedBranchId.current = branch.id;
                   event.dataTransfer.effectAllowed = 'move';
                   event.dataTransfer.setData('text/plain', `bookmark-branch:${branch.id}`);
+                  setDragPreview(event);
+                  setActiveDrag({ type: 'branch', id: branch.id });
                 }}
-                onDragEnd={() => {
-                  draggedBranchId.current = null;
-                }}
+                onDragEnd={finishDrag}
                 className="flex h-6 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                 aria-label={`Move ${branch.name}`}
                 title="Move group"
@@ -242,18 +269,29 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                 return (
                   <div
                     key={leaf.id}
+                    data-drag-preview
                     className={`group rounded-sm border p-2 transition-all duration-200 ${
                       isLeafEditing
                         ? 'border-border-strong bg-white'
                         : 'border-border-light bg-white/70 hover:bg-white'
+                    } ${
+                      activeDrag?.type === 'leaf' && activeDrag.id === leaf.id
+                        ? 'scale-[0.98] opacity-40'
+                        : ''
                     }`}
                     onDragOver={(event) => {
-                      if (draggedLeaf.current) event.preventDefault();
+                      if (!draggedLeaf.current) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.dataTransfer.dropEffect = 'move';
+                      moveLeaf(branch.id, leaf.id, getDropPlacement(event, 'y'));
                     }}
                     onDrop={(event) => {
+                      if (!draggedLeaf.current) return;
                       event.preventDefault();
                       event.stopPropagation();
                       moveLeaf(branch.id, leaf.id, getDropPlacement(event, 'y'));
+                      finishDrag();
                     }}
                   >
                     {isLeafEditing ? (
@@ -320,10 +358,10 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                             draggedLeaf.current = { branchId: branch.id, leafId: leaf.id };
                             event.dataTransfer.effectAllowed = 'move';
                             event.dataTransfer.setData('text/plain', `bookmark-leaf:${branch.id}:${leaf.id}`);
+                            setDragPreview(event);
+                            setActiveDrag({ type: 'leaf', id: leaf.id });
                           }}
-                          onDragEnd={() => {
-                            draggedLeaf.current = null;
-                          }}
+                          onDragEnd={finishDrag}
                           className="flex h-6 w-4 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                           aria-label={`Move ${leaf.name}`}
                           title="Move bookmark"
@@ -457,6 +495,11 @@ function reorder<T>(
   if (fromIndex < insertIndex) insertIndex -= 1;
   next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
   return next;
+}
+
+function sameOrder<T extends { id: string }>(current: T[], next: T[]) {
+  return current.length === next.length
+    && current.every((item, index) => item.id === next[index]?.id);
 }
 
 function newId() {

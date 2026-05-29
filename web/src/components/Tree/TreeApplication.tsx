@@ -9,6 +9,7 @@ import {
 import { ApplicationBranch, Leaf } from '@/lib/types';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_APPLICATION_ICON } from '@/lib/svg';
+import { setDragPreview } from '@/lib/drag';
 
 interface ApplicationTree {
   root: string;
@@ -27,6 +28,7 @@ type DraggedApplication = {
 };
 
 type DropPlacement = 'before' | 'after';
+type ActiveDrag = { type: 'shelf' | 'application'; id: string } | null;
 
 const TreeApplication: React.FC<TreeApplicationProps> = ({
   tree,
@@ -35,6 +37,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 }) => {
   const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
   const [newShelfName, setNewShelfName] = useState('');
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedShelfId = useRef<string | null>(null);
   const draggedApplication = useRef<DraggedApplication | null>(null);
   const applicationInputClass =
@@ -86,14 +89,16 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 
   const moveShelf = (targetBranchId: string, placement: DropPlacement) => {
     const sourceBranchId = draggedShelfId.current;
-    draggedShelfId.current = null;
     if (!sourceBranchId || sourceBranchId === targetBranchId) return;
 
     const sourceIndex = tree.branches.findIndex((branch) => branch.id === sourceBranchId);
     const targetIndex = tree.branches.findIndex((branch) => branch.id === targetBranchId);
     if (sourceIndex < 0 || targetIndex < 0) return;
 
-    updateBranches(reorder(tree.branches, sourceIndex, targetIndex, placement));
+    const nextBranches = reorder(tree.branches, sourceIndex, targetIndex, placement);
+    if (sameOrder(tree.branches, nextBranches)) return;
+
+    updateBranches(nextBranches);
   };
 
   const addApplication = (branchId?: string) => {
@@ -137,16 +142,22 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     placement: DropPlacement = 'before',
   ) => {
     const source = draggedApplication.current;
-    draggedApplication.current = null;
     if (!source) return;
-    if (source.branchId === targetBranchId && source.leafId === targetLeafId) return;
 
-    const sourceBranch = tree.branches.find((branch) => branch.id === source.branchId);
+    const sourceBranch = tree.branches.find((branch) => (
+      branch.leaves.some((leaf) => leaf.id === source.leafId)
+    ));
     const movedLeaf = sourceBranch?.leaves.find((leaf) => leaf.id === source.leafId);
     if (!sourceBranch || !movedLeaf) return;
+    if (sourceBranch.id === targetBranchId && source.leafId === targetLeafId) return;
+    if (
+      !targetLeafId
+      && sourceBranch.id === targetBranchId
+      && sourceBranch.leaves[sourceBranch.leaves.length - 1]?.id === source.leafId
+    ) return;
 
     const nextBranches = tree.branches.map((branch) => {
-      if (branch.id === source.branchId) {
+      if (branch.id === sourceBranch.id) {
         return {
           ...branch,
           leaves: branch.leaves.filter((leaf) => leaf.id !== source.leafId),
@@ -174,7 +185,14 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
       leaves: nextLeaves,
     };
 
+    draggedApplication.current = { branchId: targetBranchId, leafId: source.leafId };
     updateBranches(nextBranches);
+  };
+
+  const finishDrag = () => {
+    draggedShelfId.current = null;
+    draggedApplication.current = null;
+    setActiveDrag(null);
   };
 
   const applications = tree.branches.flatMap((branch) => (
@@ -221,14 +239,24 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
       {tree.branches.map((branch) => (
         <section
           key={branch.id}
-          className="opaque-card p-4"
+          data-drag-preview
+          className={`opaque-card p-4 transition-all duration-200 ${
+            activeDrag?.type === 'shelf' && activeDrag.id === branch.id
+              ? 'scale-[0.99] opacity-45'
+              : ''
+          }`}
           onDragOver={(event) => {
-            if (draggedShelfId.current || draggedApplication.current) event.preventDefault();
+            if (!draggedShelfId.current && !draggedApplication.current) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            if (draggedShelfId.current) moveShelf(branch.id, getDropPlacement(event, 'both'));
+            if (draggedApplication.current) moveApplication(branch.id);
           }}
           onDrop={(event) => {
             event.preventDefault();
             if (draggedShelfId.current) moveShelf(branch.id, getDropPlacement(event, 'both'));
             if (draggedApplication.current) moveApplication(branch.id);
+            finishDrag();
           }}
         >
           <div className="mb-4 flex items-center gap-2">
@@ -240,10 +268,10 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                 draggedShelfId.current = branch.id;
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('text/plain', `application-shelf:${branch.id}`);
+                setDragPreview(event);
+                setActiveDrag({ type: 'shelf', id: branch.id });
               }}
-              onDragEnd={() => {
-                draggedShelfId.current = null;
-              }}
+              onDragEnd={finishDrag}
               className="flex h-7 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
               aria-label={`Move ${branch.name}`}
               title="Move shelf"
@@ -285,18 +313,29 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
               return (
                 <div
                   key={leaf.id}
+                  data-drag-preview
                   className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all duration-200 ${
                     isLeafEditing
                       ? 'border-border-strong bg-white'
                       : 'border-border-light bg-white/70 hover:bg-white'
+                  } ${
+                    activeDrag?.type === 'application' && activeDrag.id === leaf.id
+                      ? 'scale-[0.98] opacity-40'
+                      : ''
                   }`}
                   onDragOver={(event) => {
-                    if (draggedApplication.current) event.preventDefault();
+                    if (!draggedApplication.current) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.dataTransfer.dropEffect = 'move';
+                    moveApplication(branch.id, leaf.id, getDropPlacement(event, 'both'));
                   }}
                   onDrop={(event) => {
+                    if (!draggedApplication.current) return;
                     event.preventDefault();
                     event.stopPropagation();
                     moveApplication(branch.id, leaf.id, getDropPlacement(event, 'both'));
+                    finishDrag();
                   }}
                 >
                   {isLeafEditing ? (
@@ -363,10 +402,10 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                           draggedApplication.current = { branchId: branch.id, leafId: leaf.id };
                           event.dataTransfer.effectAllowed = 'move';
                           event.dataTransfer.setData('text/plain', `application-leaf:${branch.id}:${leaf.id}`);
+                          setDragPreview(event);
+                          setActiveDrag({ type: 'application', id: leaf.id });
                         }}
-                        onDragEnd={() => {
-                          draggedApplication.current = null;
-                        }}
+                        onDragEnd={finishDrag}
                         className="flex h-8 w-4 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                         aria-label={`Move ${leaf.name}`}
                         title="Move application"
@@ -499,6 +538,11 @@ function reorder<T>(
   if (fromIndex < insertIndex) insertIndex -= 1;
   next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
   return next;
+}
+
+function sameOrder<T extends { id: string }>(current: T[], next: T[]) {
+  return current.length === next.length
+    && current.every((item, index) => item.id === next[index]?.id);
 }
 
 export default TreeApplication;

@@ -126,29 +126,37 @@ export default function Header({
 
                         {isEditing && (
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={onReset}
-                                    className="opaque-button"
-                                >
-                                    {isDirty ? (
-                                        <IconRefresh className="h-3.5 w-3.5" />
-                                    ) : (
-                                        <IconCheck className="h-3.5 w-3.5" />
-                                    )}
-                                    {isDirty ? 'Discard' : 'Done'}
-                                </button>
-                                <button
-                                    onClick={onSave}
-                                    disabled={!isDirty || isSaving}
-                                    className="opaque-button-primary"
-                                >
-                                    {isSaving ? (
-                                        <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                        <IconDeviceFloppy className="h-3.5 w-3.5" />
-                                    )}
-                                    Save
-                                </button>
+                                {isDirty ? (
+                                    <>
+                                        <button
+                                            onClick={onReset}
+                                            className="opaque-button"
+                                        >
+                                            <IconRefresh />
+                                            Discard
+                                        </button>
+                                        <button
+                                            onClick={onSave}
+                                            disabled={isSaving}
+                                            className="opaque-button-primary"
+                                        >
+                                            {isSaving ? (
+                                                <IconLoader2 className="animate-spin" />
+                                            ) : (
+                                                <IconDeviceFloppy />
+                                            )}
+                                            Save
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={onReset}
+                                        className="opaque-button"
+                                    >
+                                        <IconCheck />
+                                        Done
+                                    </button>
+                                )}
                             </div>
                         )}
 
