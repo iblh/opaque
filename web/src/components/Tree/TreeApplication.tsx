@@ -9,6 +9,7 @@ import {
 import { ApplicationBranch, Leaf } from '@/lib/types';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_APPLICATION_ICON } from '@/lib/svg';
+import { APPLICATION_ICON_PRESETS } from '@/lib/iconPresets';
 import {
   getDropPlacement,
   getSpatialDropPlacement,
@@ -16,6 +17,7 @@ import {
   type DragPreviewState,
   type DropPlacement,
 } from '@/lib/drag';
+import IconField from '@/components/IconField';
 
 interface ApplicationTree {
   root: string;
@@ -299,15 +301,6 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             />
             <button
               type="button"
-              onClick={() => addApplication(branch.id)}
-              className="opaque-icon-button"
-              aria-label={`Add application to ${branch.name}`}
-              title="Add application"
-            >
-              <IconPlus className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
               onClick={() => removeShelf(branch.id)}
               className="opaque-icon-button hover:text-red-500"
               aria-label={`Delete ${branch.name}`}
@@ -373,15 +366,15 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                         placeholder="URL"
                         className={monoApplicationInputClass}
                       />
-                      <input
-                        type="text"
+                      <IconField
                         value={leaf.icon}
-                        onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                        fallback={DEFAULT_APPLICATION_ICON}
+                        presets={APPLICATION_ICON_PRESETS}
+                        inputClassName={monoApplicationInputClass}
+                        onChange={(icon) => updateLeaf(branch.id, leaf.id, (item) => ({
                           ...item,
-                          icon: event.target.value,
+                          icon,
                         }))}
-                        placeholder="SVG icon"
-                        className={monoApplicationInputClass}
                       />
                       <div className="flex items-center justify-between">
                         <button
@@ -453,16 +446,24 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
               );
             })}
 
-            {branch.leaves.length === 0 && (
-              <button
-                type="button"
-                onClick={() => addApplication(branch.id)}
-                className="flex h-[72px] w-full max-w-[320px] items-center justify-center gap-1 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
-              >
+            <button
+              type="button"
+              onClick={() => addApplication(branch.id)}
+              className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-left transition-colors hover:border-accent-blue hover:bg-white"
+              aria-label={`Add application to ${branch.name}`}
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-tertiary transition-colors group-hover:border-accent-blue group-hover:text-accent-blue">
                 <IconPlus className="h-3.5 w-3.5" />
-                Add application
-              </button>
-            )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium leading-tight text-text-secondary transition-colors group-hover:text-text-primary">
+                  Add application
+                </span>
+                <span className="mt-1 block font-mono text-[11px] leading-tight text-text-tertiary">
+                  Name, URL, SVG icon
+                </span>
+              </span>
+            </button>
           </div>
         </section>
       ))}

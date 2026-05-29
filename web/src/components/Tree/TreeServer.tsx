@@ -16,6 +16,8 @@ import {
 } from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_SERVER_ICON } from '@/lib/svg';
+import { SERVER_ICON_PRESETS } from '@/lib/iconPresets';
+import IconField from '@/components/IconField';
 
 interface ServerTree {
   root: string;
@@ -122,6 +124,31 @@ const TreeServer: React.FC<TreeServerProps> = ({
     await navigator.clipboard.writeText(serverId);
   };
 
+  const renderDragHandle = (server: ServerBranch) => {
+    if (!isEditing) return null;
+
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        draggable
+        onDragStart={(event) => {
+          draggedServerId.current = server.id;
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', `server:${server.id}`);
+          draggedServerPreview.current = setDragPreview(event);
+          setActiveDragId(server.id);
+        }}
+        onDragEnd={finishDrag}
+        className="flex h-7 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+        aria-label={`Move ${server.name}`}
+        title="Move server"
+      >
+        <IconGripVertical className="h-4 w-4" />
+      </div>
+    );
+  };
+
   return (
     <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-4 px-4 md:px-8">
       {tree.branches.map((server) => {
@@ -135,7 +162,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
           <div
             key={server.id}
             data-drag-preview
-            className={`relative w-full max-w-[360px] overflow-hidden rounded-sm border bg-white p-4 transition-all duration-200 ${
+            className={`relative w-full max-w-[360px] rounded-sm border bg-white p-4 transition-all duration-200 ${
               isServerEditing
                 ? 'border-border-strong'
                 : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
@@ -157,15 +184,18 @@ const TreeServer: React.FC<TreeServerProps> = ({
           >
             {isEditing && isServerEditing ? (
               <div className="space-y-2">
-                <input
-                  value={server.name}
-                  onChange={(event) => updateServer(server.id, (item) => ({
-                    ...item,
-                    name: event.target.value,
-                  }))}
-                  placeholder="Name"
-                  className={serverInputClass}
-                />
+                <div className="flex items-center gap-2">
+                  {renderDragHandle(server)}
+                  <input
+                    value={server.name}
+                    onChange={(event) => updateServer(server.id, (item) => ({
+                      ...item,
+                      name: event.target.value,
+                    }))}
+                    placeholder="Name"
+                    className={serverInputClass}
+                  />
+                </div>
                 <input
                   value={server.url}
                   onChange={(event) => updateServer(server.id, (item) => ({
@@ -175,14 +205,15 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   placeholder="URL"
                   className={monoServerInputClass}
                 />
-                <input
+                <IconField
                   value={server.icon}
-                  onChange={(event) => updateServer(server.id, (item) => ({
+                  fallback={DEFAULT_SERVER_ICON}
+                  presets={SERVER_ICON_PRESETS}
+                  inputClassName={monoServerInputClass}
+                  onChange={(icon) => updateServer(server.id, (item) => ({
                     ...item,
-                    icon: event.target.value,
+                    icon,
                   }))}
-                  placeholder="SVG icon"
-                  className={monoServerInputClass}
                 />
                 <div className="rounded-sm border border-border-light bg-[#fcfcfc] px-2 py-1.5">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent id</div>
@@ -225,6 +256,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
               <>
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
+                    {renderDragHandle(server)}
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-secondary">
                       <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
                     </div>
@@ -238,26 +270,6 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {isEditing && (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        draggable
-                        onDragStart={(event) => {
-                          draggedServerId.current = server.id;
-                          event.dataTransfer.effectAllowed = 'move';
-                          event.dataTransfer.setData('text/plain', `server:${server.id}`);
-                          draggedServerPreview.current = setDragPreview(event);
-                          setActiveDragId(server.id);
-                        }}
-                        onDragEnd={finishDrag}
-                        className="flex h-7 w-5 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
-                        aria-label={`Move ${server.name}`}
-                        title="Move server"
-                      >
-                        <IconGripVertical className="h-4 w-4" />
-                      </div>
-                    )}
                     <div className="flex items-center gap-1.5">
                       <span className={`h-2 w-2 rounded-full ${stats.status === 'online' && !isStale ? 'bg-green-500' : 'bg-gray-400'}`} />
                       <span className="text-xs text-text-tertiary">

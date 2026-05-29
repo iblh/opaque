@@ -24,6 +24,7 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.0.0",
+    "simple-icons": "^16.21.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

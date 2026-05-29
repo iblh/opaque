@@ -8,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import { BookmarkBranch, Leaf } from '@/lib/types';
 import { DEFAULT_BOOKMARK_ICON } from '@/lib/svg';
+import { BOOKMARK_ICON_PRESETS } from '@/lib/iconPresets';
 import {
   getDropPlacement,
   getSpatialDropPlacement,
@@ -16,6 +17,7 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
+import IconField from '@/components/IconField';
 
 interface BookmarkTree {
   root: string;
@@ -192,7 +194,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   };
 
   return (
-    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4 px-4 md:px-8">
+    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] items-start gap-4 px-4 md:px-8">
       {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
@@ -329,15 +331,15 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                           placeholder="URL"
                           className={monoBookmarkInputClass}
                         />
-                        <input
-                          type="text"
+                        <IconField
                           value={leaf.icon}
-                          onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                          fallback={DEFAULT_BOOKMARK_ICON}
+                          presets={BOOKMARK_ICON_PRESETS}
+                          inputClassName={monoBookmarkInputClass}
+                          onChange={(icon) => updateLeaf(branch.id, leaf.id, (item) => ({
                             ...item,
-                            icon: event.target.value,
+                            icon,
                           }))}
-                          placeholder="SVG icon"
-                          className={monoBookmarkInputClass}
                         />
                         <div className="flex items-center justify-between">
                           <button
