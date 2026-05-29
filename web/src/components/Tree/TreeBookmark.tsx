@@ -8,7 +8,13 @@ import {
 } from '@tabler/icons-react';
 import { BookmarkBranch, Leaf } from '@/lib/types';
 import { DEFAULT_BOOKMARK_ICON } from '@/lib/svg';
-import { setDragPreview } from '@/lib/drag';
+import {
+  getDropPlacement,
+  getSpatialDropPlacement,
+  setDragPreview,
+  type DragPreviewState,
+  type DropPlacement,
+} from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 
 interface BookmarkTree {
@@ -27,7 +33,6 @@ type DraggedLeaf = {
   leafId: string;
 };
 
-type DropPlacement = 'before' | 'after';
 type ActiveDrag = { type: 'branch' | 'leaf'; id: string } | null;
 
 const TreeBookmark: React.FC<TreeBookmarkProps> = ({
@@ -39,6 +44,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   const [newBranchName, setNewBranchName] = useState('');
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedBranchId = useRef<string | null>(null);
+  const draggedBranchPreview = useRef<DragPreviewState | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
   const bookmarkInputClass =
     'opaque-input w-full focus:border-accent-green';
@@ -121,6 +127,10 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     updateBranches(nextBranches);
   };
 
+  const getBranchDropPlacement = (event: React.DragEvent<HTMLElement>) => {
+    return getSpatialDropPlacement(event, draggedBranchPreview.current);
+  };
+
   const moveLeaf = (
     targetBranchId: string,
     targetLeafId?: string,
@@ -176,6 +186,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
 
   const finishDrag = () => {
     draggedBranchId.current = null;
+    draggedBranchPreview.current = null;
     draggedLeaf.current = null;
     setActiveDrag(null);
   };
@@ -198,14 +209,14 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             if (isEditing && (draggedBranchId.current || draggedLeaf.current)) {
               event.preventDefault();
               event.dataTransfer.dropEffect = 'move';
-              if (draggedBranchId.current) moveBranch(branch.id, getDropPlacement(event, 'both'));
+              if (draggedBranchId.current) moveBranch(branch.id, getBranchDropPlacement(event));
               if (draggedLeaf.current) moveLeaf(branch.id);
             }
           }}
           onDrop={(event) => {
             event.preventDefault();
             if (!isEditing) return;
-            if (draggedBranchId.current) moveBranch(branch.id, getDropPlacement(event, 'both'));
+            if (draggedBranchId.current) moveBranch(branch.id, getBranchDropPlacement(event));
             if (draggedLeaf.current) moveLeaf(branch.id);
             finishDrag();
           }}
@@ -220,7 +231,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   draggedBranchId.current = branch.id;
                   event.dataTransfer.effectAllowed = 'move';
                   event.dataTransfer.setData('text/plain', `bookmark-branch:${branch.id}`);
-                  setDragPreview(event);
+                  draggedBranchPreview.current = setDragPreview(event);
                   setActiveDrag({ type: 'branch', id: branch.id });
                 }}
                 onDragEnd={finishDrag}
@@ -466,21 +477,6 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
     </div>
   );
 };
-
-function getDropPlacement(
-  event: React.DragEvent<HTMLElement>,
-  axis: 'x' | 'y' | 'both',
-): DropPlacement {
-  const rect = event.currentTarget.getBoundingClientRect();
-  const xDelta = event.clientX - (rect.left + rect.width / 2);
-  const yDelta = event.clientY - (rect.top + rect.height / 2);
-
-  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
-  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
-  return Math.abs(yDelta) >= Math.abs(xDelta)
-    ? yDelta > 0 ? 'after' : 'before'
-    : xDelta > 0 ? 'after' : 'before';
-}
 
 function reorder<T>(
   items: T[],

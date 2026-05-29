@@ -8,7 +8,12 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { ServerBranch, ServerStats } from '@/lib/types';
-import { setDragPreview } from '@/lib/drag';
+import {
+  getSpatialDropPlacement,
+  setDragPreview,
+  type DragPreviewState,
+  type DropPlacement,
+} from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 
@@ -22,8 +27,6 @@ interface TreeServerProps {
   isEditing?: boolean;
   onTreeChange?: (tree: ServerTree) => void;
 }
-
-type DropPlacement = 'before' | 'after';
 
 const emptyStats: ServerStats = {
   status: 'offline',
@@ -52,6 +55,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
   const [editingServerId, setEditingServerId] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const draggedServerId = useRef<string | null>(null);
+  const draggedServerPreview = useRef<DragPreviewState | null>(null);
   const serverInputClass =
     'opaque-input w-full focus:border-ink-700';
   const monoServerInputClass = `${serverInputClass} font-mono text-[11px]`;
@@ -103,8 +107,13 @@ const TreeServer: React.FC<TreeServerProps> = ({
     updateBranches(nextBranches);
   };
 
+  const getServerDropPlacement = (event: React.DragEvent<HTMLElement>) => {
+    return getSpatialDropPlacement(event, draggedServerPreview.current);
+  };
+
   const finishDrag = () => {
     draggedServerId.current = null;
+    draggedServerPreview.current = null;
     setActiveDragId(null);
   };
 
@@ -137,12 +146,12 @@ const TreeServer: React.FC<TreeServerProps> = ({
               if (!isEditing || !draggedServerId.current) return;
               event.preventDefault();
               event.dataTransfer.dropEffect = 'move';
-              moveServer(server.id, getDropPlacement(event, 'both'));
+              moveServer(server.id, getServerDropPlacement(event));
             }}
             onDrop={(event) => {
               if (!isEditing || !draggedServerId.current) return;
               event.preventDefault();
-              moveServer(server.id, getDropPlacement(event, 'both'));
+              moveServer(server.id, getServerDropPlacement(event));
               finishDrag();
             }}
           >
@@ -238,7 +247,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                           draggedServerId.current = server.id;
                           event.dataTransfer.effectAllowed = 'move';
                           event.dataTransfer.setData('text/plain', `server:${server.id}`);
-                          setDragPreview(event);
+                          draggedServerPreview.current = setDragPreview(event);
                           setActiveDragId(server.id);
                         }}
                         onDragEnd={finishDrag}
@@ -404,21 +413,6 @@ function formatLastSeen(updatedAt?: string | Date) {
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
-}
-
-function getDropPlacement(
-  event: React.DragEvent<HTMLElement>,
-  axis: 'x' | 'y' | 'both',
-): DropPlacement {
-  const rect = event.currentTarget.getBoundingClientRect();
-  const xDelta = event.clientX - (rect.left + rect.width / 2);
-  const yDelta = event.clientY - (rect.top + rect.height / 2);
-
-  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
-  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
-  return Math.abs(yDelta) >= Math.abs(xDelta)
-    ? yDelta > 0 ? 'after' : 'before'
-    : xDelta > 0 ? 'after' : 'before';
 }
 
 function reorder<T>(

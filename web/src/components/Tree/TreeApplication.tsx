@@ -9,7 +9,13 @@ import {
 import { ApplicationBranch, Leaf } from '@/lib/types';
 import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_APPLICATION_ICON } from '@/lib/svg';
-import { setDragPreview } from '@/lib/drag';
+import {
+  getDropPlacement,
+  getSpatialDropPlacement,
+  setDragPreview,
+  type DragPreviewState,
+  type DropPlacement,
+} from '@/lib/drag';
 
 interface ApplicationTree {
   root: string;
@@ -27,7 +33,6 @@ type DraggedApplication = {
   leafId: string;
 };
 
-type DropPlacement = 'before' | 'after';
 type ActiveDrag = { type: 'shelf' | 'application'; id: string } | null;
 
 const TreeApplication: React.FC<TreeApplicationProps> = ({
@@ -39,6 +44,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   const [newShelfName, setNewShelfName] = useState('');
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedShelfId = useRef<string | null>(null);
+  const draggedShelfPreview = useRef<DragPreviewState | null>(null);
   const draggedApplication = useRef<DraggedApplication | null>(null);
   const applicationInputClass =
     'opaque-input w-full focus:border-accent-blue';
@@ -99,6 +105,10 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     if (sameOrder(tree.branches, nextBranches)) return;
 
     updateBranches(nextBranches);
+  };
+
+  const getShelfDropPlacement = (event: React.DragEvent<HTMLElement>) => {
+    return getSpatialDropPlacement(event, draggedShelfPreview.current);
   };
 
   const addApplication = (branchId?: string) => {
@@ -191,6 +201,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 
   const finishDrag = () => {
     draggedShelfId.current = null;
+    draggedShelfPreview.current = null;
     draggedApplication.current = null;
     setActiveDrag(null);
   };
@@ -249,12 +260,12 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             if (!draggedShelfId.current && !draggedApplication.current) return;
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
-            if (draggedShelfId.current) moveShelf(branch.id, getDropPlacement(event, 'both'));
+            if (draggedShelfId.current) moveShelf(branch.id, getShelfDropPlacement(event));
             if (draggedApplication.current) moveApplication(branch.id);
           }}
           onDrop={(event) => {
             event.preventDefault();
-            if (draggedShelfId.current) moveShelf(branch.id, getDropPlacement(event, 'both'));
+            if (draggedShelfId.current) moveShelf(branch.id, getShelfDropPlacement(event));
             if (draggedApplication.current) moveApplication(branch.id);
             finishDrag();
           }}
@@ -268,7 +279,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                 draggedShelfId.current = branch.id;
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('text/plain', `application-shelf:${branch.id}`);
-                setDragPreview(event);
+                draggedShelfPreview.current = setDragPreview(event);
                 setActiveDrag({ type: 'shelf', id: branch.id });
               }}
               onDragEnd={finishDrag}
@@ -508,21 +519,6 @@ function normalizeUrl(url: string) {
 
 function removeProtocol(url: string) {
   return url.replace(/(^\w+:|^)\/\//, '');
-}
-
-function getDropPlacement(
-  event: React.DragEvent<HTMLElement>,
-  axis: 'x' | 'y' | 'both',
-): DropPlacement {
-  const rect = event.currentTarget.getBoundingClientRect();
-  const xDelta = event.clientX - (rect.left + rect.width / 2);
-  const yDelta = event.clientY - (rect.top + rect.height / 2);
-
-  if (axis === 'x') return xDelta > 0 ? 'after' : 'before';
-  if (axis === 'y') return yDelta > 0 ? 'after' : 'before';
-  return Math.abs(yDelta) >= Math.abs(xDelta)
-    ? yDelta > 0 ? 'after' : 'before'
-    : xDelta > 0 ? 'after' : 'before';
 }
 
 function reorder<T>(
