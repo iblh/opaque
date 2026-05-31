@@ -63,6 +63,70 @@ input:-webkit-autofill:active {
     }
 }
 
+@keyframes loginMeshDrift {
+    0%, 100% {
+        transform: translate3d(0, 0, 0) scale(1.06);
+    }
+    50% {
+        transform: translate3d(1.5%, -1%, 0) scale(1.08);
+    }
+}
+
+@keyframes loginTextFloat {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 0.34;
+    }
+    50% {
+        transform: translate3d(0, -8px, 0);
+        opacity: 0.46;
+    }
+}
+
+@keyframes loginBookmarkDriftA {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(-16px, -8px, 0);
+    }
+}
+
+@keyframes loginBookmarkDriftB {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(14px, 8px, 0);
+    }
+}
+
+@keyframes loginCaretBlink {
+    0%, 45% {
+        opacity: 1;
+    }
+    46%, 100% {
+        opacity: 0;
+    }
+}
+
+@keyframes loginCmdCycle {
+    0%, 19% { visibility: visible; }
+    20%, 100% { visibility: hidden; }
+}
+
+@keyframes loginCmdReveal {
+    0% { width: 0; }
+    60% { width: 100%; }
+    78% { width: 100%; }
+    92%, 100% { width: 0; }
+}
+
+@keyframes loginStatFlicker {
+    0%, 12.4% { opacity: 1; }
+    12.5%, 100% { opacity: 0; }
+}
+
 .animate-fade-in-up {
     animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
@@ -73,6 +137,200 @@ input:-webkit-autofill:active {
 
 .animate-float {
     animation: subtleFloat 6s ease-in-out infinite;
+}
+
+.login-shell {
+    isolation: isolate;
+}
+
+.login-mesh {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 28% 38%, rgba(255, 160, 170, 0.50), transparent 14%),
+        radial-gradient(circle at 56% 62%, rgba(188, 155, 255, 0.36), transparent 12%),
+        radial-gradient(circle at 68% 36%, rgba(120, 170, 245, 0.34), transparent 14%),
+        radial-gradient(circle at 78% 70%, rgba(165, 216, 190, 0.32), transparent 12%),
+        linear-gradient(115deg, #fbf4f2 0%, #f4f6fb 46%, #eef5f1 100%);
+    filter: blur(54px) saturate(1.06);
+    transform: translate3d(0, 0, 0) scale(1.06);
+    will-change: transform;
+    animation: loginMeshDrift 22s ease-in-out infinite;
+}
+
+.login-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: rgba(30, 38, 60, 0.85);
+    pointer-events: none;
+}
+
+.login-telemetry {
+    position: absolute;
+    white-space: pre;
+    font-size: clamp(10px, 0.72vw, 12px);
+    line-height: 1.72;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 18px rgba(255, 255, 255, 0.28);
+}
+
+.login-telemetry-primary {
+    top: 7vh;
+    left: 5vw;
+}
+
+.login-telemetry-secondary {
+    right: 4vw;
+    bottom: 8vh;
+    text-align: right;
+}
+
+.login-typing {
+    margin-top: 1.4rem;
+    display: flex;
+    align-items: center;
+}
+
+.login-cmd-track {
+    position: relative;
+    display: inline-block;
+    width: 32ch;
+    height: 1.4em;
+    margin-left: 0.4ch;
+    vertical-align: bottom;
+}
+
+.login-cmd {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 0;
+    visibility: hidden;
+}
+
+.login-cmd:nth-child(1) { animation: loginCmdCycle 30s steps(1, end) infinite 0s,    loginCmdReveal 6s linear infinite 0s; }
+.login-cmd:nth-child(2) { animation: loginCmdCycle 30s steps(1, end) infinite 6s,    loginCmdReveal 6s linear infinite 6s; }
+.login-cmd:nth-child(3) { animation: loginCmdCycle 30s steps(1, end) infinite 12s,   loginCmdReveal 6s linear infinite 12s; }
+.login-cmd:nth-child(4) { animation: loginCmdCycle 30s steps(1, end) infinite 18s,   loginCmdReveal 6s linear infinite 18s; }
+.login-cmd:nth-child(5) { animation: loginCmdCycle 30s steps(1, end) infinite 24s,   loginCmdReveal 6s linear infinite 24s; }
+
+.login-caret {
+    display: inline-block;
+    margin-left: 0.2ch;
+    animation: loginCaretBlink 1s steps(1, end) infinite;
+}
+
+.login-bookmark-field {
+    position: absolute;
+    inset: 0;
+}
+
+.login-bookmark {
+    position: absolute;
+    max-width: 19rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-left: 1px solid rgba(70, 80, 105, 0.15);
+    padding-left: 0.8rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: rgba(72, 82, 108, 0.18);
+}
+
+.login-bookmark:nth-child(1) { left: 12vw; top: 22vh; }
+.login-bookmark:nth-child(2) { left: 26vw; top: 32vh; }
+.login-bookmark:nth-child(3) { left: 58vw; top: 18vh; }
+.login-bookmark:nth-child(4) { left: 72vw; top: 38vh; }
+.login-bookmark:nth-child(5) { left: 18vw; top: 62vh; }
+.login-bookmark:nth-child(6) { left: 64vw; top: 76vh; }
+
+.stat-rotor {
+    position: relative;
+    display: inline-block;
+    height: 1em;
+    vertical-align: bottom;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-rotor > span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    white-space: nowrap;
+}
+
+.stat-rotor > span:nth-child(1) { animation: loginStatFlicker 16s steps(1, end) infinite 0s; }
+.stat-rotor > span:nth-child(2) { animation: loginStatFlicker 16s steps(1, end) infinite 2s; }
+.stat-rotor > span:nth-child(3) { animation: loginStatFlicker 16s steps(1, end) infinite 4s; }
+.stat-rotor > span:nth-child(4) { animation: loginStatFlicker 16s steps(1, end) infinite 6s; }
+.stat-rotor > span:nth-child(5) { animation: loginStatFlicker 16s steps(1, end) infinite 8s; }
+.stat-rotor > span:nth-child(6) { animation: loginStatFlicker 16s steps(1, end) infinite 10s; }
+.stat-rotor > span:nth-child(7) { animation: loginStatFlicker 16s steps(1, end) infinite 12s; }
+.stat-rotor > span:nth-child(8) { animation: loginStatFlicker 16s steps(1, end) infinite 14s; }
+
+.login-glass {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    background: radial-gradient(
+        ellipse 62% 52% at 50% 46%,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.34) 60%,
+        rgba(255, 255, 255, 0.46)
+    );
+}
+
+.login-telemetry {
+    animation: loginTextFloat 10s ease-in-out infinite;
+}
+
+.login-telemetry-secondary {
+    animation-delay: -3s;
+}
+
+.login-bookmark {
+    will-change: transform;
+}
+
+.login-bookmark:nth-child(1) { animation: loginBookmarkDriftA 14s ease-in-out infinite 0s; }
+.login-bookmark:nth-child(2) { animation: loginBookmarkDriftB 16s ease-in-out infinite -2s; }
+.login-bookmark:nth-child(3) { animation: loginBookmarkDriftA 13s ease-in-out infinite -4s; }
+.login-bookmark:nth-child(4) { animation: loginBookmarkDriftB 15s ease-in-out infinite -6s; }
+.login-bookmark:nth-child(5) { animation: loginBookmarkDriftA 17s ease-in-out infinite -8s; }
+.login-bookmark:nth-child(6) { animation: loginBookmarkDriftB 12s ease-in-out infinite -10s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .login-mesh,
+    .login-telemetry,
+    .login-bookmark,
+    .login-cmd,
+    .stat-rotor > span,
+    .login-caret {
+        animation: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-telemetry-primary {
+        left: 1rem;
+        top: 5rem;
+    }
+
+    .login-telemetry-secondary,
+    .login-bookmark-field {
+        display: none;
+    }
 }
 
 /* ===============================================

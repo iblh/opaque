@@ -3,6 +3,54 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getProviders, signIn } from 'next-auth/react';
+import {
+    IconArrowRight,
+    IconBrandGithub,
+    IconRefresh,
+} from '@tabler/icons-react';
+
+const COMMANDS = [
+    'sync bookmarks://ops-cluster',
+    'open vault://homelab/identity',
+    'tail metrics --server app-srv-a1',
+    'index applications --scope secure',
+    'rotate agent token --node cache-01',
+];
+
+const BOOKMARKS = [
+    'docs.internal/runbooks',
+    'grafana.local/dashboards',
+    'github.com/opaque/infra',
+    'papertrail://deploy-log',
+    'vault.local/credentials',
+    'uptime.lab/status',
+];
+
+const ROTOR_STEPS = 8;
+
+type ServerRow = {
+    id: string;
+    uptime: number;
+    cpu: string[];
+    memory: string[];
+};
+
+function buildRotor(base: number, amplitude: number, phase: number, decimals = 0) {
+    return Array.from({ length: ROTOR_STEPS }, (_, step) => {
+        const value = base + amplitude * (Math.sin((step + phase) / 1.7) + 1) / 2;
+        return decimals === 0 ? String(Math.round(value)).padStart(2, '0') : value.toFixed(decimals);
+    });
+}
+
+const SERVER_ROWS: ServerRow[] = [
+    { id: 'PROXY_01',   uptime: 47,  cpu: buildRotor(7, 38, 0), memory: buildRotor(12.2, 2.4, 0, 1) },
+    { id: 'DB_MASTER',  uptime: 51,  cpu: buildRotor(9, 62, 1), memory: buildRotor(65.2, 2.4, 1, 1) },
+    { id: 'APP_SRV_A1', uptime: 41,  cpu: buildRotor(7, 38, 2), memory: buildRotor(9.8,  2.4, 2, 1) },
+    { id: 'CACHE_01',   uptime: 107, cpu: buildRotor(7, 38, 3), memory: buildRotor(33.8, 2.4, 3, 1) },
+];
+
+const PENDING_ARCHIVE = buildRotor(42, 6, 0);
+const LAST_SYNC = buildRotor(2, 3, 0);
 
 export default function LoginPage() {
     const [error, setError] = useState('');
@@ -28,14 +76,12 @@ export default function LoginPage() {
         const name = formData.get('name') as string;
         const confirmPassword = formData.get('confirm-password') as string;
 
-        // Basic validation
         if (!identifier || !password) {
             setError('Email or username and password are required');
             setIsLoading(false);
             return;
         }
 
-        // Signup specific validation
         if (!isLogin) {
             if (password !== confirmPassword) {
                 setError('Passwords do not match');
@@ -78,186 +124,229 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-white">
-            {/* Add OPAQUE logo to top left */}
-            <div className="absolute top-0 left-0 px-6 py-4 z-20">
-                <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
+        <div className="login-shell relative min-h-screen overflow-hidden bg-[#f8f8f7] text-ink-950">
+            <div className="login-mesh" aria-hidden="true" />
+
+            <div className="login-bg" aria-hidden="true">
+                <div className="login-telemetry login-telemetry-primary">
+                    <div>--- HOMELAB CLUSTER TELEMETRY ---</div>
+                    <div>SYS_TIME: 2026-05-31T00:05:46.586Z</div>
+                    {SERVER_ROWS.map((server) => (
+                        <div key={server.id}>
+                            <span>[{server.id}]</span>
+                            <span> CPU: </span>
+                            <Rotor values={server.cpu} suffix="%" minWidth="2ch" />
+                            <span> MEM: </span>
+                            <Rotor values={server.memory} suffix="GB" minWidth="4ch" />
+                            <span> UP: {server.uptime}d</span>
+                        </div>
+                    ))}
+                    <div className="login-typing">
+                        <span>&gt; </span>
+                        <span className="login-cmd-track">
+                            {COMMANDS.map((cmd) => (
+                                <span key={cmd} className="login-cmd">{cmd}</span>
+                            ))}
+                        </span>
+                        <span className="login-caret">_</span>
+                    </div>
+                </div>
+
+                <div className="login-bookmark-field">
+                    {BOOKMARKS.map((bm) => (
+                        <div key={bm} className="login-bookmark">bookmark::{bm}</div>
+                    ))}
+                </div>
+
+                <div className="login-telemetry login-telemetry-secondary">
+                    <div>--- INDEXER STATUS ---</div>
+                    <div>TOTAL_BOOKMARKS: 14,239</div>
+                    <div>
+                        <span>PENDING_ARCHIVE: </span>
+                        <Rotor values={PENDING_ARCHIVE} minWidth="2ch" />
+                    </div>
+                    <div>
+                        <span>LAST_SYNC: </span>
+                        <Rotor values={LAST_SYNC} suffix="m ago" minWidth="2ch" />
+                    </div>
+                    <div className="mt-4">Waiting for authorization state...</div>
+                </div>
             </div>
 
-            <div className="relative z-10 flex min-h-screen w-full">
-                {/* Left side - Form area */}
-                <div className="flex w-full lg:w-3/5 h-full items-center justify-center p-6">
-                    <div className="w-full max-w-[300px]">
-                        {/* Brutalist header line */}
-                        {/* <div className="w-10 h-0 bg-[#5f7161]"></div> */}
+            <div className="login-glass" aria-hidden="true" />
 
-                        {/* Header */}
-                        <div className="flex">
-                            {isLogin && (
-                                <div className="relative py-2 px-0 mr-6 text-xl tracking-widest">
-                                    Sign in
-                                </div>
-                            )}
-                            {!isLogin && (
-                                <div className="relative py-2 px-0 mr-6 text-xl tracking-widest">
-                                    Sign up
-                                </div>
-                            )}
+            <main className="relative z-20 flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
+                <section className="w-full max-w-[26rem]">
+                    <div className="mb-10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-black font-mono text-xs font-semibold text-white">
+                                OP
+                            </div>
+                            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#5f6b84]">
+                                OPAQUE
+                            </span>
                         </div>
-
-                        {/* Mode toggle */}
-                        <div className="pb-10 pt-2">
-                            <p className="text-xs text-gray-600">
-                                {isLogin ? 'New here? ' : 'Have an account? '}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsLogin(!isLogin);
-                                        setError('');
-                                    }}
-                                    className="text-[#5f7161] font-medium hover:underline hover:underline-offset-4"
-                                >
-                                    {isLogin ? 'Create account' : 'Sign in'}
-                                </button>
-                            </p>
+                        <div className="flex items-center gap-3 font-mono text-xs font-semibold">
+                            <button
+                                type="button"
+                                onClick={() => { setIsLogin(true); setError(''); }}
+                                className={`pb-0.5 transition-colors ${isLogin ? 'border-b-2 border-black text-black' : 'border-b-2 border-transparent text-[#8792aa] hover:text-black'}`}
+                            >
+                                Login
+                            </button>
+                            <span className="text-[#a5adbd]">/</span>
+                            <button
+                                type="button"
+                                onClick={() => { setIsLogin(false); setError(''); }}
+                                className={`pb-0.5 transition-colors ${!isLogin ? 'border-b-2 border-black text-black' : 'border-b-2 border-transparent text-[#8792aa] hover:text-black'}`}
+                            >
+                                Register
+                            </button>
                         </div>
+                    </div>
 
-                        {/* Form */}
-                        <form onSubmit={handleSubmit} className="space-y-8">
-                            {!isLogin && (
-                                <div className="space-y-1">
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        name="name"
-                                        placeholder="full name"
-                                        className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                    />
-                                </div>
-                            )}
+                    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-7">
+                        {!isLogin && (
+                            <AuthInput
+                                id="name"
+                                name="name"
+                                label="Operator name"
+                                placeholder="ada lovelace"
+                            />
+                        )}
 
-                            <div className="space-y-1">
-                                <input
-                                    type="text"
-                                    id="identifier"
-                                    name="identifier"
-                                    placeholder="email or username"
-                                    required
-                                    className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                />
-                            </div>
+                        <AuthInput
+                            id="identifier"
+                            name="identifier"
+                            label="Email or username"
+                            placeholder="operator@domain.com"
+                            required
+                        />
 
-                            <div className="space-y-1">
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    placeholder="password"
-                                    required
-                                    className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                />
-                            </div>
+                        <AuthInput
+                            id="password"
+                            name="password"
+                            type="password"
+                            label="Password"
+                            placeholder="••••••••"
+                            required
+                        />
 
-                            {!isLogin && (
-                                <div className="space-y-1">
-                                    <input
-                                        type="password"
-                                        id="confirm-password"
-                                        name="confirm-password"
-                                        placeholder="confirm password"
-                                        required
-                                        className="w-full border-0 border-b border-black bg-transparent px-0 py-2 text-sm text-black placeholder-gray-400 focus:border-[#5f7161] focus:ring-0"
-                                    />
-                                </div>
-                            )}
+                        {!isLogin && (
+                            <AuthInput
+                                id="confirm-password"
+                                name="confirm-password"
+                                type="password"
+                                label="Confirm password"
+                                placeholder="••••••••"
+                                required
+                            />
+                        )}
 
-                            {error && (
-                                <div className="border-l-4 border-black bg-gray-100 p-3 text-xs text-black">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="pt-2">
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="relative w-full border border-black rounded-sm py-2 text-xs uppercase tracking-widest text-black transition-all duration-200 hover:bg-black hover:text-white focus:outline-none focus:ring-1 focus:ring-[#5f7161] focus:ring-offset-1 disabled:opacity-50"
-                                >
-                                    {isLoading ? (
-                                        <span className="flex items-center justify-center">
-                                            <svg
-                                                className="-ml-1 mr-2 h-3 w-3 animate-spin text-current"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                            {isLogin ? 'Signing in' : 'Creating account'}
-                                        </span>
-                                    ) : isLogin ? (
-                                        'Enter'
-                                    ) : (
-                                        'Create'
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                        {isLogin && hasGitHubProvider && (
-                            <div className="mt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => signIn('github', { callbackUrl: '/' })}
-                                    className="relative w-full rounded-sm border border-black py-2 text-xs uppercase tracking-widest text-black transition-all duration-200 hover:bg-black hover:text-white focus:outline-none focus:ring-1 focus:ring-[#5f7161] focus:ring-offset-1"
-                                >
-                                    Continue with GitHub
-                                </button>
+                        {error && (
+                            <div className="border-l-2 border-black px-3 py-2 font-mono text-xs text-black">
+                                {error}
                             </div>
                         )}
-                    </div>
-                </div>
 
-                {/* Right side - Minimalist, wabi-sabi, soft aesthetic */}
-                <div className="hidden lg:block lg:w-2/5 h-full relative bg-[#f7f7f5]">
-                    {/* Soft, organic, blurred shapes for wabi-sabi effect */}
-                    <div className="absolute inset-0 overflow-hidden">
-                        {/* Large soft blob 1 */}
-                        <div
-                            className="absolute top-[20%] left-[10%] w-[32vh] h-[32vh] rounded-full bg-[#e6eae6] blur-2xl opacity-70"
-                            style={{ filter: 'blur(32px)' }}
-                        />
-                        {/* Large soft blob 2 */}
-                        <div
-                            className="absolute bottom-[10%] right-[8%] w-[40vh] h-[28vh] rounded-full bg-[#e3e6e1] blur-2xl opacity-60"
-                            style={{ filter: 'blur(36px)' }}
-                        />
-                        {/* Small accent blob */}
-                        <div
-                            className="absolute top-[60%] left-[30%] w-[12vh] h-[10vh] rounded-full bg-[#5f7161] blur-2xl opacity-20"
-                            style={{ filter: 'blur(18px)' }}
-                        />
-                        {/* Subtle imperfect ellipse */}
-                        <div
-                            className="absolute top-[40%] right-[20%] w-[22vh] h-[10vh] rounded-full bg-[#f0f1ee] blur-xl opacity-80 rotate-[12deg]"
-                            style={{ filter: 'blur(16px)' }}
-                        />
-                        {/* Gentle shadow for depth */}
-                        <div className="absolute bottom-0 left-1/2 w-[60%] h-[8vh] bg-black opacity-5 rounded-full blur-2xl -translate-x-1/2" />
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="inline-flex h-11 w-full items-center justify-center gap-3 bg-black px-6 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#202020] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <IconRefresh className="h-4 w-4 animate-spin" />
+                                    {isLogin ? 'Signing in' : 'Creating'}
+                                </>
+                            ) : (
+                                <>
+                                    {isLogin ? 'Authenticate' : 'Create account'}
+                                    <IconArrowRight className="h-4 w-4" />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px]">
+                        <button
+                            type="button"
+                            className="text-[#69758f] transition-colors hover:text-black"
+                        >
+                            Forgot password?
+                        </button>
+                        {hasGitHubProvider && (
+                            <button
+                                type="button"
+                                onClick={() => signIn('github', { callbackUrl: '/' })}
+                                className="inline-flex items-center gap-1.5 text-[#63708b] transition-colors hover:text-black"
+                            >
+                                <IconBrandGithub className="h-3.5 w-3.5" />
+                                GitHub
+                            </button>
+                        )}
                     </div>
-                </div>
-            </div>
+                </section>
+            </main>
         </div>
+    );
+}
+
+function Rotor({
+    values,
+    suffix = '',
+    minWidth,
+}: {
+    values: string[];
+    suffix?: string;
+    minWidth: string;
+}) {
+    return (
+        <span className="stat-rotor" style={{ minWidth }}>
+            {values.map((value, index) => (
+                <span key={index}>{value}{suffix}</span>
+            ))}
+        </span>
+    );
+}
+
+function AuthInput({
+    id,
+    name,
+    label,
+    placeholder,
+    type = 'text',
+    required = false,
+    autoComplete = 'off',
+}: {
+    id: string;
+    name: string;
+    label: string;
+    placeholder: string;
+    type?: string;
+    required?: boolean;
+    autoComplete?: string;
+}) {
+    return (
+        <label htmlFor={id} className="block">
+            <span className="block font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68748d]">
+                {label}
+            </span>
+            <input
+                type={type}
+                id={id}
+                name={name}
+                placeholder={placeholder}
+                required={required}
+                autoComplete={autoComplete}
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                data-form-type="other"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                className="mt-2 w-full border-0 border-b border-black/25 bg-transparent px-0 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-[#8c98b0] focus:border-black focus:ring-0"
+            />
+        </label>
     );
 }
