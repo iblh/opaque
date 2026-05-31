@@ -3,8 +3,10 @@ import {
   IconCheck,
   IconCopy,
   IconGripVertical,
+  IconKey,
   IconPencil,
   IconPlus,
+  IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
 import { ServerBranch, ServerStats } from '@/lib/types';
@@ -56,6 +58,9 @@ const TreeServer: React.FC<TreeServerProps> = ({
 }) => {
   const [editingServerId, setEditingServerId] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [rotatingTokenId, setRotatingTokenId] = useState<string | null>(null);
+  const [agentTokens, setAgentTokens] = useState<Record<string, string>>({});
+  const [agentTokenErrors, setAgentTokenErrors] = useState<Record<string, string>>({});
   const draggedServerId = useRef<string | null>(null);
   const draggedServerPreview = useRef<DragPreviewState | null>(null);
   const serverInputClass =
@@ -122,6 +127,48 @@ const TreeServer: React.FC<TreeServerProps> = ({
   const copyAgentId = async (serverId: string) => {
     if (!navigator.clipboard) return;
     await navigator.clipboard.writeText(serverId);
+  };
+
+  const copyAgentToken = async (serverId: string) => {
+    const token = agentTokens[serverId];
+    if (!navigator.clipboard || !token) return;
+    await navigator.clipboard.writeText(token);
+  };
+
+  const rotateAgentToken = async (serverId: string) => {
+    setRotatingTokenId(serverId);
+    setAgentTokenErrors((current) => ({ ...current, [serverId]: '' }));
+
+    try {
+      const response = await fetch('/api/server/token/rotate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ serverId }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setAgentTokenErrors((current) => ({
+          ...current,
+          [serverId]: result.error || 'Failed to rotate token',
+        }));
+        return;
+      }
+
+      setAgentTokens((current) => ({
+        ...current,
+        [serverId]: result.token,
+      }));
+    } catch (error) {
+      setAgentTokenErrors((current) => ({
+        ...current,
+        [serverId]: 'Network error',
+      }));
+    } finally {
+      setRotatingTokenId(null);
+    }
   };
 
   const renderDragHandle = (server: ServerBranch) => {
@@ -232,6 +279,45 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </button>
                   </div>
                 </div>
+                <div className="rounded-sm border border-border-light bg-[#fcfcfc] px-2 py-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent token</div>
+                    <button
+                      type="button"
+                      onClick={() => rotateAgentToken(server.id)}
+                      disabled={rotatingTokenId === server.id}
+                      className="flex h-6 items-center gap-1 rounded-sm px-2 text-[11px] text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-50"
+                    >
+                      {rotatingTokenId === server.id ? (
+                        <IconRefresh className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <IconKey className="h-3.5 w-3.5" />
+                      )}
+                      Rotate
+                    </button>
+                  </div>
+                  {agentTokens[server.id] && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-secondary">
+                        {agentTokens[server.id]}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => copyAgentToken(server.id)}
+                        className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-white hover:text-text-primary"
+                        aria-label="Copy agent token"
+                        title="Copy agent token"
+                      >
+                        <IconCopy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {agentTokenErrors[server.id] && (
+                    <div className="mt-1 text-[11px] leading-relaxed text-red-500">
+                      {agentTokenErrors[server.id]}
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
@@ -313,7 +399,6 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   <MetaRow label="Network in" value={formatBandwidth(stats.network.in)} />
                   <MetaRow label="Network out" value={formatBandwidth(stats.network.out)} />
                   <MetaRow label="Uptime" value={stats.uptime || '-'} />
-                  <MetaRow label="Updated" value={formatLastSeen(stats.updatedAt)} />
                 </div>
               </>
             )}
@@ -412,19 +497,6 @@ function formatBytes(bytes: number, decimals = 1): string {
 
 function formatBandwidth(bytesPerSecond: number): string {
   return `${formatBytes(bytesPerSecond)}/s`;
-}
-
-function formatLastSeen(updatedAt?: string | Date) {
-  if (!updatedAt) return '-';
-  const date = new Date(updatedAt);
-  if (Number.isNaN(date.getTime())) return '-';
-
-  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
 }
 
 function reorder<T>(

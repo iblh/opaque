@@ -12,5 +12,18 @@ Start the current app:
 cd web
 cp .env.example .env.local
 npm install
+npm run db:migrate
 npm run dev
 ```
+
+For a self-hosted stack with Postgres:
+
+```bash
+cd web
+cp .env.example .env
+docker compose up --build
+```
+
+This repository remains the upstream for the self-hosted product. Hosted product
+work can be layered in a private downstream repository while keeping the core
+Postgres schema and API contracts compatible.

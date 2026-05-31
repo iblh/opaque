@@ -1,12 +1,12 @@
 const opaqueUrl = (process.env.OPAQUE_URL || 'http://localhost:3000').replace(/\/$/, '');
 const serverId = process.env.SERVER_ID;
-const token = process.env.SERVER_INGEST_TOKEN;
+const token = process.env.SERVER_AGENT_TOKEN;
 const intervalMs = Number(process.env.MOCK_AGENT_INTERVAL_MS || 2000);
 const startedAt = Date.now();
 
 if (!serverId || !token) {
-  console.error('Missing SERVER_ID or SERVER_INGEST_TOKEN.');
-  console.error('Example: SERVER_ID=... SERVER_INGEST_TOKEN=... npm run mock:server-agent');
+  console.error('Missing SERVER_ID or SERVER_AGENT_TOKEN.');
+  console.error('Example: SERVER_ID=... SERVER_AGENT_TOKEN=... npm run mock:server-agent');
   process.exit(1);
 }
 

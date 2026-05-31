@@ -18,7 +18,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saveError, setSaveError] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -103,11 +102,7 @@ export default function HomePage() {
   }, [isEditing, loading, router])
 
   const activeDashboard = isEditing ? draftDashboard : dashboard
-  const visibleDashboard = useMemo(() => {
-    if (!activeDashboard) return null
-    if (isEditing || !searchTerm.trim()) return activeDashboard
-    return filterDashboard(activeDashboard, searchTerm)
-  }, [activeDashboard, isEditing, searchTerm])
+  const visibleDashboard = useMemo(() => activeDashboard, [activeDashboard])
 
   const displayName = activeDashboard?.name || activeDashboard?.username || activeDashboard?.email
 
@@ -253,8 +248,6 @@ export default function HomePage() {
         isDirty={isDirty}
         isSaving={isSaving}
         saveError={saveError}
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
         onEdit={startEditing}
         onReset={resetEditing}
         onSave={saveDashboard}
@@ -327,43 +320,6 @@ export default function HomePage() {
       <Footer />
     </div>
   )
-}
-
-function filterDashboard(dashboard: Dashboard, query: string): Dashboard {
-  const needle = query.trim().toLowerCase()
-  if (!needle) return dashboard
-
-  return {
-    ...dashboard,
-    forest: dashboard.forest.map((tree) => ({
-      ...tree,
-      branches: tree.branches.filter((branch) => {
-        const branchText = `${branch.name || ''} ${(branch as any).url || ''}`.toLowerCase()
-        if (branchText.includes(needle)) return true
-
-        const leaves = (branch as any).leaves
-        if (!Array.isArray(leaves)) return false
-
-        return leaves.some((leaf) => (
-          `${leaf.name || ''} ${leaf.url || ''}`.toLowerCase().includes(needle)
-        ))
-      }).map((branch) => {
-        const branchText = `${branch.name || ''} ${(branch as any).url || ''}`.toLowerCase()
-        const leaves = (branch as any).leaves
-
-        if (branchText.includes(needle) || !Array.isArray(leaves)) {
-          return branch
-        }
-
-        return {
-          ...branch,
-          leaves: leaves.filter((leaf: any) => (
-            `${leaf.name || ''} ${leaf.url || ''}`.toLowerCase().includes(needle)
-          )),
-        }
-      }),
-    })),
-  }
 }
 
 function mergeServerStats(

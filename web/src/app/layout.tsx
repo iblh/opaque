@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
           <main className="relative flex-1">
             {children}
           </main>
+          <CookieBanner />
         </div>
       </body>
     </html>

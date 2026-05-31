@@ -362,7 +362,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <div
                           role="button"
                           tabIndex={0}
@@ -384,13 +384,13 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                         <SvgIcon
                           svg={leaf.icon}
                           fallback={DEFAULT_BOOKMARK_ICON}
-                          className="h-5 w-5 flex-shrink-0 text-text-secondary"
+                          className="h-4 w-4 flex-shrink-0 text-text-secondary"
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs font-normal leading-tight text-text-primary">
+                          <div className="truncate text-xs font-normal leading-4 text-text-primary">
                             {leaf.name}
                           </div>
-                          <div className="truncate font-mono text-[11px] leading-tight text-text-tertiary">
+                          <div className="truncate font-mono text-[11px] leading-4 text-text-tertiary">
                             {removeProtocol(leaf.url)}
                           </div>
                         </div>
@@ -417,15 +417,15 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   rel="noopener noreferrer"
                   className="group block text-inherit no-underline transition-all duration-200 ease-in-out"
                 >
-                  <div className="relative px-1 py-2 transition-colors duration-200 hover:bg-white">
-                    <div className="flex items-center gap-2 text-left">
+                  <div className="relative px-1 py-1.5 transition-colors duration-200 hover:bg-white">
+                    <div className="flex items-center gap-1.5 text-left">
                       <SvgIcon
                         svg={leaf.icon}
                         fallback={DEFAULT_BOOKMARK_ICON}
                         className="h-4 w-4 flex-shrink-0 text-text-secondary transition-colors duration-200 group-hover:text-accent-green"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-normal leading-tight text-text-primary">
+                        <div className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-4 text-text-primary transition-colors duration-200 group-hover:border-accent-green">
                           {leaf.name}
                         </div>
                       </div>

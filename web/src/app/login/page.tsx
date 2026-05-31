@@ -1,14 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Tick from '@/components/Tick';
+import { getProviders, signIn } from 'next-auth/react';
 
 export default function LoginPage() {
     const [error, setError] = useState('');
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [hasGitHubProvider, setHasGitHubProvider] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        getProviders()
+            .then((providers) => setHasGitHubProvider(Boolean(providers?.github)))
+            .catch(() => setHasGitHubProvider(false));
+    }, []);
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -20,7 +27,6 @@ export default function LoginPage() {
         const password = formData.get('password') as string;
         const name = formData.get('name') as string;
         const confirmPassword = formData.get('confirm-password') as string;
-        const remember = formData.get('remember') as string;
 
         // Basic validation
         if (!identifier || !password) {
@@ -43,19 +49,11 @@ export default function LoginPage() {
             }
         }
 
-        let expires_in = '3d';
-        let expires_time = new Date(Date.now() + 3 * 86400 * 1000);
-
-        if (remember) {
-            expires_in = '90d';
-            expires_time = new Date(Date.now() + 90 * 86400 * 1000);
-        }
-
         try {
             const endpoint = isLogin ? '/api/user/login' : '/api/user/signup';
             const requestBody = isLogin
-                ? { identifier, password, expires_in }
-                : { identifier, password, name, expires_in };
+                ? { identifier, password }
+                : { identifier, password, name };
 
             const res = await fetch(endpoint, {
                 method: 'POST',
@@ -173,15 +171,6 @@ export default function LoginPage() {
                                 </div>
                             )}
 
-                            {isLogin && (
-                                <Tick
-                                    id="remember"
-                                    name="remember"
-                                    label="Remember me"
-                                    className="mt-4"
-                                />
-                            )}
-
                             {error && (
                                 <div className="border-l-4 border-black bg-gray-100 p-3 text-xs text-black">
                                     {error}
@@ -225,9 +214,18 @@ export default function LoginPage() {
                                     )}
                                 </button>
                             </div>
-
-                            {isLogin && <div className="h-[54px]"></div>}
                         </form>
+                        {isLogin && hasGitHubProvider && (
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => signIn('github', { callbackUrl: '/' })}
+                                    className="relative w-full rounded-sm border border-black py-2 text-xs uppercase tracking-widest text-black transition-all duration-200 hover:bg-black hover:text-white focus:outline-none focus:ring-1 focus:ring-[#5f7161] focus:ring-offset-1"
+                                >
+                                    Continue with GitHub
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

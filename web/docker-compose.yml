@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opaque
+      POSTGRES_USER: opaque
+      POSTGRES_PASSWORD: opaque
+    ports:
+      - "5432:5432"
+    volumes:
+      - opaque-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opaque -d opaque"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://opaque:opaque@postgres:5432/opaque
+      AUTH_SECRET: ${AUTH_SECRET:-replace-with-a-long-random-secret}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_GITHUB_ID: ${AUTH_GITHUB_ID:-}
+      AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET:-}
+      METRICS_RETENTION_DAYS: ${METRICS_RETENTION_DAYS:-7}
+    ports:
+      - "3000:3000"
+    command: sh -c "npm run db:migrate && npm run start"
+
+  retention:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://opaque:opaque@postgres:5432/opaque
+      METRICS_RETENTION_DAYS: ${METRICS_RETENTION_DAYS:-7}
+    command: sh -c "while true; do npm run metrics:retention; sleep 3600; done"
+
+volumes:
+  opaque-postgres:

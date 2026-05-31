@@ -223,16 +223,18 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             rel="noopener noreferrer"
             className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
           >
-            <div className="opaque-card flex min-h-[72px] items-center gap-3 p-3">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-accent-blue transition-colors duration-200 group-hover:border-accent-blue">
-                <SvgIcon svg={leaf.icon} fallback={DEFAULT_APPLICATION_ICON} className="h-5 w-5" />
-              </div>
+            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors duration-200 hover:bg-white">
+              <SvgIcon
+                svg={leaf.icon}
+                fallback={DEFAULT_APPLICATION_ICON}
+                className="h-10 w-10 flex-shrink-0 text-accent-blue transition-colors duration-200 group-hover:text-ink-800"
+              />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium leading-tight text-text-primary transition-colors duration-200 group-hover:text-accent-blue">
                   {leaf.name}
                 </div>
                 <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
-                  {removeProtocol(leaf.url)}
+                  {formatApplicationUrl(leaf.url)}
                 </div>
                 {tree.branches.length > 1 && (
                   <div className="mt-2 truncate text-[10px] uppercase tracking-wider text-text-muted">
@@ -321,7 +323,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                   className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all duration-200 ${
                     isLeafEditing
                       ? 'border-border-strong bg-white'
-                      : 'border-border-light bg-white/70 hover:bg-white'
+                      : 'border-transparent bg-transparent hover:bg-white'
                   } ${
                     activeDrag?.type === 'application' && activeDrag.id === leaf.id
                       ? 'scale-[0.98] opacity-40'
@@ -397,7 +399,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <div
                         role="button"
                         tabIndex={0}
@@ -416,19 +418,17 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                       >
                         <IconGripVertical className="h-4 w-4" />
                       </div>
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-accent-blue">
-                        <SvgIcon
-                          svg={leaf.icon}
-                          fallback={DEFAULT_APPLICATION_ICON}
-                          className="h-5 w-5"
-                        />
-                      </div>
+                      <SvgIcon
+                        svg={leaf.icon}
+                        fallback={DEFAULT_APPLICATION_ICON}
+                        className="h-9 w-9 flex-shrink-0 text-accent-blue"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium leading-tight text-text-primary">
                           {leaf.name}
                         </div>
                         <div className="mt-1 truncate font-mono text-[11px] leading-tight text-text-tertiary">
-                          {removeProtocol(leaf.url)}
+                          {formatApplicationUrl(leaf.url)}
                         </div>
                       </div>
                       <button
@@ -452,7 +452,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
               className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-left transition-colors hover:border-accent-blue hover:bg-white"
               aria-label={`Add application to ${branch.name}`}
             >
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-tertiary transition-colors group-hover:border-accent-blue group-hover:text-accent-blue">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center text-text-tertiary transition-colors group-hover:text-accent-blue">
                 <IconPlus className="h-3.5 w-3.5" />
               </span>
               <span className="min-w-0 flex-1">
@@ -518,8 +518,23 @@ function normalizeUrl(url: string) {
   return `https://${trimmed}`;
 }
 
-function removeProtocol(url: string) {
-  return url.replace(/(^\w+:|^)\/\//, '');
+function formatApplicationUrl(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'https://') return trimmed;
+
+  const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    return parsed.host.replace(/^www\./i, '');
+  } catch {
+    return trimmed
+      .replace(/(^\w+:|^)\/\//, '')
+      .split(/[/?#]/)[0]
+      .replace(/^www\./i, '');
+  }
 }
 
 function reorder<T>(

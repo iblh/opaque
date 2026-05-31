@@ -20,6 +20,13 @@ import {
     IconUser,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
+import {
+    buildSearchUrl,
+    DEFAULT_SEARCH_PROVIDER_ID,
+    getSearchProvider,
+    SEARCH_PROVIDERS,
+    type SearchProviderId,
+} from '@/lib/searchProviders';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -27,8 +34,6 @@ interface HeaderProps {
     isDirty?: boolean;
     isSaving?: boolean;
     saveError?: string;
-    searchTerm?: string;
-    onSearchTermChange?: (value: string) => void;
     onEdit?: () => void;
     onSave?: () => void;
     onReset?: () => void;
@@ -40,8 +45,6 @@ export default function Header({
     isDirty = false,
     isSaving = false,
     saveError = '',
-    searchTerm = '',
-    onSearchTermChange,
     onEdit,
     onSave,
     onReset,
@@ -49,11 +52,14 @@ export default function Header({
     const pathname = usePathname();
     const router = useRouter();
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchProviderId, setSearchProviderId] = useState<SearchProviderId>(DEFAULT_SEARCH_PROVIDER_ID);
     const avatarRef = useRef<HTMLDivElement>(null);
     const displayName = dashboard?.name || dashboard?.username || dashboard?.email || 'User';
     const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
     const avatarInitial = displayName.charAt(0).toUpperCase();
     const serverSummary = getServerSummary(dashboard);
+    const searchProvider = getSearchProvider(searchProviderId);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -69,9 +75,27 @@ export default function Header({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showAvatarDropdown]);
 
+    useEffect(() => {
+        const savedProvider = localStorage.getItem('opaque_search_provider');
+        setSearchProviderId(getSearchProvider(savedProvider).id);
+    }, []);
+
     const handleLogout = async () => {
         await fetch('/api/user/logout', { method: 'POST' });
         router.push('/login');
+    };
+
+    const updateSearchProvider = (providerId: SearchProviderId) => {
+        setSearchProviderId(providerId);
+        localStorage.setItem('opaque_search_provider', providerId);
+    };
+
+    const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const query = searchQuery.trim();
+        if (!query) return;
+
+        window.location.href = buildSearchUrl(searchProviderId, query);
     };
 
     return (
@@ -86,18 +110,18 @@ export default function Header({
                         <div className="text-sm font-medium tracking-tight text-text-primary">
                             OPAQUE
                         </div>
-                        <div className="relative hidden sm:block">
+                        <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
                             <input
                                 id="search"
                                 type="text"
-                                value={searchTerm}
-                                onChange={(event) => onSearchTermChange?.(event.target.value)}
-                                placeholder="Search"
+                                value={searchQuery}
+                                onChange={(event) => setSearchQuery(event.target.value)}
+                                placeholder={searchProvider.placeholder}
                                 autoComplete="off"
                                 className="peer opaque-input w-[min(22rem,34vw)] pr-8"
                             />
                             <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
-                        </div>
+                        </form>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -230,6 +254,28 @@ export default function Header({
                                                 label="Theme"
                                                 trailing={<IconChevronRight />}
                                             />
+                                        </div>
+
+                                        <div className="opaque-menu-section px-3.5 py-2.5">
+                                            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                                                Search provider
+                                            </div>
+                                            <div className="mt-2 grid grid-cols-2 gap-1">
+                                                {SEARCH_PROVIDERS.map((provider) => (
+                                                    <button
+                                                        key={provider.id}
+                                                        type="button"
+                                                        onClick={() => updateSearchProvider(provider.id)}
+                                                        className={`h-6 rounded-sm px-2 text-left text-[11px] transition-colors ${
+                                                            searchProviderId === provider.id
+                                                                ? 'bg-ink-900 text-white'
+                                                                : 'bg-surface-sunken text-text-secondary hover:bg-border-light hover:text-text-primary'
+                                                        }`}
+                                                    >
+                                                        {provider.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
 
                                         <div className="opaque-menu-section">

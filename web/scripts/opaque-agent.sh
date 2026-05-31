@@ -3,7 +3,7 @@ set -euo pipefail
 
 : "${OPAQUE_URL:?missing OPAQUE_URL}"
 : "${SERVER_ID:?missing SERVER_ID}"
-: "${SERVER_INGEST_TOKEN:?missing SERVER_INGEST_TOKEN}"
+: "${SERVER_AGENT_TOKEN:?missing SERVER_AGENT_TOKEN}"
 
 interval="${OPAQUE_INTERVAL_SECONDS:-5}"
 if ! [[ "$interval" =~ ^[0-9]+$ ]] || (( interval < 2 )); then
@@ -77,7 +77,7 @@ JSON
 )"
 
   curl -fsS -X POST "$OPAQUE_URL/api/server/metrics" \
-    -H "Authorization: Bearer $SERVER_INGEST_TOKEN" \
+    -H "Authorization: Bearer $SERVER_AGENT_TOKEN" \
     -H "Content-Type: application/json" \
     -d "$payload"
 }

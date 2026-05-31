@@ -4,7 +4,10 @@ import {
   siArchlinux,
   siAnsible,
   siAsana,
+  siAwwwards,
+  siBehance,
   siBitwarden,
+  siBlender,
   siCloudflare,
   siCloudflarepages,
   siCloudflareworkers,
@@ -16,10 +19,12 @@ import {
   siDigitalocean,
   siDiscord,
   siDocker,
+  siDribbble,
   siDropbox,
   siFedora,
   siFigma,
   siFirebase,
+  siFramer,
   siGithub,
   siGithubactions,
   siGitlab,
@@ -38,8 +43,10 @@ import {
   siJira,
   siKubernetes,
   siLinear,
+  siLottiefiles,
   siMariadb,
   siMinio,
+  siMiro,
   siMongodb,
   siMysql,
   siN8n,
@@ -50,6 +57,7 @@ import {
   siNotion,
   siObsidian,
   siOpenmediavault,
+  siPinterest,
   siPlex,
   siPortainer,
   siPostgresql,
@@ -67,6 +75,7 @@ import {
   siRedis,
   siReddit,
   siSentry,
+  siSketch,
   siSonarr,
   siSpotify,
   siSqlite,
@@ -84,10 +93,12 @@ import {
   siUmami,
   siUnraid,
   siUptimekuma,
+  siUnsplash,
   siVault,
   siVaultwarden,
   siVercel,
   siVite,
+  siWebflow,
   siWikipedia,
   siWireguard,
   siX,
@@ -106,6 +117,7 @@ type SimpleIcon = {
 
 export type IconCategory =
   | 'General'
+  | 'Design'
   | 'Dev'
   | 'Infra'
   | 'Media'
@@ -163,7 +175,6 @@ const BRAND_ICONS: IconPreset[] = [
 const DEV_ICONS: IconPreset[] = [
   brandPreset('gitlab', siGitlab, 'Dev', ['git', 'code']),
   brandPreset('github-actions', siGithubactions, 'Dev', ['ci', 'workflow']),
-  brandPreset('figma', siFigma, 'Dev', ['design']),
   brandPreset('docker', siDocker, 'Dev', ['container']),
   brandPreset('kubernetes', siKubernetes, 'Dev', ['container', 'cluster']),
   brandPreset('python', siPython, 'Dev', ['language']),
@@ -183,6 +194,21 @@ const DEV_ICONS: IconPreset[] = [
   brandPreset('anthropic', siAnthropic, 'Dev', ['ai', 'model']),
   brandPreset('claude', siClaude, 'Dev', ['ai', 'model']),
   brandPreset('read-the-docs', siReadthedocs, 'Dev', ['docs']),
+];
+
+const DESIGN_ICONS: IconPreset[] = [
+  brandPreset('figma', siFigma, 'Design', ['interface', 'ui', 'ux']),
+  brandPreset('pinterest', siPinterest, 'Design', ['moodboard', 'inspiration']),
+  brandPreset('dribbble', siDribbble, 'Design', ['portfolio', 'inspiration']),
+  brandPreset('behance', siBehance, 'Design', ['portfolio', 'adobe']),
+  brandPreset('sketch', siSketch, 'Design', ['interface', 'ui']),
+  brandPreset('framer', siFramer, 'Design', ['prototype', 'website']),
+  brandPreset('webflow', siWebflow, 'Design', ['website', 'no-code']),
+  brandPreset('miro', siMiro, 'Design', ['whiteboard', 'planning']),
+  brandPreset('unsplash', siUnsplash, 'Design', ['image', 'photo']),
+  brandPreset('awwwards', siAwwwards, 'Design', ['website', 'inspiration']),
+  brandPreset('lottiefiles', siLottiefiles, 'Design', ['animation']),
+  brandPreset('blender', siBlender, 'Design', ['3d']),
 ];
 
 const INFRA_ICONS: IconPreset[] = [
@@ -259,6 +285,7 @@ const WORK_ICONS: IconPreset[] = [
 export const BOOKMARK_ICON_PRESETS: IconPreset[] = [
   ...GENERAL_ICONS,
   ...BRAND_ICONS,
+  ...DESIGN_ICONS,
   ...WORK_ICONS,
   ...MEDIA_ICONS,
   ...DEV_ICONS,
@@ -267,6 +294,7 @@ export const BOOKMARK_ICON_PRESETS: IconPreset[] = [
 export const APPLICATION_ICON_PRESETS: IconPreset[] = [
   ...GENERAL_ICONS,
   ...BRAND_ICONS,
+  ...DESIGN_ICONS,
   ...DEV_ICONS,
   ...WORK_ICONS,
   ...MEDIA_ICONS,
