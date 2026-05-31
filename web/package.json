@@ -8,6 +8,7 @@
     "start": "NODE_OPTIONS=--no-experimental-webstorage next start",
     "lint": "eslint",
     "test:contract": "node --test test/contract/*.test.mjs",
+    "db:ensure": "node scripts/ensure-database.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "metrics:retention": "node scripts/metrics-retention.mjs",

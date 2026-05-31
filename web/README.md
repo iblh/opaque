@@ -17,6 +17,7 @@ Install and run the app:
 ```bash
 cp .env.example .env.local
 npm install
+npm run db:ensure
 npm run db:migrate
 npm run dev
 ```
@@ -181,6 +182,14 @@ npm run metrics:retention
 ```
 
 The Docker Compose `retention` service runs this command hourly.
+
+If your Postgres server is reachable but the configured database has not been
+created yet, run:
+
+```bash
+npm run db:ensure
+npm run db:migrate
+```
 
 ## Tests
 

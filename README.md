@@ -12,6 +12,7 @@ Start the current app:
 cd web
 cp .env.example .env.local
 npm install
+npm run db:ensure
 npm run db:migrate
 npm run dev
 ```
