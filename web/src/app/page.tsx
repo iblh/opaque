@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation'
 import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
 import TreeServer from '@/components/Tree/TreeServer'
+import TreeModule from '@/components/Tree/TreeModule'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
-import { Dashboard, ServerStats, Tree } from '@/lib/types'
+import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
+import {
+  createDefaultModulesForRoot,
+  isKnownModuleType,
+  isModuleRoot,
+} from '@/lib/modules'
 import {
   DEFAULT_APPLICATION_ICON,
   DEFAULT_BOOKMARK_ICON,
@@ -113,6 +120,10 @@ export default function HomePage() {
   const displayName = activeDashboard?.name || activeDashboard?.username || activeDashboard?.email
   const isDashboardEmpty = visibleDashboard?.forest.every((tree) => tree.branches.length === 0) ?? false
 
+  const layoutForest = useMemo(() => (
+    visibleDashboard ? materializeImplicitLayout(visibleDashboard.forest, isEditing) : []
+  ), [visibleDashboard, isEditing])
+
   const startEditing = () => {
     if (!dashboard) return
     setDraftDashboard(cloneDashboard(dashboard))
@@ -167,12 +178,22 @@ export default function HomePage() {
   const updateTree = (tree: Tree) => {
     setDraftDashboard((current) => {
       if (!current) return current
+      const hasExistingTree = current.forest.some((item) => item.root === tree.root)
 
       return {
         ...current,
-        forest: current.forest.map((item) => (item.root === tree.root ? tree : item)),
+        forest: hasExistingTree
+          ? current.forest.map((item) => (item.root === tree.root ? tree : item))
+          : [...current.forest, tree],
       }
     })
+    setIsDirty(true)
+  }
+
+  const updateForest = (forest: Tree[]) => {
+    setDraftDashboard((current) => (
+      current ? { ...current, forest } : current
+    ))
     setIsDirty(true)
   }
 
@@ -288,39 +309,20 @@ export default function HomePage() {
                 onOpenEditor={startEditing}
               />
             ) : (
-              visibleDashboard.forest.map((tree, index) => (
-                <div
-                  key={tree.root}
-                  className="relative my-8 flex animate-fade-in-up flex-col gap-4 md:flex-row md:justify-between md:gap-0"
-                  style={{ '--tree-index': index } as React.CSSProperties}
-                >
-                  <div className="relative flex w-full items-start justify-start px-4 py-2 text-xs font-medium uppercase tracking-wider text-text-tertiary after:hidden md:w-[12.5rem] md:justify-end md:px-0 md:pt-4 md:after:absolute md:after:right-[-1rem] md:after:top-1/2 md:after:block md:after:h-px md:after:w-3 md:after:-translate-y-1/2 md:after:bg-border-light">{tree.root}</div>
-
-                  {tree.root === 'bookmarks' && (
-                    <TreeBookmark
-                      tree={tree as any}
+              <div className="mt-8 animate-fade-in-up">
+                <DashboardLayoutEditor
+                  forest={layoutForest}
+                  isEditing={isEditing}
+                  onForestChange={updateForest}
+                  renderSection={(tree) => (
+                    <RootContent
+                      tree={tree}
                       isEditing={isEditing}
-                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                      onTreeChange={updateTree}
                     />
                   )}
-                  {tree.root === 'applications' && (
-                    <TreeApplication
-                      tree={tree as any}
-                      isEditing={isEditing}
-                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
-                    />
-                  )}
-                  {tree.root === 'servers' && (
-                    <TreeServer
-                      tree={tree as any}
-                      isEditing={isEditing}
-                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
-                    />
-                  )}
-
-                  <div className="relative hidden w-[12.5rem] md:block" />
-                </div>
-              ))
+                />
+              </div>
             )}
           </div>
         </div>
@@ -331,7 +333,7 @@ export default function HomePage() {
 }
 
 function addOnboardingBranch(dashboard: Dashboard, draft: OnboardingDraft): Dashboard {
-  const branch = createOnboardingBranch(draft)
+  const branches = createOnboardingBranches(draft)
   let didInsert = false
 
   const forest = dashboard.forest.map((tree) => {
@@ -340,14 +342,14 @@ function addOnboardingBranch(dashboard: Dashboard, draft: OnboardingDraft): Dash
     didInsert = true
     return {
       ...tree,
-      branches: [...tree.branches, branch],
+      branches: [...tree.branches, ...branches],
     }
   })
 
   if (!didInsert) {
     forest.push({
       root: draft.kind,
-      branches: [branch],
+      branches,
     })
   }
 
@@ -357,17 +359,21 @@ function addOnboardingBranch(dashboard: Dashboard, draft: OnboardingDraft): Dash
   }
 }
 
-function createOnboardingBranch(draft: OnboardingDraft) {
+function createOnboardingBranches(draft: OnboardingDraft): Branch[] {
+  if (isModuleRoot(draft.kind)) {
+    return createDefaultModulesForRoot(draft.kind)
+  }
+
   if (draft.kind === 'servers') {
-    return {
+    return [{
       id: newId(),
       name: draft.itemName,
       url: draft.url,
       icon: DEFAULT_SERVER_ICON,
-    }
+    }]
   }
 
-  return {
+  return [{
     id: newId(),
     name: draft.sectionName,
     leaves: [
@@ -378,7 +384,98 @@ function createOnboardingBranch(draft: OnboardingDraft) {
         icon: draft.kind === 'applications' ? DEFAULT_APPLICATION_ICON : DEFAULT_BOOKMARK_ICON,
       },
     ],
+  }]
+}
+
+function materializeImplicitLayout(forest: Tree[], isEditing: boolean): Tree[] {
+  const renderable = forest.filter((tree) => isEditing || hasRenderableTree(tree))
+
+  const explicitRowIndices = renderable
+    .map((tree) => tree.layout?.rowIndex)
+    .filter((value): value is number => typeof value === 'number')
+  const nextRowIndex = explicitRowIndices.length > 0
+    ? Math.max(...explicitRowIndices) + 1
+    : 0
+
+  let synthetic = nextRowIndex
+
+  return renderable.map((tree) => {
+    if (tree.layout) return tree
+    const rowIndex = synthetic++
+    return {
+      ...tree,
+      layout: {
+        rowId: `implicit-${tree.root}`,
+        rowIndex,
+        colIndex: 0,
+        widthPct: 100,
+      },
+    }
+  })
+}
+
+function RootContent({
+  tree,
+  isEditing,
+  onTreeChange,
+}: {
+  tree: Tree
+  isEditing: boolean
+  onTreeChange: (tree: Tree) => void
+}) {
+  if (tree.root === 'bookmarks') {
+    return (
+      <TreeBookmark
+        tree={tree as any}
+        isEditing={isEditing}
+        onTreeChange={(nextTree) => onTreeChange(nextTree as Tree)}
+      />
+    )
   }
+
+  if (tree.root === 'applications') {
+    return (
+      <TreeApplication
+        tree={tree as any}
+        isEditing={isEditing}
+        onTreeChange={(nextTree) => onTreeChange(nextTree as Tree)}
+      />
+    )
+  }
+
+  if (tree.root === 'servers') {
+    return (
+      <TreeServer
+        tree={tree as any}
+        isEditing={isEditing}
+        onTreeChange={(nextTree) => onTreeChange(nextTree as Tree)}
+      />
+    )
+  }
+
+  if (isModuleRoot(tree.root)) {
+    return (
+      <TreeModule
+        tree={tree as any}
+        isEditing={isEditing}
+        onTreeChange={(nextTree) => onTreeChange(nextTree as Tree)}
+      />
+    )
+  }
+
+  return null
+}
+
+function hasRenderableTree(tree: Tree) {
+  if (tree.branches.length === 0) return false
+
+  if (isModuleRoot(tree.root)) {
+    return (tree.branches as ModuleBranch[]).some((branch) => (
+      branch.enabled !== false && isKnownModuleType(branch.moduleType)
+    ))
+  }
+
+  return true
 }
 
 function newId() {

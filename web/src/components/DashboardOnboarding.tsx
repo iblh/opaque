@@ -5,11 +5,20 @@ import {
   IconApps,
   IconArrowRight,
   IconBookmark,
+  IconCalendarEvent,
   IconCheck,
+  IconDeviceTv,
+  IconNews,
   IconServer,
 } from '@tabler/icons-react'
 
-export type OnboardingKind = 'bookmarks' | 'applications' | 'servers'
+export type OnboardingKind =
+  | 'bookmarks'
+  | 'applications'
+  | 'servers'
+  | 'today'
+  | 'media'
+  | 'posts'
 
 export interface OnboardingDraft {
   kind: OnboardingKind
@@ -46,6 +55,27 @@ const choices = [
     detail: 'A server card ready for metrics.',
     icon: IconServer,
   },
+  {
+    kind: 'today' as const,
+    label: 'Today',
+    title: 'Add daily context',
+    detail: 'Weather, calendar, and markets.',
+    icon: IconCalendarEvent,
+  },
+  {
+    kind: 'media' as const,
+    label: 'Media',
+    title: 'Add media status',
+    detail: 'Plex, Jellyfin, Radarr, Sonarr.',
+    icon: IconDeviceTv,
+  },
+  {
+    kind: 'posts' as const,
+    label: 'Posts',
+    title: 'Add reading feeds',
+    detail: 'RSS, Reddit, and Hacker News.',
+    icon: IconNews,
+  },
 ]
 
 const defaults: Record<OnboardingKind, Omit<OnboardingDraft, 'kind'>> = {
@@ -64,6 +94,21 @@ const defaults: Record<OnboardingKind, Omit<OnboardingDraft, 'kind'>> = {
     itemName: 'First server',
     url: 'https://',
   },
+  today: {
+    sectionName: 'Today',
+    itemName: 'Daily modules',
+    url: '',
+  },
+  media: {
+    sectionName: 'Media',
+    itemName: 'Media modules',
+    url: '',
+  },
+  posts: {
+    sectionName: 'Posts',
+    itemName: 'Post sources',
+    url: '',
+  },
 }
 
 export default function DashboardOnboarding({
@@ -79,7 +124,9 @@ export default function DashboardOnboarding({
   const activeChoice = choices.find((choice) => choice.kind === kind) || choices[0]
   const ActiveIcon = activeChoice.icon
   const isServer = kind === 'servers'
-  const canCreate = itemName.trim().length > 0 && (isServer || sectionName.trim().length > 0)
+  const isModuleRoot = kind === 'today' || kind === 'media' || kind === 'posts'
+  const canCreate = isModuleRoot
+    || (itemName.trim().length > 0 && (isServer || sectionName.trim().length > 0))
 
   const previewHost = useMemo(() => formatPreviewUrl(url), [url])
 
@@ -126,7 +173,7 @@ export default function DashboardOnboarding({
             )}
           </div>
 
-          <div className="mt-8 grid gap-2 md:grid-cols-3">
+          <div className="mt-8 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {choices.map((choice) => {
               const Icon = choice.icon
               const isActive = kind === choice.kind
@@ -159,7 +206,7 @@ export default function DashboardOnboarding({
 
           <div className="mt-8 border-t border-border-light pt-6">
             <div className="grid gap-3 md:grid-cols-2">
-              {!isServer && (
+              {!isServer && !isModuleRoot && (
                 <label className="block">
                   <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                     {kind === 'bookmarks' ? 'Group' : 'Shelf'}
@@ -173,29 +220,38 @@ export default function DashboardOnboarding({
                 </label>
               )}
 
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                  {isServer ? 'Server name' : 'Item name'}
-                </span>
-                <input
-                  value={itemName}
-                  onChange={(event) => setItemName(event.target.value)}
-                  className="opaque-input w-full"
-                  placeholder={isServer ? 'Home server' : 'Name'}
-                />
-              </label>
+              {!isModuleRoot ? (
+                <>
+                  <label className="block">
+                    <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                      {isServer ? 'Server name' : 'Item name'}
+                    </span>
+                    <input
+                      value={itemName}
+                      onChange={(event) => setItemName(event.target.value)}
+                      className="opaque-input w-full"
+                      placeholder={isServer ? 'Home server' : 'Name'}
+                    />
+                  </label>
 
-              <label className={`block ${isServer ? '' : 'md:col-span-2'}`}>
-                <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                  URL
-                </span>
-                <input
-                  value={url}
-                  onChange={(event) => setUrl(event.target.value)}
-                  className="opaque-input w-full font-mono text-[11px]"
-                  placeholder="https://"
-                />
-              </label>
+                  <label className={`block ${isServer ? '' : 'md:col-span-2'}`}>
+                    <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                      URL
+                    </span>
+                    <input
+                      value={url}
+                      onChange={(event) => setUrl(event.target.value)}
+                      className="opaque-input w-full font-mono text-[11px]"
+                      placeholder="https://"
+                    />
+                  </label>
+                </>
+              ) : (
+                <div className="md:col-span-2 border border-border-light bg-white p-3 text-xs leading-relaxed text-text-tertiary">
+                  This creates the default mock modules for {activeChoice.label}. You can rename,
+                  disable, or remove modules in the editor before saving.
+                </div>
+              )}
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -258,6 +314,9 @@ export default function DashboardOnboarding({
                   itemName={itemName}
                   url={previewHost}
                 />
+              )}
+              {isModuleRoot && (
+                <PreviewModules kind={kind} />
               )}
             </div>
           </div>
@@ -351,6 +410,38 @@ function PreviewServer({
         <PreviewMeter label="Memory" value="6.8 / 16 GB" width="58%" />
         <PreviewMeter label="Storage" value="312 / 980 GB" width="32%" />
       </div>
+    </div>
+  )
+}
+
+function PreviewModules({ kind }: { kind: 'today' | 'media' | 'posts' }) {
+  const modules = {
+    today: [
+      ['Weather', '67 deg, partly cloudy'],
+      ['Calendar', '3 upcoming events'],
+      ['Markets', 'SPY, AAPL, NVDA, BTC'],
+    ],
+    media: [
+      ['Plex', 'online, 9 libraries'],
+      ['Jellyfin', 'online, 7 libraries'],
+      ['Radarr', '482 monitored'],
+      ['Sonarr', '92 series'],
+    ],
+    posts: [
+      ['RSS', '5 latest posts'],
+      ['Hacker News', 'top stories'],
+      ['Reddit', 'r/selfhosted'],
+    ],
+  }[kind]
+
+  return (
+    <div className="space-y-3">
+      {modules.map(([name, detail]) => (
+        <div key={name} className="flex items-baseline justify-between gap-4 border-b border-border-light pb-2 last:border-b-0 last:pb-0">
+          <div className="text-xs font-medium text-text-primary">{name}</div>
+          <div className="truncate font-mono text-[10px] text-text-tertiary">{detail}</div>
+        </div>
+      ))}
     </div>
   )
 }

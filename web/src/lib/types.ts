@@ -5,6 +5,39 @@ export interface Leaf {
   icon: string;
 }
 
+export type DashboardRoot =
+  | 'bookmarks'
+  | 'applications'
+  | 'servers'
+  | 'today'
+  | 'media'
+  | 'posts'
+  | (string & {});
+
+export type LayoutPreset = '100' | '50/50' | '33/33/33' | '20/60/20';
+
+export interface TreeLayout {
+  rowId: string;
+  rowIndex: number;
+  colIndex: number;
+  widthPct: number;
+}
+
+export type KnownModuleType =
+  | 'weather'
+  | 'calendar'
+  | 'markets'
+  | 'plex'
+  | 'jellyfin'
+  | 'emby'
+  | 'radarr'
+  | 'sonarr'
+  | 'rss'
+  | 'reddit'
+  | 'hacker-news';
+
+export type ModuleType = KnownModuleType | (string & {});
+
 export interface ServerStats {
   status: 'online' | 'offline';
   uptime: string;
@@ -47,11 +80,18 @@ export interface ServerBranch extends BaseBranch {
   stats?: ServerStats;
 }
 
-export type Branch = BookmarkBranch | ApplicationBranch | ServerBranch;
+export interface ModuleBranch extends BaseBranch {
+  moduleType: ModuleType;
+  enabled?: boolean;
+  config?: Record<string, unknown>;
+}
+
+export type Branch = BookmarkBranch | ApplicationBranch | ServerBranch | ModuleBranch;
 
 export interface Tree {
-  root: string;
+  root: DashboardRoot;
   branches: Branch[];
+  layout?: TreeLayout;
 }
 
 export interface Dashboard {
