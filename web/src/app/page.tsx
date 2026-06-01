@@ -7,8 +7,14 @@ import TreeApplication from '@/components/Tree/TreeApplication'
 import TreeServer from '@/components/Tree/TreeServer'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
 import { Dashboard, ServerStats, Tree } from '@/lib/types'
+import {
+  DEFAULT_APPLICATION_ICON,
+  DEFAULT_BOOKMARK_ICON,
+  DEFAULT_SERVER_ICON,
+} from '@/lib/svg'
 
 const SERVER_STATS_POLL_INTERVAL_MS = 5000
 
@@ -105,6 +111,7 @@ export default function HomePage() {
   const visibleDashboard = useMemo(() => activeDashboard, [activeDashboard])
 
   const displayName = activeDashboard?.name || activeDashboard?.username || activeDashboard?.email
+  const isDashboardEmpty = visibleDashboard?.forest.every((tree) => tree.branches.length === 0) ?? false
 
   const startEditing = () => {
     if (!dashboard) return
@@ -169,6 +176,18 @@ export default function HomePage() {
     setIsDirty(true)
   }
 
+  const createOnboardingDraft = (draft: OnboardingDraft) => {
+    if (!dashboard) return
+
+    const nextDashboard = addOnboardingBranch(cloneDashboard(dashboard), draft)
+    const normalized = normalizeDashboard(nextDashboard)
+
+    setDraftDashboard(cloneDashboard(normalized))
+    setIsEditing(true)
+    setIsDirty(true)
+    setSaveError('')
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -178,7 +197,7 @@ export default function HomePage() {
             <div className="space-y-4 text-center">
               <div className="mx-auto h-0.5 w-8 animate-pulse bg-ink-400"></div>
               <div className="animate-fade-in text-sm font-light tracking-wide text-text-tertiary">
-                Loading your workspace...
+                Loading dashboard...
               </div>
             </div>
           </div>
@@ -226,10 +245,10 @@ export default function HomePage() {
               <div className="mx-auto h-0.5 w-8 bg-ink-300"></div>
               <div className="space-y-2">
                 <div className="text-sm font-medium text-text-primary">
-                  Your canvas awaits
+                  Dashboard unavailable
                 </div>
                 <div className="max-w-xs text-xs leading-relaxed text-text-tertiary">
-                  No data found. Your creative space is ready to be filled.
+                  No dashboard data was returned for this account.
                 </div>
               </div>
             </div>
@@ -258,61 +277,50 @@ export default function HomePage() {
             <div className="animate-fade-in pl-20">
               <div className="h-0.5 w-6 bg-ink-300"></div>
               <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-                Welcome back{displayName ? `, ${displayName}` : ''}
+                Welcome{displayName ? `, ${displayName}` : ''}
               </div>
             </div>
 
-            {visibleDashboard.forest.map((tree, index) => (
-              <div
-                key={tree.root}
-                className="relative my-8 flex animate-fade-in-up flex-col gap-4 md:flex-row md:justify-between md:gap-0"
-                style={{ '--tree-index': index } as React.CSSProperties}
-              >
-                <div className="relative flex w-full items-start justify-start px-4 py-2 text-xs font-medium uppercase tracking-wider text-text-tertiary after:hidden md:w-[12.5rem] md:justify-end md:px-0 md:pt-4 md:after:absolute md:after:right-[-1rem] md:after:top-1/2 md:after:block md:after:h-px md:after:w-3 md:after:-translate-y-1/2 md:after:bg-border-light">{tree.root}</div>
+            {!isEditing && isDashboardEmpty ? (
+              <DashboardOnboarding
+                displayName={displayName}
+                onCreateDraft={createOnboardingDraft}
+                onOpenEditor={startEditing}
+              />
+            ) : (
+              visibleDashboard.forest.map((tree, index) => (
+                <div
+                  key={tree.root}
+                  className="relative my-8 flex animate-fade-in-up flex-col gap-4 md:flex-row md:justify-between md:gap-0"
+                  style={{ '--tree-index': index } as React.CSSProperties}
+                >
+                  <div className="relative flex w-full items-start justify-start px-4 py-2 text-xs font-medium uppercase tracking-wider text-text-tertiary after:hidden md:w-[12.5rem] md:justify-end md:px-0 md:pt-4 md:after:absolute md:after:right-[-1rem] md:after:top-1/2 md:after:block md:after:h-px md:after:w-3 md:after:-translate-y-1/2 md:after:bg-border-light">{tree.root}</div>
 
-                {tree.root === 'bookmarks' && (
-                  <TreeBookmark
-                    tree={tree as any}
-                    isEditing={isEditing}
-                    onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
-                  />
-                )}
-                {tree.root === 'applications' && (
-                  <TreeApplication
-                    tree={tree as any}
-                    isEditing={isEditing}
-                    onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
-                  />
-                )}
-                {tree.root === 'servers' && (
-                  <TreeServer
-                    tree={tree as any}
-                    isEditing={isEditing}
-                    onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
-                  />
-                )}
+                  {tree.root === 'bookmarks' && (
+                    <TreeBookmark
+                      tree={tree as any}
+                      isEditing={isEditing}
+                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                    />
+                  )}
+                  {tree.root === 'applications' && (
+                    <TreeApplication
+                      tree={tree as any}
+                      isEditing={isEditing}
+                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                    />
+                  )}
+                  {tree.root === 'servers' && (
+                    <TreeServer
+                      tree={tree as any}
+                      isEditing={isEditing}
+                      onTreeChange={(nextTree) => updateTree(nextTree as Tree)}
+                    />
+                  )}
 
-                <div className="relative hidden w-[12.5rem] md:block" />
-              </div>
-            ))}
-
-            {visibleDashboard.forest.every((tree) => tree.branches.length === 0) && (
-              <div className="flex min-h-[42vh] flex-1 items-center justify-center">
-                <div className="animate-fade-in-up space-y-8 text-center">
-                  <div className="space-y-4">
-                    <div className="mx-auto h-0.5 w-16 bg-ink-200"></div>
-                    <div>
-                      <h2 className="mb-2 text-lg font-light tracking-tight text-text-primary">
-                        Your mindful workspace
-                      </h2>
-                      <p className="max-w-sm text-xs leading-relaxed text-text-tertiary">
-                        A clean canvas awaits. Begin by organizing your bookmarks, applications,
-                        and servers into meaningful collections.
-                      </p>
-                    </div>
-                  </div>
+                  <div className="relative hidden w-[12.5rem] md:block" />
                 </div>
-              </div>
+              ))
             )}
           </div>
         </div>
@@ -320,6 +328,65 @@ export default function HomePage() {
       <Footer />
     </div>
   )
+}
+
+function addOnboardingBranch(dashboard: Dashboard, draft: OnboardingDraft): Dashboard {
+  const branch = createOnboardingBranch(draft)
+  let didInsert = false
+
+  const forest = dashboard.forest.map((tree) => {
+    if (tree.root !== draft.kind) return tree
+
+    didInsert = true
+    return {
+      ...tree,
+      branches: [...tree.branches, branch],
+    }
+  })
+
+  if (!didInsert) {
+    forest.push({
+      root: draft.kind,
+      branches: [branch],
+    })
+  }
+
+  return {
+    ...dashboard,
+    forest,
+  }
+}
+
+function createOnboardingBranch(draft: OnboardingDraft) {
+  if (draft.kind === 'servers') {
+    return {
+      id: newId(),
+      name: draft.itemName,
+      url: draft.url,
+      icon: DEFAULT_SERVER_ICON,
+    }
+  }
+
+  return {
+    id: newId(),
+    name: draft.sectionName,
+    leaves: [
+      {
+        id: newId(),
+        name: draft.itemName,
+        url: draft.url,
+        icon: draft.kind === 'applications' ? DEFAULT_APPLICATION_ICON : DEFAULT_BOOKMARK_ICON,
+      },
+    ],
+  }
+}
+
+function newId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+
+  return Math.random().toString(36).slice(2)
 }
 
 function mergeServerStats(

@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "OPAQUE",
-  description: "A mindful space for creators",
+  description: "A quiet dashboard for bookmarks, applications, and servers",
 };
 
 export default function RootLayout({
