@@ -1,31 +1,30 @@
-# Opage
+## OPAQUE
 
-> Homepage for your browser
+`web` is the current consolidated app for active development.
 
-`Opage` 是一个客制化上网首页
+- `web`: merged Next/React version with the retained visual direction and restored dashboard editing.
+- `react-frontend`: earlier Next/React version kept for reference.
+- `front-end`: older SvelteKit version kept for reference.
 
-基于 Material Design & Vue.js
-
-集成搜索，网站，天气，TODO
-
-Faster & Pure
-
-## 功能   
-
-- 搜索：Google + Bing + 百度
-- 网站：可自定义网站列表
-- 天气：全国城市 + 4 天预测
-- TODO: 简单的 Todo 列表
-
-## 使用
+Start the current app:
 
 ```bash
-# install dependencies
+cd web
+cp .env.example .env.local
 npm install
-
-# serve with hot reload at localhost:8080
+npm run db:ensure
+npm run db:migrate
 npm run dev
-
-# build for production with minification
-npm run build
 ```
+
+For a self-hosted stack with Postgres:
+
+```bash
+cd web
+cp .env.example .env
+docker compose up --build
+```
+
+This repository remains the upstream for the self-hosted product. Hosted product
+work can be layered in a private downstream repository while keeping the core
+Postgres schema and API contracts compatible.
