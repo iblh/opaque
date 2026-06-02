@@ -1,7 +1,6 @@
 import { Tree, TreeLayout } from '@/lib/types';
 
 export const MIN_COLUMN_PCT = 15;
-export const RESIZE_SNAP_PCT = 1;
 
 export interface DashboardLayoutRow {
   rowId: string;
@@ -11,6 +10,33 @@ export interface DashboardLayoutRow {
 
 export type RowDropEdge = 'top' | 'bottom';
 export type CellDropEdge = 'left' | 'right';
+
+export type LayoutDropTarget =
+  | { kind: 'cell-edge'; rowId: string; colIndex: number; edge: CellDropEdge }
+  | { kind: 'row-edge'; rowId: string; edge: RowDropEdge }
+  | { kind: 'unassign' };
+
+/**
+ * Single source of truth for applying a drag drop to the forest. Used both to
+ * compute the live preview during dragover and to commit on drop, so what the
+ * user sees while dragging is exactly what they get.
+ */
+export function applyLayoutDrop(
+  forest: Tree[],
+  root: string,
+  target: LayoutDropTarget,
+): Tree[] {
+  switch (target.kind) {
+    case 'row-edge':
+      return moveTreeToRowEdge(forest, root, target.rowId, target.edge);
+    case 'cell-edge':
+      return moveTreeIntoRow(forest, root, target.rowId, target.colIndex, target.edge);
+    case 'unassign':
+      return unassignTree(forest, root);
+    default:
+      return forest;
+  }
+}
 
 export function getLayoutRows(forest: Tree[]): DashboardLayoutRow[] {
   const byRow = new Map<string, Array<{ tree: Tree; layout: TreeLayout }>>();
