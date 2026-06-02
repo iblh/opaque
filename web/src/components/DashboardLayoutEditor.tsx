@@ -33,6 +33,11 @@ const ROW_BAND_RATIO = 0.3;
 // Hysteresis (px) the pointer must travel past a zone boundary before the
 // drop target flips. This is what kills the reflow-induced flutter.
 const ZONE_HYSTERESIS = 14;
+// The drag clone caps its width here; a full-width section becomes a tidy card
+// instead of a screen-wide slab. Height still follows the source body height.
+const MAX_CLONE_WIDTH = 360;
+// How many skeleton blocks the clone draws at most (one per branch, capped).
+const MAX_CLONE_SKELETON_BLOCKS = 4;
 
 interface DashboardLayoutEditorProps {
   forest: Tree[];
@@ -54,12 +59,17 @@ interface ResizeState {
 interface DragState {
   root: string;
   label: string;
-  // Pointer offset within the grabbed section (so the clone tracks naturally).
+  // Pointer offset within the clone (already adjusted for the clamped width so
+  // the grab point tracks the cursor naturally).
   pointerOffsetX: number;
   pointerOffsetY: number;
-  // Size of the clone, taken from the grabbed section.
+  // Clone size: width is clamped to MAX_CLONE_WIDTH, height follows the body.
   width: number;
   height: number;
+  // Height of just the section body, so the placeholder reserves the same space.
+  bodyHeight: number;
+  // Number of branches in the dragged section — drives the skeleton block count.
+  branchCount: number;
   // Current pointer position (viewport coords) for the floating clone.
   clientX: number;
   clientY: number;
@@ -94,7 +104,15 @@ export default function DashboardLayoutEditor({
   const dropTargetRef = useRef<LayoutDropTarget | null>(null);
   const lastZoneRef = useRef<{ key: string; x: number; y: number } | null>(null);
   const pendingStart = useRef<
-    | { root: string; label: string; rect: DOMRect; startX: number; startY: number }
+    | {
+        root: string;
+        label: string;
+        rect: DOMRect;
+        bodyHeight: number;
+        branchCount: number;
+        startX: number;
+        startY: number;
+      }
     | null
   >(null);
   const bootstrapRef = useRef(false);
@@ -294,10 +312,17 @@ export default function DashboardLayoutEditor({
     const section = event.currentTarget.closest('[data-section-root]');
     if (!(section instanceof HTMLElement)) return;
     event.preventDefault();
+    const bodyEl = section.querySelector('[data-section-body]');
+    const bodyHeight = bodyEl instanceof HTMLElement
+      ? bodyEl.getBoundingClientRect().height
+      : section.getBoundingClientRect().height;
+    const branchCount = forest.find((tree) => tree.root === root)?.branches.length ?? 0;
     pendingStart.current = {
       root,
       label,
       rect: section.getBoundingClientRect(),
+      bodyHeight,
+      branchCount,
       startX: event.clientX,
       startY: event.clientY,
     };
@@ -309,13 +334,29 @@ export default function DashboardLayoutEditor({
       if (!pending || dragRef.current) return;
       const dist = Math.hypot(moveEvent.clientX - pending.startX, moveEvent.clientY - pending.startY);
       if (dist < DRAG_START_THRESHOLD) return;
+      const sourceWidth = pending.rect.width;
+      const cloneWidth = Math.min(sourceWidth, MAX_CLONE_WIDTH);
+      const widthScale = sourceWidth > 0 ? cloneWidth / sourceWidth : 1;
+      // Height follows the source body, but never taller than the skeleton's
+      // natural height so a tall section doesn't stretch a few blocks apart.
+      const blocks = Math.max(1, Math.min(pending.branchCount || 1, MAX_CLONE_SKELETON_BLOCKS));
+      const HEADER = 37; // header row + border
+      const PADDING = 24; // body padding (p-3 top+bottom)
+      const BLOCK = 28; // one skeleton block
+      const GAP = 10; // gap between blocks
+      const naturalHeight = HEADER + PADDING + blocks * BLOCK + Math.max(0, blocks - 1) * GAP;
+      const cloneHeight = Math.min(pending.bodyHeight + HEADER, naturalHeight);
       const next: DragState = {
         root: pending.root,
         label: pending.label,
-        pointerOffsetX: pending.startX - pending.rect.left,
-        pointerOffsetY: pending.startY - pending.rect.top,
-        width: pending.rect.width,
-        height: pending.rect.height,
+        // Scale the horizontal grab point to the clamped width; clamp the
+        // vertical offset so the cursor always rests on the (shorter) clone.
+        pointerOffsetX: (pending.startX - pending.rect.left) * widthScale,
+        pointerOffsetY: Math.min(pending.startY - pending.rect.top, cloneHeight - 16),
+        width: cloneWidth,
+        height: cloneHeight,
+        bodyHeight: pending.bodyHeight,
+        branchCount: pending.branchCount,
         clientX: moveEvent.clientX,
         clientY: moveEvent.clientY,
       };
@@ -349,6 +390,7 @@ export default function DashboardLayoutEditor({
           isEditing={isEditing}
           renderSection={renderSection}
           draggingRoot={drag?.root ?? null}
+          dragHeight={drag?.bodyHeight ?? null}
           isDragActive={Boolean(drag)}
           resize={resize}
           onGripPointerDown={beginPress}
@@ -368,7 +410,7 @@ export default function DashboardLayoutEditor({
       )}
 
       {mounted && drag && createPortal(
-        <DragClone label={drag.label} drag={drag} />,
+        <DragClone drag={drag} />,
         document.body,
       )}
     </div>
@@ -380,6 +422,7 @@ interface LayoutRowProps {
   isEditing: boolean;
   renderSection: (tree: Tree) => ReactNode;
   draggingRoot: string | null;
+  dragHeight: number | null;
   isDragActive: boolean;
   resize: ResizeState | null;
   onGripPointerDown: (event: ReactPointerEvent<HTMLElement>, root: string, label: string) => void;
@@ -391,6 +434,7 @@ function LayoutRow({
   isEditing,
   renderSection,
   draggingRoot,
+  dragHeight,
   isDragActive,
   resize,
   onGripPointerDown,
@@ -429,9 +473,12 @@ function LayoutRow({
               />
 
               {isPlaceholder ? (
-                <PlaceholderBody label={getRootLabel(cell.tree.root)} />
+                <PlaceholderBody
+                  label={getRootLabel(cell.tree.root)}
+                  height={dragHeight}
+                />
               ) : (
-                <div>{renderSection(cell.tree)}</div>
+                <div data-section-body>{renderSection(cell.tree)}</div>
               )}
             </div>
           );
@@ -488,9 +535,18 @@ function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: Se
   );
 }
 
-function PlaceholderBody({ label }: { label: string }) {
+function PlaceholderBody({ label, height }: { label: string; height: number | null }) {
+  // Reserve the dragged section's original body height so the surrounding
+  // layout barely shifts while the section is lifted out.
+  const style: CSSProperties = height
+    ? { height }
+    : { minHeight: '4.5rem' };
+
   return (
-    <div className="flex min-h-[4.5rem] items-center justify-center rounded-sm border border-dashed border-border-strong bg-surface-sunken/50">
+    <div
+      style={style}
+      className="flex items-center justify-center rounded-sm border border-dashed border-border-strong bg-surface-sunken/40"
+    >
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
         {label}
       </span>
@@ -498,26 +554,51 @@ function PlaceholderBody({ label }: { label: string }) {
   );
 }
 
-function DragClone({ label, drag }: { label: string; drag: DragState }) {
-  // Floating element that follows the cursor until release. Kept lightweight (a
-  // labeled chip sized to the source) rather than a full render of the section.
+function DragClone({ drag }: { drag: DragState }) {
+  // A clean skeleton card that follows the cursor: the section header plus a
+  // few abstracted "content" blocks (one per branch, capped). It keeps the
+  // source's height for a sense of mass but caps its width so a full-width
+  // section becomes a tidy card rather than a screen-wide slab.
   const style: CSSProperties = {
     position: 'fixed',
     left: drag.clientX - drag.pointerOffsetX,
     top: drag.clientY - drag.pointerOffsetY,
     width: drag.width,
-    height: Math.min(drag.height, 96),
+    height: drag.height,
+    transform: 'scale(1.02)',
+    transformOrigin: 'top left',
     pointerEvents: 'none',
     zIndex: 60,
   };
 
+  const blockCount = Math.max(1, Math.min(drag.branchCount || 1, MAX_CLONE_SKELETON_BLOCKS));
+
   return (
-    <div style={style} className="animate-fade-in">
-      <div className="flex h-full w-full items-center gap-2 rounded-sm border border-border-strong bg-white/95 px-3 shadow-floating backdrop-blur-sm">
-        <IconGripVertical className="h-3.5 w-3.5 text-text-muted" />
-        <span className="text-xs font-medium uppercase tracking-wider text-text-secondary">
-          {label}
-        </span>
+    <div style={style} className="opaque-drag-clone">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border-medium bg-white shadow-floating">
+        <div className="flex items-center gap-2 border-b border-border-light px-3 py-2">
+          <IconGripVertical className="h-3.5 w-3.5 text-text-muted" />
+          <span className="truncate text-xs font-medium uppercase tracking-wider text-text-secondary">
+            {drag.label}
+          </span>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3">
+          {Array.from({ length: blockCount }, (_, index) => (
+            <SkeletonBlock key={index} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonBlock() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="h-7 w-7 flex-shrink-0 rounded-sm bg-surface-sunken" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="h-2 w-1/2 rounded-full bg-surface-sunken" />
+        <div className="h-2 w-3/4 rounded-full bg-[#f1f1f1]" />
       </div>
     </div>
   );
