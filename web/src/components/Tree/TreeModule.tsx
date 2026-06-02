@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   IconActivity,
   IconAntennaBars5,
@@ -7,6 +7,7 @@ import {
   IconChartLine,
   IconCloud,
   IconDeviceTv,
+  IconGripVertical,
   IconMovie,
   IconNews,
   IconPhotoVideo,
@@ -21,6 +22,12 @@ import {
   getAllowedModuleTypes,
   MODULE_LABELS,
 } from '@/lib/modules';
+import {
+  getSpatialDropPlacement,
+  setDragPreview,
+  type DragPreviewState,
+  type DropPlacement,
+} from '@/lib/drag';
 
 interface ModuleTree {
   root: string;
@@ -44,6 +51,9 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   const [newModuleType, setNewModuleType] = useState<KnownModuleType | ''>(
     allowedTypes[0] || '',
   );
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const draggedModuleId = useRef<string | null>(null);
+  const draggedModulePreview = useRef<DragPreviewState | null>(null);
 
   const visibleModules = useMemo(() => (
     tree.branches.filter((module) => (
@@ -53,6 +63,30 @@ const TreeModule: React.FC<TreeModuleProps> = ({
 
   const updateBranches = (branches: ModuleBranch[]) => {
     onTreeChange?.({ ...tree, branches });
+  };
+
+  const moveModule = (targetModuleId: string, placement: DropPlacement) => {
+    const sourceModuleId = draggedModuleId.current;
+    if (!sourceModuleId || sourceModuleId === targetModuleId) return;
+
+    const sourceIndex = tree.branches.findIndex((module) => module.id === sourceModuleId);
+    const targetIndex = tree.branches.findIndex((module) => module.id === targetModuleId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const nextBranches = reorder(tree.branches, sourceIndex, targetIndex, placement);
+    if (sameOrder(tree.branches, nextBranches)) return;
+
+    updateBranches(nextBranches);
+  };
+
+  const getModuleDropPlacement = (event: React.DragEvent<HTMLElement>) => (
+    getSpatialDropPlacement(event, draggedModulePreview.current)
+  );
+
+  const finishDrag = () => {
+    draggedModuleId.current = null;
+    draggedModulePreview.current = null;
+    setActiveDragId(null);
   };
 
   const updateModule = (
@@ -82,10 +116,43 @@ const TreeModule: React.FC<TreeModuleProps> = ({
           return (
             <div
               key={module.id}
-              className="group border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium"
+              data-drag-preview
+              className={`group border border-border-light bg-white p-3 transition-all duration-200 hover:border-border-medium ${
+                activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''
+              }`}
+              onDragOver={(event) => {
+                if (!draggedModuleId.current) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                moveModule(module.id, getModuleDropPlacement(event));
+              }}
+              onDrop={(event) => {
+                if (!draggedModuleId.current) return;
+                event.preventDefault();
+                moveModule(module.id, getModuleDropPlacement(event));
+                finishDrag();
+              }}
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    draggable
+                    onDragStart={(event) => {
+                      draggedModuleId.current = module.id;
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', `module:${module.id}`);
+                      draggedModulePreview.current = setDragPreview(event);
+                      setActiveDragId(module.id);
+                    }}
+                    onDragEnd={finishDrag}
+                    className="flex h-6 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+                    aria-label={`Move ${module.name}`}
+                    title="Move module"
+                  >
+                    <IconGripVertical className="h-4 w-4" />
+                  </div>
                   <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
                   <div className="min-w-0">
                     <div className="truncate text-xs font-medium text-text-primary">
@@ -430,6 +497,26 @@ function getModuleLabel(moduleType: string) {
 
 function isKnownModuleType(moduleType: string): moduleType is KnownModuleType {
   return Boolean((MODULE_LABELS as Record<string, string>)[moduleType]);
+}
+
+function reorder<T>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number,
+  placement: DropPlacement,
+) {
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+  let insertIndex = placement === 'after' ? toIndex + 1 : toIndex;
+
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  next.splice(Math.max(0, Math.min(next.length, insertIndex)), 0, item);
+  return next;
+}
+
+function sameOrder<T extends { id: string }>(current: T[], next: T[]) {
+  return current.length === next.length
+    && current.every((item, index) => item.id === next[index]?.id);
 }
 
 function getMediaRows(moduleType: string): [string, string][] {
