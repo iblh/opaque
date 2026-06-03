@@ -498,7 +498,7 @@ export default function LoginPage() {
             <div className="login-glass" aria-hidden="true" />
 
             <main className="relative z-20 flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-                <section className="w-full max-w-[26rem]">
+                <section className="login-auth-panel w-full max-w-[26rem]">
                     <div className="mb-10 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-black font-mono text-xs font-semibold text-white">

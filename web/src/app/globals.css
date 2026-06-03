@@ -506,6 +506,27 @@ input:-webkit-autofill:active {
     background: rgba(255, 255, 255, 0.08);
 }
 
+.login-auth-panel {
+    position: relative;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-right-color: rgba(105, 117, 143, 0.2);
+    border-bottom-color: rgba(105, 117, 143, 0.24);
+    border-radius: 0;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(244, 248, 253, 0.03) 54%, rgba(232, 240, 250, 0.05)),
+        rgba(255, 255, 255, 0.02);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.62),
+        inset 1px 0 0 rgba(255, 255, 255, 0.28),
+        0 1px 2px rgba(31, 41, 55, 0.06),
+        0 14px 34px rgba(41, 50, 72, 0.11),
+        0 30px 70px rgba(41, 50, 72, 0.1);
+    backdrop-filter: blur(16px) saturate(1.55);
+    -webkit-backdrop-filter: blur(16px) saturate(1.55);
+    transform: translateY(-4px);
+}
+
 .login-live-value {
     display: inline-block;
     min-width: 3ch;
@@ -523,6 +544,12 @@ input:-webkit-autofill:active {
     .login-caret,
     .login-pulse {
         animation: none !important;
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .login-auth-panel {
+        background: rgba(255, 255, 255, 0.82);
     }
 }
 
@@ -556,6 +583,13 @@ input:-webkit-autofill:active {
     .login-telemetry-row > :nth-child(4),
     .login-telemetry-row > :nth-child(5) {
         display: none;
+    }
+}
+
+@media (max-width: 520px) {
+    .login-auth-panel {
+        padding: 1.5rem;
+        transform: translateY(-2px);
     }
 }
 
