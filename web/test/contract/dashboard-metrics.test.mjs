@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import test from 'node:test';
 
 const baseUrl = process.env.CONTRACT_BASE_URL || 'http://localhost:3000';
 
-test('dashboard and metrics API contract', async () => {
+test('dashboard, modules, and metrics API contract', async (t) => {
+  const moduleMock = await startModuleMockServer();
+  t.after(() => moduleMock.close());
+
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const identifier = `contract-${suffix}`;
   const password = 'contract-password';
@@ -24,9 +28,25 @@ test('dashboard and metrics API contract', async () => {
   await assertStatus(dashboardGet, 200);
   const dashboardBody = await dashboardGet.json();
   const roots = dashboardBody.dashboard.forest.map((tree) => tree.root);
-  assert.deepEqual(roots.slice(0, 3), ['bookmarks', 'applications', 'servers']);
+  assert.deepEqual(
+    roots.slice(0, 6),
+    ['bookmarks', 'applications', 'servers', 'today', 'media', 'posts'],
+  );
 
   const serverId = `server-${suffix}`;
+  const moduleIds = {
+    weather: `weather-${suffix}`,
+    calendar: `calendar-${suffix}`,
+    markets: `markets-${suffix}`,
+    plex: `plex-${suffix}`,
+    jellyfin: `jellyfin-${suffix}`,
+    emby: `emby-${suffix}`,
+    radarr: `radarr-${suffix}`,
+    sonarr: `sonarr-${suffix}`,
+    rss: `rss-${suffix}`,
+    hackerNews: `hn-${suffix}`,
+    reddit: `reddit-${suffix}`,
+  };
   const dashboard = {
     ...dashboardBody.dashboard,
     forest: dashboardBody.dashboard.forest.map((tree) => (
@@ -42,7 +62,102 @@ test('dashboard and metrics API contract', async () => {
               },
             ],
           }
-        : tree
+        : tree.root === 'today'
+          ? {
+              ...tree,
+              branches: [
+                {
+                  id: moduleIds.weather,
+                  name: 'Contract Weather',
+                  moduleType: 'weather',
+                  enabled: true,
+                  config: { location: 'San Francisco', units: 'imperial' },
+                },
+                {
+                  id: moduleIds.calendar,
+                  name: 'Contract Calendar',
+                  moduleType: 'calendar',
+                  enabled: true,
+                  config: { url: `${moduleMock.baseUrl}/calendar.ics` },
+                },
+                {
+                  id: moduleIds.markets,
+                  name: 'Contract Markets',
+                  moduleType: 'markets',
+                  enabled: true,
+                  config: { symbols: ['SPY'] },
+                },
+              ],
+            }
+          : tree.root === 'media'
+            ? {
+                ...tree,
+                branches: [
+                  {
+                    id: moduleIds.plex,
+                    name: 'Contract Plex',
+                    moduleType: 'plex',
+                    enabled: true,
+                    config: { url: `${moduleMock.baseUrl}/plex`, token: 'plex-token' },
+                  },
+                  {
+                    id: moduleIds.jellyfin,
+                    name: 'Contract Jellyfin',
+                    moduleType: 'jellyfin',
+                    enabled: true,
+                    config: { url: `${moduleMock.baseUrl}/jellyfin`, apiKey: 'jellyfin-key' },
+                  },
+                  {
+                    id: moduleIds.radarr,
+                    name: 'Contract Radarr',
+                    moduleType: 'radarr',
+                    enabled: true,
+                    config: { url: `${moduleMock.baseUrl}/radarr`, apiKey: 'radarr-key' },
+                  },
+                  {
+                    id: moduleIds.emby,
+                    name: 'Contract Emby',
+                    moduleType: 'emby',
+                    enabled: true,
+                    config: { url: `${moduleMock.baseUrl}/emby`, apiKey: 'emby-key' },
+                  },
+                  {
+                    id: moduleIds.sonarr,
+                    name: 'Contract Sonarr',
+                    moduleType: 'sonarr',
+                    enabled: true,
+                    config: { url: `${moduleMock.baseUrl}/sonarr`, apiKey: 'sonarr-key' },
+                  },
+                ],
+              }
+          : tree.root === 'posts'
+            ? {
+                ...tree,
+                branches: [
+                  {
+                    id: moduleIds.rss,
+                    name: 'Contract RSS',
+                    moduleType: 'rss',
+                    enabled: true,
+                    config: { feeds: [`${moduleMock.baseUrl}/feed.xml`], limit: 2 },
+                  },
+                  {
+                    id: moduleIds.hackerNews,
+                    name: 'Contract Hacker News',
+                    moduleType: 'hacker-news',
+                    enabled: true,
+                    config: { feed: 'top', limit: 2 },
+                  },
+                  {
+                    id: moduleIds.reddit,
+                    name: 'Contract Reddit',
+                    moduleType: 'reddit',
+                    enabled: true,
+                    config: { subreddit: 'selfhosted', sort: 'new', limit: 1 },
+                  },
+                ],
+              }
+            : tree
     )),
   };
 
@@ -66,6 +181,53 @@ test('dashboard and metrics API contract', async () => {
     .branches
     .find((server) => server.id === serverId);
   assert.equal(roundtripServer.name, 'Contract Server');
+
+  const weatherBody = await getModuleData(cookie, moduleIds.weather);
+  assert.equal(weatherBody.data.kind, 'weather');
+  assert.equal(typeof weatherBody.data.temperature, 'number');
+
+  const calendarBody = await getModuleData(cookie, moduleIds.calendar, {
+    month: monthKey(new Date(Date.now() + 60 * 60 * 1000)),
+  });
+  assert.equal(calendarBody.data.kind, 'calendar');
+  assert.equal(calendarBody.data.events[0].title, 'Contract review');
+
+  const marketsBody = await getModuleData(cookie, moduleIds.markets);
+  assert.equal(marketsBody.data.kind, 'markets');
+  assert.equal(marketsBody.data.quotes[0].symbol, 'SPY');
+
+  const plexBody = await getModuleData(cookie, moduleIds.plex);
+  assert.equal(plexBody.data.kind, 'media');
+  assert.equal(plexBody.data.service, 'Plex');
+  assert.equal(plexBody.data.stats.find((stat) => stat.label === 'Items').value, 24);
+
+  const jellyfinBody = await getModuleData(cookie, moduleIds.jellyfin);
+  assert.equal(jellyfinBody.data.service, 'Jellyfin');
+  assert.equal(jellyfinBody.data.stats.find((stat) => stat.label === 'Streams').value, 1);
+
+  const radarrBody = await getModuleData(cookie, moduleIds.radarr);
+  assert.equal(radarrBody.data.service, 'Radarr');
+  assert.equal(radarrBody.data.stats.find((stat) => stat.label === 'Queue').value, 2);
+
+  const embyBody = await getModuleData(cookie, moduleIds.emby);
+  assert.equal(embyBody.data.service, 'Emby');
+  assert.equal(embyBody.data.stats.find((stat) => stat.label === 'Libraries').value, 2);
+
+  const sonarrBody = await getModuleData(cookie, moduleIds.sonarr);
+  assert.equal(sonarrBody.data.service, 'Sonarr');
+  assert.equal(sonarrBody.data.stats.find((stat) => stat.label === 'Series').value, 1);
+
+  const rssBody = await getModuleData(cookie, moduleIds.rss);
+  assert.equal(rssBody.data.kind, 'posts');
+  assert.equal(rssBody.data.posts[0].title, 'Contract feed item');
+
+  const hackerNewsBody = await getModuleData(cookie, moduleIds.hackerNews);
+  assert.equal(hackerNewsBody.data.kind, 'posts');
+  assert.equal(hackerNewsBody.data.posts.length, 2);
+
+  const redditBody = await getModuleData(cookie, moduleIds.reddit);
+  assert.equal(redditBody.data.kind, 'posts');
+  assert.equal(redditBody.data.posts[0].source, 'r/selfhosted');
 
   const rotate = await fetch(`${baseUrl}/api/server/token/rotate`, {
     method: 'POST',
@@ -115,4 +277,162 @@ async function assertStatus(response, expected) {
   if (response.status !== expected) {
     assert.equal(response.status, expected, await response.text());
   }
+}
+
+async function getModuleData(cookie, moduleId, params = {}) {
+  const query = new URLSearchParams({ moduleId, ...params });
+  const response = await fetch(`${baseUrl}/api/modules/data?${query.toString()}`, {
+    headers: { cookie },
+  });
+  await assertStatus(response, 200);
+  return response.json();
+}
+
+async function startModuleMockServer() {
+  const start = new Date(Date.now() + 60 * 60 * 1000);
+  const end = new Date(start.getTime() + 30 * 60 * 1000);
+  const server = createServer((request, response) => {
+    const url = new URL(request.url || '/', 'http://localhost');
+    const path = url.pathname;
+
+    if (path === '/calendar.ics') {
+      response.writeHead(200, { 'Content-Type': 'text/calendar' });
+      response.end([
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'BEGIN:VEVENT',
+        'UID:contract-review',
+        `DTSTAMP:${icalDate(new Date())}`,
+        `DTSTART:${icalDate(start)}`,
+        `DTEND:${icalDate(end)}`,
+        'SUMMARY:Contract review',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n'));
+      return;
+    }
+
+    if (path === '/feed.xml') {
+      response.writeHead(200, { 'Content-Type': 'application/rss+xml' });
+      response.end(`<?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0"><channel><title>Contract Feed</title>
+        <item><guid>contract-feed-item</guid><title>Contract feed item</title>
+        <link>${moduleMockUrl(request)}/feed-item</link>
+        <pubDate>${new Date().toUTCString()}</pubDate></item>
+        </channel></rss>`);
+      return;
+    }
+
+    if (path.startsWith('/plex/')) {
+      if (request.headers['x-plex-token'] !== 'plex-token') return sendJson(response, 401, {});
+      if (path === '/plex/library/sections') {
+        return sendJson(response, 200, { MediaContainer: { Directory: [{ title: 'Movies' }] } });
+      }
+      if (path === '/plex/status/sessions') {
+        return sendJson(response, 200, { MediaContainer: { size: 2 } });
+      }
+      if (path === '/plex/library/sections/all') {
+        return sendJson(response, 200, { MediaContainer: { totalSize: 24 } });
+      }
+      if (path === '/plex/library/recentlyAdded') {
+        return sendJson(response, 200, { MediaContainer: { Metadata: [{ title: 'Contract Movie' }] } });
+      }
+    }
+
+    if (path.startsWith('/jellyfin/')) {
+      if (!String(request.headers.authorization || '').includes('jellyfin-key')) {
+        return sendJson(response, 401, {});
+      }
+      if (path === '/jellyfin/Items/Counts') {
+        return sendJson(response, 200, { MovieCount: 10, SeriesCount: 3, EpisodeCount: 40 });
+      }
+      if (path === '/jellyfin/Sessions') {
+        return sendJson(response, 200, [{ NowPlayingItem: { Name: 'Contract Stream' } }, {}]);
+      }
+      if (path === '/jellyfin/Library/MediaFolders') {
+        return sendJson(response, 200, { Items: [{ Name: 'Movies' }, { Name: 'TV' }] });
+      }
+      if (path === '/jellyfin/Items') {
+        return sendJson(response, 200, { Items: [{ Name: 'Contract Episode' }] });
+      }
+    }
+
+    if (path.startsWith('/emby/')) {
+      if (request.headers['x-emby-token'] !== 'emby-key') return sendJson(response, 401, {});
+      if (path === '/emby/Items/Counts') {
+        return sendJson(response, 200, { MovieCount: 8, SeriesCount: 2, EpisodeCount: 20 });
+      }
+      if (path === '/emby/Sessions') {
+        return sendJson(response, 200, []);
+      }
+      if (path === '/emby/Library/MediaFolders') {
+        return sendJson(response, 200, { Items: [{ Name: 'Movies' }, { Name: 'TV' }] });
+      }
+      if (path === '/emby/Items') {
+        return sendJson(response, 200, { Items: [{ Name: 'Contract Emby Item' }] });
+      }
+    }
+
+    if (path.startsWith('/radarr/')) {
+      if (request.headers['x-api-key'] !== 'radarr-key') return sendJson(response, 401, {});
+      if (path === '/radarr/api/v3/system/status') {
+        return sendJson(response, 200, { version: '5.0.0' });
+      }
+      if (path === '/radarr/api/v3/movie') {
+        return sendJson(response, 200, [{ title: 'Contract Movie', added: new Date().toISOString() }]);
+      }
+      if (path === '/radarr/api/v3/queue') {
+        return sendJson(response, 200, { totalRecords: 2 });
+      }
+      if (path === '/radarr/api/v3/wanted/missing') {
+        return sendJson(response, 200, { totalRecords: 4 });
+      }
+    }
+
+    if (path.startsWith('/sonarr/')) {
+      if (request.headers['x-api-key'] !== 'sonarr-key') return sendJson(response, 401, {});
+      if (path === '/sonarr/api/v3/system/status') {
+        return sendJson(response, 200, { version: '4.0.0' });
+      }
+      if (path === '/sonarr/api/v3/series') {
+        return sendJson(response, 200, [{ title: 'Contract Series', added: new Date().toISOString() }]);
+      }
+      if (path === '/sonarr/api/v3/queue') {
+        return sendJson(response, 200, { totalRecords: 1 });
+      }
+      if (path === '/sonarr/api/v3/wanted/missing') {
+        return sendJson(response, 200, { totalRecords: 3 });
+      }
+    }
+
+    sendJson(response, 404, {});
+  });
+
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === 'object');
+
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    close: () => new Promise((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    }),
+  };
+}
+
+function sendJson(response, status, body) {
+  response.writeHead(status, { 'Content-Type': 'application/json' });
+  response.end(JSON.stringify(body));
+}
+
+function moduleMockUrl(request) {
+  return `http://${request.headers.host}`;
+}
+
+function icalDate(date) {
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }

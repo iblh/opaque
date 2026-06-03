@@ -74,23 +74,23 @@ export function createDefaultModuleBranch(moduleType: KnownModuleType): ModuleBr
 function createDefaultModuleConfig(moduleType: KnownModuleType) {
   switch (moduleType) {
     case 'weather':
-      return { location: 'San Francisco', units: 'imperial' };
+      return { location: 'San Francisco', countryCode: 'US', region: '', units: 'imperial' };
     case 'calendar':
-      return { source: 'local', days: 7 };
+      return { url: '' };
     case 'markets':
       return { symbols: ['SPY', 'AAPL', 'NVDA', 'BTC-USD'] };
     case 'plex':
-      return { url: 'https://plex.local' };
+      return { url: '', token: '' };
     case 'jellyfin':
-      return { url: 'https://jellyfin.local' };
+      return { url: '', apiKey: '' };
     case 'emby':
-      return { url: 'https://emby.local' };
+      return { url: '', apiKey: '' };
     case 'radarr':
-      return { url: 'https://radarr.local' };
+      return { url: '', apiKey: '' };
     case 'sonarr':
-      return { url: 'https://sonarr.local' };
+      return { url: '', apiKey: '' };
     case 'rss':
-      return { feeds: ['https://example.com/feed.xml'], limit: 5 };
+      return { feeds: [], limit: 5 };
     case 'reddit':
       return { subreddit: 'selfhosted', sort: 'hot', limit: 5 };
     case 'hacker-news':

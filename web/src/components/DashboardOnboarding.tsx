@@ -248,8 +248,8 @@ export default function DashboardOnboarding({
                 </>
               ) : (
                 <div className="md:col-span-2 border border-border-light bg-white p-3 text-xs leading-relaxed text-text-tertiary">
-                  This creates the default mock modules for {activeChoice.label}. You can rename,
-                  disable, or remove modules in the editor before saving.
+                  This creates the default live-data modules for {activeChoice.label}. You can
+                  configure, rename, disable, or remove modules in the editor before saving.
                 </div>
               )}
             </div>

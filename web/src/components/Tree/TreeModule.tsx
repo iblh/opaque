@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   IconActivity,
   IconAntennaBars5,
@@ -8,14 +8,25 @@ import {
   IconCloud,
   IconDeviceTv,
   IconGripVertical,
+  IconHelpCircle,
   IconMovie,
   IconNews,
   IconPhotoVideo,
   IconPlayerPlay,
   IconPlus,
+  IconRefresh,
   IconRss,
   IconTrash,
 } from '@tabler/icons-react';
+import type {
+  CalendarModuleData,
+  MarketsModuleData,
+  MediaModuleData,
+  ModuleData,
+  ModuleDataResponse,
+  PostsModuleData,
+  WeatherModuleData,
+} from '@/lib/moduleData';
 import { KnownModuleType, ModuleBranch } from '@/lib/types';
 import {
   createDefaultModuleBranch,
@@ -41,6 +52,7 @@ interface TreeModuleProps {
 }
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
+const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
 
 const TreeModule: React.FC<TreeModuleProps> = ({
   tree,
@@ -220,6 +232,15 @@ const TreeModule: React.FC<TreeModuleProps> = ({
                   />
                   Enabled
                 </label>
+                {isKnownModuleType(module.moduleType) && (
+                  <ModuleConfigFields
+                    module={module}
+                    onChange={(config) => updateModule(module.id, (item) => ({
+                      ...item,
+                      config,
+                    }))}
+                  />
+                )}
               </div>
             </div>
           );
@@ -237,7 +258,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
               Add module
             </div>
             <div className="mt-1 text-[11px] leading-relaxed text-text-tertiary">
-              Thin mock data only. Real API credentials come later.
+              Configure the module, save the dashboard, then live data will load here.
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
@@ -268,186 +289,799 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   );
 };
 
+interface ModuleDataState {
+  data: ModuleData | null;
+  error: string;
+  isLoading: boolean;
+  refresh: () => void;
+}
+
 function ModuleWidget({ module }: { module: ModuleBranch }) {
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const calendarMonthKey = formatMonthKey(calendarMonth);
+  const state = useModuleData(
+    module,
+    module.moduleType === 'calendar'
+      ? `month=${encodeURIComponent(calendarMonthKey)}`
+      : '',
+  );
+
   switch (module.moduleType) {
     case 'weather':
-      return <WeatherWidget module={module} />;
+      return <WeatherWidget module={module} state={state} />;
     case 'calendar':
-      return <CalendarWidget module={module} />;
+      return (
+        <CalendarWidget
+          module={module}
+          state={state}
+          visibleMonth={calendarMonth}
+          onMonthChange={setCalendarMonth}
+        />
+      );
     case 'markets':
-      return <MarketsWidget module={module} />;
+      return <MarketsWidget module={module} state={state} />;
     case 'plex':
     case 'jellyfin':
     case 'emby':
     case 'radarr':
     case 'sonarr':
-      return <MediaWidget module={module} />;
+      return <MediaWidget module={module} state={state} />;
     case 'rss':
     case 'reddit':
     case 'hacker-news':
-      return <PostsWidget module={module} />;
+      return <PostsWidget module={module} state={state} />;
     default:
       return null;
   }
 }
 
+function useModuleData(module: ModuleBranch, queryString = ''): ModuleDataState {
+  const [data, setData] = useState<ModuleData | null>(null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [requestVersion, setRequestVersion] = useState(0);
+  const configKey = JSON.stringify(module.config || {});
+  const refresh = useCallback(() => setRequestVersion((version) => version + 1), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    const load = async (silent = false) => {
+      if (!silent) setIsLoading(true);
+      setError('');
+
+      try {
+        const response = await fetch(`/api/modules/data?moduleId=${encodeURIComponent(module.id)}${queryString ? `&${queryString}` : ''}`, {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Failed to load module data.');
+        }
+
+        if (!cancelled) {
+          setData((payload as ModuleDataResponse).data);
+        }
+      } catch (loadError) {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(loadError instanceof Error ? loadError.message : 'Failed to load module data.');
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    load();
+    const intervalId = window.setInterval(() => load(true), moduleRefreshInterval(module.moduleType));
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [configKey, module.id, module.moduleType, queryString, requestVersion]);
+
+  return { data, error, isLoading, refresh };
+}
+
 function ModulePanel({
   module,
+  state,
+  href,
   children,
 }: {
   module: ModuleBranch;
+  state: ModuleDataState;
+  href?: string;
   children: React.ReactNode;
 }) {
+  const statusClass = state.error
+    ? 'bg-red-500'
+    : state.isLoading
+      ? 'bg-ink-300'
+      : 'bg-accent-green';
+  const title = module.name || getModuleLabel(module.moduleType);
+
   return (
     <section className="border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium hover:bg-[#fcfcfc]">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-          <div className="truncate text-xs font-medium text-text-primary">
-            {module.name || getModuleLabel(module.moduleType)}
-          </div>
+          {href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate text-xs font-medium text-text-primary no-underline hover:text-ink-800"
+            >
+              {title}
+            </a>
+          ) : (
+            <div className="truncate text-xs font-medium text-text-primary">
+              {title}
+            </div>
+          )}
         </div>
-        <div className="h-1.5 w-1.5 rounded-full bg-accent-green" />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={state.refresh}
+            className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+            aria-label={`Refresh ${title}`}
+            title="Refresh"
+          >
+            <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <div
+            className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
+            title={state.error || (state.isLoading ? 'Loading' : 'Online')}
+          />
+        </div>
       </div>
       {children}
     </section>
   );
 }
 
-function WeatherWidget({ module }: { module: ModuleBranch }) {
-  return (
-    <ModulePanel module={module}>
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <div className="text-3xl font-light leading-none tracking-tight text-text-primary">
-            67°
-          </div>
-          <div className="mt-2 text-xs text-text-tertiary">
-            Partly cloudy
-          </div>
-        </div>
-        <div className="font-mono text-[10px] text-text-tertiary">
-          SF · 61%
-        </div>
-      </div>
-      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
-        {[
-          ['Mon', '69', '55'],
-          ['Tue', '65', '53'],
-          ['Wed', '71', '56'],
-        ].map(([day, high, low]) => (
-          <div key={day}>
-            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{day}</div>
-            <div className="mt-1 font-mono text-[11px] text-text-secondary">{high}/{low}</div>
-          </div>
-        ))}
-      </div>
-    </ModulePanel>
-  );
-}
+function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
+  const data = state.data?.kind === 'weather' ? state.data as WeatherModuleData : null;
 
-function CalendarWidget({ module }: { module: ModuleBranch }) {
   return (
-    <ModulePanel module={module}>
-      <div className="space-y-3">
-        {[
-          ['09:30', 'Design review'],
-          ['13:00', 'Infra check-in'],
-          ['16:20', 'Release notes'],
-        ].map(([time, title]) => (
-          <div key={title} className="flex items-baseline gap-3">
-            <div className="w-10 font-mono text-[10px] text-text-tertiary">{time}</div>
-            <div className="min-w-0 flex-1 truncate text-xs text-text-primary">{title}</div>
-          </div>
-        ))}
-      </div>
-    </ModulePanel>
-  );
-}
-
-function MarketsWidget({ module }: { module: ModuleBranch }) {
-  return (
-    <ModulePanel module={module}>
-      <div className="space-y-3">
-        {[
-          ['SPY', '624.18', '+0.8%', '62%'],
-          ['AAPL', '214.62', '-0.2%', '46%'],
-          ['NVDA', '182.40', '+1.4%', '76%'],
-          ['BTC', '108.2k', '+2.1%', '83%'],
-        ].map(([symbol, price, change, width]) => (
-          <div key={symbol}>
-            <div className="mb-1 flex items-center justify-between gap-3">
-              <div className="font-mono text-[11px] text-text-primary">{symbol}</div>
-              <div className="flex items-center gap-2 font-mono text-[10px]">
-                <span className="text-text-tertiary">{price}</span>
-                <span className={change.startsWith('+') ? 'text-accent-green' : 'text-red-500'}>
-                  {change}
-                </span>
+    <ModulePanel module={module} state={state}>
+      {!data ? (
+        <ModuleBodyState state={state} />
+      ) : (
+        <>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <div className="text-3xl font-light leading-none tracking-tight text-text-primary">
+                {Math.round(data.temperature)}°
+              </div>
+              <div className="mt-2 text-xs text-text-tertiary">
+                {data.condition}
               </div>
             </div>
-            <div className="h-1 bg-surface-sunken">
-              <div className="h-full bg-ink-500" style={{ width }} />
+            <div className="max-w-[8rem] truncate text-right font-mono text-[10px] text-text-tertiary">
+              {data.location} · {Math.round(data.humidity)}%
             </div>
           </div>
-        ))}
+          <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+            {data.forecast.map((day) => (
+              <div key={day.date} title={day.condition}>
+                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                  {formatWeekday(day.date)}
+                </div>
+                <div className="mt-1 font-mono text-[11px] text-text-secondary">
+                  {Math.round(day.high)}/{Math.round(day.low)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </ModulePanel>
+  );
+}
+
+function CalendarWidget({
+  module,
+  state,
+  visibleMonth,
+  onMonthChange,
+}: {
+  module: ModuleBranch;
+  state: ModuleDataState;
+  visibleMonth: Date;
+  onMonthChange: (date: Date) => void;
+}) {
+  const data = state.data?.kind === 'calendar' ? state.data as CalendarModuleData : null;
+  const monthDate = monthKeyToDate(data?.month) || visibleMonth;
+  const cells = useMemo(() => calendarCells(monthDate), [monthDate]);
+  const eventsByDay = useMemo(() => groupEventsByDay(data?.events || []), [data?.events]);
+  const monthEventCount = data?.events.length || 0;
+  const footerMessage = state.error
+    || (state.isLoading ? 'Loading calendar events...' : '')
+    || (monthEventCount === 0
+      ? 'No events on this calendar for the visible month.'
+      : `${monthEventCount} event${monthEventCount === 1 ? '' : 's'} on this calendar for the visible month.`);
+
+  const moveMonth = (offset: number) => {
+    onMonthChange(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1));
+  };
+
+  return (
+    <ModulePanel module={module} state={state}>
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="text-2xl font-semibold tracking-tight text-text-primary">
+            {formatCalendarMonth(monthDate)}
+          </div>
+          <div className="flex items-center gap-1 text-text-muted">
+            <button
+              type="button"
+              onClick={() => moveMonth(-1)}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Previous month"
+              title="Previous month"
+            >
+              &lsaquo;
+            </button>
+            <button
+              type="button"
+              onClick={() => onMonthChange(startOfMonth(new Date()))}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Current month"
+              title="Current month"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-current" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveMonth(1)}
+              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Next month"
+              title="Next month"
+            >
+              &rsaquo;
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 gap-y-1 text-center">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
+            <div key={`${weekday}-${index}`} className="pb-2 text-[11px] font-semibold text-text-primary">
+              {weekday}
+            </div>
+          ))}
+          {cells.map((cell) => {
+            const events = eventsByDay.get(cell.key) || [];
+            const eventDots = events.slice(0, 3);
+            return (
+              <button
+                key={cell.key}
+                type="button"
+                className={`group relative mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                  cell.inMonth
+                    ? 'text-text-primary hover:bg-surface-sunken'
+                    : 'text-text-muted/50 hover:bg-surface-sunken/60'
+                } ${cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-white' : ''}`}
+                title={calendarCellTitle(cell.date, events)}
+                aria-label={calendarCellTitle(cell.date, events)}
+              >
+                <span>{cell.date.getDate()}</span>
+                {eventDots.length > 0 && (
+                  <span className="absolute bottom-0.5 left-1/2 flex -translate-x-1/2 gap-0.5">
+                    {eventDots.map((event) => (
+                      <span key={event.id} className="h-1 w-1 rounded-full bg-ink-700" />
+                    ))}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className={`mt-4 border-t border-border-light pt-3 text-[11px] leading-relaxed ${state.error ? 'text-red-500' : 'text-text-tertiary'}`}>
+          {footerMessage}
+        </div>
       </div>
     </ModulePanel>
   );
 }
 
-function MediaWidget({ module }: { module: ModuleBranch }) {
-  const rows = getMediaRows(module.moduleType);
+function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
+  const data = state.data?.kind === 'markets' ? state.data as MarketsModuleData : null;
 
   return (
-    <ModulePanel module={module}>
-      <div className="mb-4 flex items-baseline justify-between">
-        <div className="font-mono text-[10px] uppercase tracking-wider text-accent-green">
-          online
+    <ModulePanel module={module} state={state}>
+      {!data ? (
+        <ModuleBodyState state={state} />
+      ) : (
+        <div className="space-y-3">
+          {data.quotes.map((quote) => {
+            const change = `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
+            const width = `${Math.max(8, Math.min(100, 50 + quote.changePercent * 8))}%`;
+
+            return (
+              <div key={quote.symbol}>
+                <div className="mb-1 flex items-center justify-between gap-3">
+                  <div className="font-mono text-[11px] text-text-primary">{quote.symbol}</div>
+                  <div className="flex items-center gap-2 font-mono text-[10px]">
+                    <span className="text-text-tertiary">{formatMarketPrice(quote.price)}</span>
+                    <span className={quote.changePercent >= 0 ? 'text-accent-green' : 'text-red-500'}>
+                      {change}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-1 bg-surface-sunken">
+                  <div className="h-full bg-ink-500" style={{ width }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="font-mono text-[10px] text-text-tertiary">
-          mock
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-              {label}
-            </div>
-            <div className="mt-1 truncate text-sm font-medium text-text-primary">
-              {value}
-            </div>
-          </div>
-        ))}
-      </div>
+      )}
     </ModulePanel>
   );
 }
 
-function PostsWidget({ module }: { module: ModuleBranch }) {
-  const posts = getPostRows(module.moduleType);
+function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
+  const data = state.data?.kind === 'media' ? state.data as MediaModuleData : null;
 
   return (
-    <ModulePanel module={module}>
-      <div className="space-y-3">
-        {posts.map((post) => (
-          <a
-            key={post.title}
-            href="#"
-            className="group block text-inherit no-underline"
+    <ModulePanel module={module} state={state} href={data?.url}>
+      {!data ? (
+        <ModuleBodyState state={state} />
+      ) : (
+        <>
+          <div className="mb-4 flex items-baseline justify-between">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-accent-green">
+              {data.status}
+            </div>
+            <div className="font-mono text-[10px] text-text-tertiary">
+              {data.detail || data.service}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {data.stats.map((stat) => (
+              <div key={stat.label}>
+                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                  {stat.label}
+                </div>
+                <div className="mt-1 truncate text-sm font-medium text-text-primary">
+                  {typeof stat.value === 'number' ? formatCompactNumber(stat.value) : stat.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </ModulePanel>
+  );
+}
+
+function PostsWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
+  const data = state.data?.kind === 'posts' ? state.data as PostsModuleData : null;
+
+  return (
+    <ModulePanel module={module} state={state}>
+      {!data ? (
+        <ModuleBodyState state={state} />
+      ) : data.posts.length === 0 ? (
+        <EmptyModuleState>No posts found.</EmptyModuleState>
+      ) : (
+        <div className="space-y-3">
+          {data.posts.map((post) => (
+            <a
+              key={post.id}
+              href={post.url}
+              target="_blank"
+              rel="noreferrer"
+              className="group block text-inherit no-underline"
+            >
+              <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors group-hover:text-ink-800">
+                {post.title}
+              </div>
+              <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary">
+                <span>{post.source}</span>
+                {(post.meta || post.publishedAt) && <span>·</span>}
+                {post.meta && <span className="truncate">{post.meta}</span>}
+                {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </ModulePanel>
+  );
+}
+
+function ModuleBodyState({ state }: { state: ModuleDataState }) {
+  return (
+    <div className={`min-h-16 text-[11px] leading-relaxed ${state.error ? 'text-red-500' : 'text-text-tertiary'}`}>
+      {state.error || 'Loading live data...'}
+    </div>
+  );
+}
+
+function EmptyModuleState({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-16 text-[11px] leading-relaxed text-text-tertiary">
+      {children}
+    </div>
+  );
+}
+
+function ModuleConfigFields({
+  module,
+  onChange,
+}: {
+  module: ModuleBranch;
+  onChange: (config: Record<string, unknown>) => void;
+}) {
+  const config = module.config || {};
+  const setValue = (key: string, value: unknown) => onChange({ ...config, [key]: value });
+
+  let fields: React.ReactNode;
+  switch (module.moduleType) {
+    case 'weather':
+      fields = (
+        <>
+          <ConfigInput
+            label="Location"
+            value={configText(config, 'location')}
+            placeholder="San Francisco"
+            onChange={(value) => setValue('location', value)}
+          />
+          <ConfigInput
+            label="Country code"
+            value={configText(config, 'countryCode')}
+            placeholder="US"
+            onChange={(value) => setValue('countryCode', value.toUpperCase())}
+          />
+          <ConfigInput
+            label="Region / state"
+            value={configText(config, 'region')}
+            placeholder="California"
+            onChange={(value) => setValue('region', value)}
+          />
+          <ConfigSelect
+            label="Units"
+            value={configText(config, 'units') || 'imperial'}
+            onChange={(value) => setValue('units', value)}
+            options={[
+              ['imperial', 'Imperial'],
+              ['metric', 'Metric'],
+            ]}
+          />
+        </>
+      );
+      break;
+    case 'calendar':
+      fields = (
+        <>
+          <ConfigInput
+            label="iCalendar URL"
+            value={configText(config, 'url')}
+            placeholder="https://.../calendar.ics"
+            onChange={(value) => setValue('url', value)}
+          />
+        </>
+      );
+      break;
+    case 'markets':
+      fields = (
+        <ConfigInput
+          label="Symbols"
+          value={configListText(config, 'symbols')}
+          placeholder="SPY, AAPL, NVDA, BTC-USD"
+          onChange={(value) => setValue('symbols', value)}
+        />
+      );
+      break;
+    case 'plex':
+      fields = (
+        <>
+          <ConfigInput
+            label="Plex URL"
+            value={configText(config, 'url')}
+            placeholder="http://plex:32400 or https://app.plex.tv"
+            onChange={(value) => setValue('url', value)}
+            help="Use the actual Plex Media Server URL when possible, for example http://server-ip:32400. app.plex.tv is accepted only to auto-discover a server from your token."
+          />
+          <ConfigInput
+            label="Plex token"
+            type="password"
+            value={configText(config, 'token')}
+            onChange={(value) => setValue('token', value)}
+            help={mediaCredentialHelp('plex')}
+          />
+        </>
+      );
+      break;
+    case 'jellyfin':
+    case 'emby':
+    case 'radarr':
+    case 'sonarr':
+      fields = (
+        <>
+          <ConfigInput
+            label={`${getModuleLabel(module.moduleType)} URL`}
+            value={configText(config, 'url')}
+            placeholder="http://service:port"
+            onChange={(value) => setValue('url', value)}
+          />
+          <ConfigInput
+            label="API key"
+            type="password"
+            value={configText(config, 'apiKey')}
+            onChange={(value) => setValue('apiKey', value)}
+            help={mediaCredentialHelp(module.moduleType)}
+          />
+        </>
+      );
+      break;
+    case 'rss':
+      fields = (
+        <>
+          <ConfigTextarea
+            label="Feed URLs"
+            value={configListText(config, 'feeds', '\n')}
+            placeholder={'https://example.com/feed.xml\nhttps://example.com/atom.xml'}
+            onChange={(value) => setValue('feeds', value)}
+          />
+          <ConfigNumberInput
+            label="Post limit"
+            value={configNumberValue(config, 'limit', 5)}
+            min={1}
+            max={15}
+            onChange={(value) => setValue('limit', value)}
+          />
+        </>
+      );
+      break;
+    case 'reddit':
+      fields = (
+        <>
+          <ConfigInput
+            label="Subreddit"
+            value={configText(config, 'subreddit')}
+            placeholder="selfhosted"
+            onChange={(value) => setValue('subreddit', value)}
+          />
+          <ConfigSelect
+            label="Sort"
+            value={configText(config, 'sort') || 'hot'}
+            onChange={(value) => setValue('sort', value)}
+            options={[
+              ['hot', 'Hot'],
+              ['new', 'New'],
+              ['top', 'Top today'],
+            ]}
+          />
+          <ConfigNumberInput
+            label="Post limit"
+            value={configNumberValue(config, 'limit', 5)}
+            min={1}
+            max={15}
+            onChange={(value) => setValue('limit', value)}
+          />
+        </>
+      );
+      break;
+    case 'hacker-news':
+      fields = (
+        <>
+          <ConfigSelect
+            label="Feed"
+            value={configText(config, 'feed') || 'top'}
+            onChange={(value) => setValue('feed', value)}
+            options={[
+              ['top', 'Top'],
+              ['new', 'New'],
+              ['best', 'Best'],
+              ['ask', 'Ask HN'],
+              ['show', 'Show HN'],
+              ['jobs', 'Jobs'],
+            ]}
+          />
+          <ConfigNumberInput
+            label="Post limit"
+            value={configNumberValue(config, 'limit', 5)}
+            min={1}
+            max={15}
+            onChange={(value) => setValue('limit', value)}
+          />
+        </>
+      );
+      break;
+    default:
+      fields = null;
+  }
+
+  return (
+    <div className="space-y-2 border-t border-border-light pt-3">
+      {fields}
+      <div className="text-[10px] leading-relaxed text-text-muted">
+        Live data refreshes after the dashboard is saved.
+      </div>
+    </div>
+  );
+}
+
+function mediaCredentialHelp(moduleType: string) {
+  switch (moduleType) {
+    case 'plex':
+      return 'Open Plex Web with your account, inspect a server/library XML request, and copy the X-Plex-Token value from the URL or request headers. Account tokens can also discover servers from app.plex.tv.';
+    case 'jellyfin':
+      return 'In Jellyfin, open Dashboard -> Advanced -> API Keys, create a new key for OPAQUE, then paste it here.';
+    case 'emby':
+      return 'In Emby, open Server Dashboard -> Advanced -> API Keys, create a new API key, then paste it here.';
+    case 'radarr':
+      return 'In Radarr, open Settings -> General -> Security and copy the API Key.';
+    case 'sonarr':
+      return 'In Sonarr, open Settings -> General -> Security and copy the API Key.';
+    default:
+      return 'Open the service admin settings and create or copy an API token for OPAQUE.';
+  }
+}
+
+function ConfigInput({
+  label,
+  value,
+  placeholder,
+  type = 'text',
+  help,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  type?: 'text' | 'password';
+  help?: React.ReactNode;
+  onChange: (value: string) => void;
+}) {
+  const inputId = useId();
+
+  return (
+    <div className="space-y-1">
+      <ConfigFieldLabel htmlFor={inputId} label={label} help={help} />
+      <input
+        id={inputId}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        autoComplete="off"
+        onChange={(event) => onChange(event.target.value)}
+        className={moduleInputClass}
+      />
+    </div>
+  );
+}
+
+function ConfigNumberInput({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const inputId = useId();
+
+  return (
+    <div className="space-y-1">
+      <ConfigFieldLabel htmlFor={inputId} label={label} />
+      <input
+        id={inputId}
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className={moduleInputClass}
+      />
+    </div>
+  );
+}
+
+function ConfigSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: [string, string][];
+  onChange: (value: string) => void;
+}) {
+  const selectId = useId();
+
+  return (
+    <div className="space-y-1">
+      <ConfigFieldLabel htmlFor={selectId} label={label} />
+      <select
+        id={selectId}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={moduleInputClass}
+      >
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>{optionLabel}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function ConfigTextarea({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  const textareaId = useId();
+
+  return (
+    <div className="space-y-1">
+      <ConfigFieldLabel htmlFor={textareaId} label={label} />
+      <textarea
+        id={textareaId}
+        value={value}
+        placeholder={placeholder}
+        rows={3}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${moduleInputClass} resize-y`}
+      />
+    </div>
+  );
+}
+
+function ConfigFieldLabel({
+  htmlFor,
+  label,
+  help,
+}: {
+  htmlFor: string;
+  label: string;
+  help?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <label htmlFor={htmlFor} className={moduleLabelClass}>
+        {label}
+      </label>
+      {help && (
+        <span className="group/help relative inline-flex">
+          <button
+            type="button"
+            className="flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-sunken hover:text-text-primary focus:outline-none focus:ring-1 focus:ring-ink-500"
+            aria-label={`${label} help`}
           >
-            <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors group-hover:text-ink-800">
-              {post.title}
-            </div>
-            <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary">
-              <span>{post.source}</span>
-              <span>·</span>
-              <span>{post.meta}</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </ModulePanel>
+            <IconHelpCircle className="h-3 w-3" />
+          </button>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-64 -translate-x-1/2 border border-border-medium bg-white p-2 text-[10px] normal-case leading-relaxed tracking-normal text-text-secondary opacity-0 shadow-sm transition-opacity group-hover/help:opacity-100 group-focus-within/help:opacity-100"
+          >
+            {help}
+          </span>
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -519,50 +1153,166 @@ function sameOrder<T extends { id: string }>(current: T[], next: T[]) {
     && current.every((item, index) => item.id === next[index]?.id);
 }
 
-function getMediaRows(moduleType: string): [string, string][] {
-  switch (moduleType) {
-    case 'radarr':
-      return [['Monitored', '482'], ['Missing', '17'], ['Queue', '2'], ['Recent', 'Dune']];
-    case 'sonarr':
-      return [['Series', '92'], ['Episodes', '8.4k'], ['Queue', '5'], ['Recent', 'Severance']];
-    case 'jellyfin':
-      return [['Libraries', '7'], ['Items', '18k'], ['Streams', '2'], ['Recent', 'Foundation']];
-    case 'emby':
-      return [['Libraries', '5'], ['Items', '11k'], ['Streams', '1'], ['Recent', 'Arrival']];
-    case 'plex':
-    default:
-      return [['Libraries', '9'], ['Items', '24k'], ['Streams', '3'], ['Recent', 'Andor']];
-  }
+function moduleRefreshInterval(moduleType: string) {
+  if (['plex', 'jellyfin', 'emby', 'radarr', 'sonarr'].includes(moduleType)) return 60_000;
+  if (moduleType === 'weather') return 15 * 60_000;
+  return 5 * 60_000;
 }
 
-function getPostRows(moduleType: string) {
-  if (moduleType === 'hacker-news') {
-    return [
-      { title: 'SQLite on the edge, without a server', source: 'HN', meta: '428 pts · 91 comments' },
-      { title: 'A visual guide to DNS propagation', source: 'HN', meta: '211 pts · 32 comments' },
-      { title: 'Why small tools survive rewrites', source: 'HN', meta: '168 pts · 45 comments' },
-      { title: 'Show HN: A tiny dashboard for homelabs', source: 'HN', meta: '104 pts · 17 comments' },
-      { title: 'Postgres indexing mistakes I keep seeing', source: 'HN', meta: '86 pts · 14 comments' },
-    ];
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function formatMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthKeyToDate(monthKey: string | undefined) {
+  if (!monthKey) return null;
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  if (!Number.isFinite(year) || month < 0 || month > 11) return null;
+
+  return new Date(year, month, 1);
+}
+
+function formatCalendarMonth(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function calendarCells(monthDate: Date) {
+  const firstDay = startOfMonth(monthDate);
+  const gridStart = new Date(firstDay);
+  gridStart.setDate(1 - firstDay.getDay());
+  const todayKey = dateKey(new Date());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    const key = dateKey(date);
+
+    return {
+      key,
+      date,
+      inMonth: date.getMonth() === monthDate.getMonth(),
+      isToday: key === todayKey,
+    };
+  });
+}
+
+function groupEventsByDay(events: CalendarModuleData['events']) {
+  const groups = new Map<string, CalendarModuleData['events']>();
+  for (const event of events) {
+    const key = dateKey(new Date(event.start));
+    const dayEvents = groups.get(key) || [];
+    dayEvents.push(event);
+    groups.set(key, dayEvents);
   }
 
-  if (moduleType === 'reddit') {
-    return [
-      { title: 'What are you using for a home dashboard in 2026?', source: 'r/selfhosted', meta: '214 upvotes' },
-      { title: 'Moving media services behind a private gateway', source: 'r/homelab', meta: '93 upvotes' },
-      { title: 'Best approach for remote server metrics?', source: 'r/selfhosted', meta: '71 upvotes' },
-      { title: 'Small NAS, big monitoring stack', source: 'r/homelab', meta: '42 upvotes' },
-      { title: 'RSS readers that still feel fast', source: 'r/rss', meta: '38 upvotes' },
-    ];
-  }
+  return groups;
+}
 
+function dateKey(date: Date) {
   return [
-    { title: 'Minimal interfaces for daily operations', source: 'RSS', meta: '12m ago' },
-    { title: 'Designing dashboards that stay quiet', source: 'RSS', meta: '48m ago' },
-    { title: 'Agent push metrics for remote servers', source: 'RSS', meta: '1h ago' },
-    { title: 'A practical guide to media automation', source: 'RSS', meta: '2h ago' },
-    { title: 'Building with fewer panels and better defaults', source: 'RSS', meta: '3h ago' },
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function calendarCellTitle(date: Date, events: CalendarModuleData['events']) {
+  const dateLabel = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+
+  if (events.length === 0) return dateLabel;
+  return [
+    dateLabel,
+    ...events.map((event) => `${calendarEventTime(event)} ${event.title}`.trim()),
+  ].join('\n');
+}
+
+function calendarEventTime(event: CalendarModuleData['events'][number]) {
+  if (event.allDay) return 'All day';
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(event.start));
+}
+
+function formatWeekday(date: string) {
+  return new Intl.DateTimeFormat(undefined, { weekday: 'short' })
+    .format(new Date(`${date}T12:00:00`));
+}
+
+function formatMarketPrice(value: number) {
+  if (Math.abs(value) >= 100_000) return `${(value / 1000).toFixed(1)}k`;
+  if (Math.abs(value) >= 1_000) return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  if (Math.abs(value) >= 10) return value.toFixed(2);
+  return value.toFixed(4);
+}
+
+function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat(undefined, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function formatRelativeTime(value: string) {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return '';
+
+  const seconds = Math.round((timestamp - Date.now()) / 1000);
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const ranges: [number, Intl.RelativeTimeFormatUnit][] = [
+    [60, 'second'],
+    [60, 'minute'],
+    [24, 'hour'],
+    [7, 'day'],
+    [4.345, 'week'],
+    [12, 'month'],
   ];
+
+  let valueInUnit = seconds;
+  for (const [divisor, unit] of ranges) {
+    if (Math.abs(valueInUnit) < divisor) return formatter.format(Math.round(valueInUnit), unit);
+    valueInUnit /= divisor;
+  }
+  return formatter.format(Math.round(valueInUnit), 'year');
+}
+
+function configText(config: Record<string, unknown>, key: string) {
+  const value = config[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function configListText(
+  config: Record<string, unknown>,
+  key: string,
+  separator = ', ',
+) {
+  const value = config[key];
+  if (Array.isArray(value)) return value.filter((item) => typeof item === 'string').join(separator);
+  return typeof value === 'string' ? value : '';
+}
+
+function configNumberValue(
+  config: Record<string, unknown>,
+  key: string,
+  fallback: number,
+) {
+  const value = Number(config[key]);
+  return Number.isFinite(value) ? value : fallback;
 }
 
 export default TreeModule;

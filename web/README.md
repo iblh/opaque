@@ -45,6 +45,45 @@ The compose file starts:
 - `web`: Next.js app; runs migrations before starting.
 - `retention`: hourly cleanup for old metric samples.
 
+## Dashboard Modules
+
+The Today, Media, and Posts sections load live data through the authenticated
+`GET /api/modules/data?moduleId=<dashboard-module-id>` endpoint. Configure a
+module in dashboard edit mode, save the dashboard, then exit edit mode to load
+its data.
+
+- **Weather**: location forecasts from Open-Meteo. No API key is required.
+  Configure a two-letter country code such as `US` and, when needed, a
+  region/state such as `California` to disambiguate city names.
+- **Calendar**: a month grid backed by an iCalendar (`.ics`) URL, including
+  recurring events.
+- **Markets**: stock and crypto symbols supported by the Yahoo Finance chart
+  endpoint, such as `SPY`, `AAPL`, and `BTC-USD`.
+- **Plex**: Plex Media Server URL and Plex token. The server URL is usually
+  `http://server-ip:32400`; `https://app.plex.tv` can be used only when the
+  token can discover a reachable server through the Plex account API.
+- **Jellyfin / Emby**: server URL and API key.
+- **Radarr / Sonarr**: server URL and API key.
+- **RSS**: one or more RSS or Atom feed URLs.
+- **Reddit**: subreddit posts through Reddit's Atom feed, no Reddit API key.
+- **Hacker News**: top, new, best, Ask HN, Show HN, or jobs stories through
+  the public Hacker News Firebase API.
+
+Calendar feeds and media service URLs are fetched by the OPAQUE web server, not
+the browser. They must be reachable from the web process or Docker container.
+Media credentials are stored in the dashboard JSON, so use a dedicated
+service-specific key where possible.
+
+Credential locations:
+
+- Plex: open Plex Web, inspect a server/library XML request, and copy the
+  `X-Plex-Token` value. Prefer configuring the actual Plex Media Server URL,
+  not only the Plex Web client URL.
+- Jellyfin: `Dashboard` -> `Advanced` -> `API Keys`.
+- Emby: `Server Dashboard` -> `Advanced` -> `API Keys`.
+- Radarr: `Settings` -> `General` -> `Security` -> `API Key`.
+- Sonarr: `Settings` -> `General` -> `Security` -> `API Key`.
+
 ## Server Metrics
 
 OPAQUE uses an agent push model:
@@ -156,6 +195,18 @@ Logged-in dashboards read latest metrics:
 
 ```http
 GET /api/server/metrics
+```
+
+Logged-in dashboards read a saved module's live data:
+
+```http
+GET /api/modules/data?moduleId=<dashboard-module-id>
+```
+
+Calendar modules also accept a visible month:
+
+```http
+GET /api/modules/data?moduleId=<dashboard-module-id>&month=2026-06
 ```
 
 Historical samples:
