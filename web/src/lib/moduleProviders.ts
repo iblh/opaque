@@ -1,10 +1,9 @@
 import { XMLParser } from 'fast-xml-parser';
-import * as ical from 'node-ical';
-import type { EventInstance, ParameterValue, VEvent } from 'node-ical';
 import type {
-  CalendarEvent,
   MarketQuote,
+  MediaLibraryStat,
   MediaModuleData,
+  MediaRecentItem,
   ModuleData,
   PostItem,
 } from '@/lib/moduleData';
@@ -12,6 +11,7 @@ import type { ModuleBranch } from '@/lib/types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_TEXT_RESPONSE_LENGTH = 2_000_000;
+const MAX_IMAGE_RESPONSE_LENGTH = 5_000_000;
 const USER_AGENT = 'OPAQUE/0.1 personal dashboard';
 
 const xmlParser = new XMLParser({
@@ -99,10 +99,6 @@ const US_STATE_NAMES = Object.fromEntries(
 
 type JsonObject = Record<string, unknown>;
 
-interface ModuleDataOptions {
-  month?: string;
-}
-
 interface WeatherLocationQuery {
   raw: string;
   name: string;
@@ -120,15 +116,10 @@ export class ModuleDataError extends Error {
   }
 }
 
-export async function fetchModuleData(
-  module: ModuleBranch,
-  options: ModuleDataOptions = {},
-): Promise<ModuleData> {
+export async function fetchModuleData(module: ModuleBranch): Promise<ModuleData> {
   switch (module.moduleType) {
     case 'weather':
       return fetchWeather(module);
-    case 'calendar':
-      return fetchCalendar(module, options);
     case 'markets':
       return fetchMarkets(module);
     case 'plex':
@@ -147,6 +138,56 @@ export async function fetchModuleData(
       return fetchHackerNews(module);
     default:
       throw new ModuleDataError('Unsupported module type.', 400);
+  }
+}
+
+export async function fetchModuleImage(
+  module: ModuleBranch,
+  path: string,
+): Promise<{ body: ArrayBuffer; contentType: string }> {
+  const endpoint = mediaImageEndpoint(path);
+
+  switch (module.moduleType) {
+    case 'plex': {
+      const configuredUrl = requiredHttpUrl(configString(module, 'url'), 'Add a Plex URL in edit mode.');
+      const token = configString(module, 'token') || configString(module, 'apiKey');
+      if (!token) throw new ModuleDataError('Add a Plex token in edit mode.', 400);
+
+      const target = await resolvePlexTarget(configuredUrl, token);
+      return fetchImage(
+        serviceEndpoint(target.baseUrl, endpoint),
+        { headers: { ...plexHeaders(target.token), Accept: 'image/*' } },
+        'Plex image',
+      );
+    }
+    case 'jellyfin':
+    case 'emby': {
+      const service = module.moduleType === 'emby' ? 'Emby' : 'Jellyfin';
+      const baseUrl = requiredHttpUrl(configString(module, 'url'), `Add a ${service} URL in edit mode.`);
+      const apiKey = configString(module, 'apiKey') || configString(module, 'token');
+      if (!apiKey) throw new ModuleDataError(`Add a ${service} API key in edit mode.`, 400);
+
+      return fetchImage(
+        serviceEndpoint(baseUrl, endpoint),
+        { headers: { ...jellyfinLikeHeaders(module.moduleType, apiKey), Accept: 'image/*' } },
+        `${service} image`,
+      );
+    }
+    case 'radarr':
+    case 'sonarr': {
+      const service = module.moduleType === 'sonarr' ? 'Sonarr' : 'Radarr';
+      const baseUrl = requiredHttpUrl(configString(module, 'url'), `Add a ${service} URL in edit mode.`);
+      const apiKey = configString(module, 'apiKey') || configString(module, 'token');
+      if (!apiKey) throw new ModuleDataError(`Add a ${service} API key in edit mode.`, 400);
+
+      return fetchImage(
+        serviceEndpoint(baseUrl, endpoint),
+        { headers: { Accept: 'image/*', 'X-Api-Key': apiKey } },
+        `${service} image`,
+      );
+    }
+    default:
+      throw new ModuleDataError('This module does not expose media images.', 400);
   }
 }
 
@@ -227,37 +268,6 @@ async function fetchWeather(module: ModuleBranch): Promise<ModuleData> {
   };
 }
 
-async function fetchCalendar(
-  module: ModuleBranch,
-  options: ModuleDataOptions,
-): Promise<ModuleData> {
-  const calendarUrl = requiredHttpUrl(
-    configString(module, 'url'),
-    'Add an iCalendar (.ics) URL in edit mode.',
-  );
-  const { month, from, to } = calendarMonthRange(options.month);
-  const body = await fetchText(
-    calendarUrl,
-    { headers: { Accept: 'text/calendar, text/plain;q=0.9, */*;q=0.8' } },
-    'calendar feed',
-  );
-  const parsed = await ical.async.parseICS(body);
-
-  const events = Object.values(parsed)
-    .filter((item): item is VEvent => Boolean(item) && item?.type === 'VEVENT')
-    .flatMap((event) => calendarInstances(event, from, to))
-    .filter((instance) => instance.end >= from && instance.start <= to)
-    .map(toCalendarEvent)
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
-    .slice(0, 100);
-
-  return {
-    kind: 'calendar',
-    month,
-    events,
-  };
-}
-
 async function fetchMarkets(module: ModuleBranch): Promise<ModuleData> {
   const symbols = configList(module, 'symbols', ['SPY', 'AAPL', 'NVDA', 'BTC-USD'])
     .map((symbol) => symbol.toUpperCase())
@@ -284,7 +294,7 @@ async function fetchMarkets(module: ModuleBranch): Promise<ModuleData> {
 
 async function fetchMarketQuote(symbol: string): Promise<MarketQuote> {
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
-  url.searchParams.set('range', '5d');
+  url.searchParams.set('range', '1mo');
   url.searchParams.set('interval', '1d');
 
   const payload = asObject(await fetchJson(url, {}, `market quote for ${symbol}`));
@@ -310,6 +320,7 @@ async function fetchMarketQuote(symbol: string): Promise<MarketQuote> {
     price,
     previousClose,
     changePercent: previousClose === 0 ? 0 : ((price - previousClose) / previousClose) * 100,
+    sparkline: marketSparkline(closes, price, previousClose),
     currency: stringValue(valueOf(meta, 'currency')) || undefined,
   };
 }
@@ -324,16 +335,11 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
   const target = await resolvePlexTarget(configuredUrl, token);
   const headers = plexHeaders(target.token);
 
-  const [sections, sessions, allItems, recent] = await Promise.all([
+  const [sections, sessions, recent] = await Promise.all([
     fetchJson(serviceEndpoint(target.baseUrl, 'library/sections'), { headers }, 'Plex'),
     fetchJson(serviceEndpoint(target.baseUrl, 'status/sessions'), { headers }, 'Plex'),
     fetchJson(
-      serviceEndpoint(target.baseUrl, 'library/sections/all?X-Plex-Container-Start=0&X-Plex-Container-Size=0'),
-      { headers },
-      'Plex',
-    ),
-    fetchJson(
-      serviceEndpoint(target.baseUrl, 'library/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=1'),
+      serviceEndpoint(target.baseUrl, 'library/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=4'),
       { headers },
       'Plex',
     ),
@@ -341,9 +347,13 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
 
   const sectionContainer = mediaContainer(sections);
   const sessionContainer = mediaContainer(sessions);
-  const itemContainer = mediaContainer(allItems);
   const recentContainer = mediaContainer(recent);
-  const recentItem = asObject(arrayValue(valueOf(recentContainer, 'Metadata'))[0]);
+  const sectionsList = arrayValue(valueOf(sectionContainer, 'Directory')).map(asObject);
+  const libraries = await fetchPlexLibraries(target.baseUrl, headers, sectionsList);
+  const recentItems = arrayValue(valueOf(recentContainer, 'Metadata'))
+    .map(asObject)
+    .slice(0, 4)
+    .flatMap((item) => plexRecentItem(module.id, item));
 
   return {
     kind: 'media',
@@ -352,11 +362,10 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
     detail: target.detail,
     url: cleanBaseUrl(target.baseUrl),
     stats: [
-      { label: 'Libraries', value: arrayValue(valueOf(sectionContainer, 'Directory')).length },
-      { label: 'Items', value: finiteNumber(valueOf(itemContainer, 'totalSize', 'size')) ?? 0 },
       { label: 'Streams', value: finiteNumber(valueOf(sessionContainer, 'size')) ?? activePlexStreams(sessionContainer) },
-      { label: 'Recent', value: stringValue(valueOf(recentItem, 'title', 'grandparentTitle')) || 'None' },
     ],
+    libraries,
+    recent: recentItems,
   };
 }
 
@@ -368,12 +377,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     throw new ModuleDataError(`Add a ${service} API key in edit mode.`, 400);
   }
 
-  const headers: Record<string, string> = module.moduleType === 'emby'
-    ? { Accept: 'application/json', 'X-Emby-Token': apiKey }
-    : {
-        Accept: 'application/json',
-        Authorization: `MediaBrowser Token="${apiKey.replace(/["\\]/g, '')}"`,
-      };
+  const headers = jellyfinLikeHeaders(module.moduleType, apiKey);
 
   const [counts, sessions, folders, recent] = await Promise.all([
     fetchJson(serviceEndpoint(baseUrl, 'Items/Counts'), { headers }, service),
@@ -382,7 +386,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     fetchJson(
       serviceEndpoint(
         baseUrl,
-        'Items?sortBy=DateCreated&sortOrder=Descending&limit=1&recursive=true&includeItemTypes=Movie,Series,Episode',
+        'Items?sortBy=DateCreated&sortOrder=Descending&limit=4&recursive=true&includeItemTypes=Movie,Series,Episode',
       ),
       { headers },
       service,
@@ -390,8 +394,12 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
   ]);
 
   const folderItems = arrayValue(valueOf(asObject(folders), 'Items', 'items'));
+  const libraries = await fetchJellyfinLikeLibraries(baseUrl, headers, folderItems.map(asObject), service);
   const sessionItems = arrayValue(sessions);
-  const recentItem = asObject(arrayValue(valueOf(asObject(recent), 'Items', 'items'))[0]);
+  const recentItems = arrayValue(valueOf(asObject(recent), 'Items', 'items'))
+    .map(asObject)
+    .slice(0, 4)
+    .flatMap((item) => jellyfinLikeRecentItem(module.id, item));
 
   return {
     kind: 'media',
@@ -399,14 +407,19 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     status: 'online',
     url: cleanBaseUrl(baseUrl),
     stats: [
-      { label: 'Libraries', value: folderItems.length },
-      { label: 'Items', value: mediaItemCount(asObject(counts)) },
       {
         label: 'Streams',
         value: sessionItems.filter((session) => Boolean(valueOf(asObject(session), 'NowPlayingItem', 'nowPlayingItem'))).length,
       },
-      { label: 'Recent', value: stringValue(valueOf(recentItem, 'Name', 'name')) || 'None' },
     ],
+    libraries: libraries.length > 0
+      ? libraries
+      : [{
+          id: 'all',
+          name: 'All media',
+          count: mediaItemCount(asObject(counts)),
+        }],
+    recent: recentItems,
   };
 }
 
@@ -431,9 +444,9 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
   ]);
 
   const items = arrayValue(collection).map(asObject);
-  const recent = [...items].sort((a, b) => (
+  const recentItems = [...items].sort((a, b) => (
     Date.parse(stringValue(valueOf(b, 'added')) || '') - Date.parse(stringValue(valueOf(a, 'added')) || '')
-  ))[0];
+  )).slice(0, 4).flatMap((item) => arrRecentItem(module.id, item));
   const statusObject = asObject(status);
 
   return {
@@ -446,8 +459,8 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
       { label: module.moduleType === 'sonarr' ? 'Series' : 'Movies', value: items.length },
       { label: 'Missing', value: finiteNumber(valueOf(asObject(missing), 'totalRecords')) ?? 0 },
       { label: 'Queue', value: finiteNumber(valueOf(asObject(queue), 'totalRecords')) ?? 0 },
-      { label: 'Recent', value: stringValue(valueOf(recent, 'title')) || 'None' },
     ],
+    recent: recentItems,
   };
 }
 
@@ -552,46 +565,6 @@ async function fetchHackerNews(module: ModuleBranch): Promise<ModuleData> {
     kind: 'posts',
     provider: 'Hacker News',
     posts,
-  };
-}
-
-function calendarInstances(event: VEvent, from: Date, to: Date) {
-  if (event.status === 'CANCELLED') return [];
-
-  if (event.rrule) {
-    return ical.expandRecurringEvent(event, {
-      from,
-      to,
-      expandOngoing: true,
-    });
-  }
-
-  const end = event.end || event.start;
-  if (end < from || event.start > to) return [];
-
-  return [{
-    start: event.start,
-    end,
-    summary: event.summary,
-    isFullDay: event.datetype === 'date' || event.start.dateOnly === true,
-    isRecurring: false,
-    isOverride: false,
-    event,
-  } satisfies EventInstance];
-}
-
-function toCalendarEvent(instance: EventInstance): CalendarEvent {
-  const event = instance.event;
-  const uid = event.uid || 'event';
-
-  return {
-    id: `${uid}-${instance.start.toISOString()}`,
-    title: parameterText(instance.summary) || 'Untitled event',
-    start: instance.start.toISOString(),
-    end: instance.end.toISOString(),
-    allDay: instance.isFullDay,
-    location: parameterText(event.location) || undefined,
-    url: safeHttpUrl(event.url) || undefined,
   };
 }
 
@@ -830,6 +803,15 @@ function plexHeaders(token: string): Record<string, string> {
   };
 }
 
+function jellyfinLikeHeaders(moduleType: string, apiKey: string): Record<string, string> {
+  return moduleType === 'emby'
+    ? { Accept: 'application/json', 'X-Emby-Token': apiKey }
+    : {
+        Accept: 'application/json',
+        Authorization: `MediaBrowser Token="${apiKey.replace(/["\\]/g, '')}"`,
+      };
+}
+
 function normalizeCountryCode(value: string) {
   const trimmed = value.trim();
   return /^[A-Za-z]{2}$/.test(trimmed) ? trimmed.toUpperCase() : '';
@@ -844,38 +826,173 @@ function normalizeSearchText(value: string) {
     .trim();
 }
 
-function calendarMonthRange(month: string | undefined) {
-  const requestedMonth = month?.trim();
-  let monthDate: Date;
-
-  if (requestedMonth) {
-    const match = /^(\d{4})-(\d{2})$/.exec(requestedMonth);
-    const year = match ? Number(match[1]) : NaN;
-    const monthIndex = match ? Number(match[2]) - 1 : NaN;
-    if (!match || monthIndex < 0 || monthIndex > 11) {
-      throw new ModuleDataError('Use month as YYYY-MM.', 400);
-    }
-    monthDate = new Date(year, monthIndex, 1);
-  } else {
-    const now = new Date();
-    monthDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-
-  const from = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1, 0, 0, 0, 0);
-  const to = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
-
-  return {
-    month: `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`,
-    from,
-    to,
-  };
-}
-
 function mediaContainer(value: unknown) {
   return asObject(valueOf(asObject(value), 'MediaContainer'));
 }
 
+function plexRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
+  const id = stringValue(valueOf(item, 'ratingKey', 'key', 'guid'));
+  const title = stringValue(valueOf(item, 'title', 'grandparentTitle')) || 'Untitled';
+  const seriesTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
+  const year = finiteNumber(valueOf(item, 'year'));
+  const type = stringValue(valueOf(item, 'type'));
+  const subtitle = [
+    seriesTitle && seriesTitle !== title ? seriesTitle : '',
+    year ? String(year) : type,
+  ].filter(Boolean).join(' · ') || undefined;
+  const imagePath = stringValue(valueOf(item, 'thumb', 'parentThumb', 'grandparentThumb', 'art'));
+
+  return [{
+    id: id || `${title}-${imagePath}`,
+    title,
+    subtitle,
+    imageUrl: imagePath ? mediaImageUrl(moduleId, imagePath) : undefined,
+  }];
+}
+
+function jellyfinLikeRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
+  const id = stringValue(valueOf(item, 'Id', 'id'));
+  const title = stringValue(valueOf(item, 'Name', 'name')) || 'Untitled';
+  const seriesName = stringValue(valueOf(item, 'SeriesName', 'seriesName'));
+  const type = stringValue(valueOf(item, 'Type', 'type'));
+  const year = finiteNumber(valueOf(item, 'ProductionYear', 'productionYear'));
+  const imageTags = asObject(valueOf(item, 'ImageTags', 'imageTags'));
+  const hasPrimaryImage = Boolean(
+    stringValue(valueOf(imageTags, 'Primary', 'primary'))
+      || stringValue(valueOf(item, 'PrimaryImageTag', 'primaryImageTag')),
+  );
+
+  return [{
+    id: id || title,
+    title,
+    subtitle: [seriesName, year ? String(year) : type].filter(Boolean).join(' · ') || undefined,
+    imageUrl: id && hasPrimaryImage
+      ? mediaImageUrl(moduleId, `Items/${encodeURIComponent(id)}/Images/Primary?maxWidth=240&quality=80`)
+      : undefined,
+  }];
+}
+
+function arrRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
+  const id = stringValue(valueOf(item, 'id', 'tmdbId', 'tvdbId'));
+  const title = stringValue(valueOf(item, 'title')) || 'Untitled';
+  const year = finiteNumber(valueOf(item, 'year'));
+  const images = arrayValue(valueOf(item, 'images')).map(asObject);
+  const poster = images.find((image) => stringValue(valueOf(image, 'coverType')).toLowerCase() === 'poster')
+    || images[0]
+    || {};
+  const rawImageUrl = stringValue(valueOf(poster, 'url', 'remoteUrl'));
+
+  return [{
+    id: id || title,
+    title,
+    subtitle: year ? String(year) : undefined,
+    imageUrl: mediaCoverImageUrl(moduleId, rawImageUrl),
+  }];
+}
+
+function mediaCoverImageUrl(moduleId: string, rawImageUrl: string) {
+  const directUrl = safeHttpUrl(rawImageUrl);
+  if (directUrl) return directUrl;
+  return rawImageUrl ? mediaImageUrl(moduleId, rawImageUrl) : undefined;
+}
+
+function mediaImageUrl(moduleId: string, path: string) {
+  const params = new URLSearchParams({
+    moduleId,
+    path,
+  });
+  return `/api/modules/image?${params.toString()}`;
+}
+
+async function fetchPlexLibraries(
+  baseUrl: URL,
+  headers: Record<string, string>,
+  sections: JsonObject[],
+) {
+  const libraries = await Promise.allSettled(
+    sections.slice(0, 30).map(async (section) => {
+      const key = stringValue(valueOf(section, 'key'));
+      const title = stringValue(valueOf(section, 'title')) || 'Library';
+      const type = stringValue(valueOf(section, 'type')) || undefined;
+      if (!key) {
+        return {
+          id: title,
+          name: title,
+          count: 0,
+          type,
+        };
+      }
+
+      const payload = await fetchJson(
+        serviceEndpoint(
+          baseUrl,
+          `library/sections/${encodeURIComponent(key)}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=0`,
+        ),
+        { headers },
+        'Plex',
+      );
+      const container = mediaContainer(payload);
+      return {
+        id: key,
+        name: title,
+        count: finiteNumber(valueOf(container, 'totalSize', 'size')) ?? 0,
+        type,
+      };
+    }),
+  );
+
+  return libraries.flatMap((result): MediaLibraryStat[] => (
+    result.status === 'fulfilled' ? [result.value] : []
+  ));
+}
+
+async function fetchJellyfinLikeLibraries(
+  baseUrl: URL,
+  headers: Record<string, string>,
+  folders: JsonObject[],
+  service: string,
+) {
+  const libraries = await Promise.allSettled(
+    folders.slice(0, 30).map(async (folder) => {
+      const id = stringValue(valueOf(folder, 'Id', 'id'));
+      const name = stringValue(valueOf(folder, 'Name', 'name')) || 'Library';
+      const type = stringValue(valueOf(folder, 'CollectionType', 'collectionType')) || undefined;
+      const childCount = finiteNumber(valueOf(folder, 'ChildCount', 'childCount'));
+      if (!id) {
+        return {
+          id: name,
+          name,
+          count: childCount ?? 0,
+          type,
+        };
+      }
+
+      const countUrl = serviceEndpoint(baseUrl, 'Items');
+      countUrl.searchParams.set('ParentId', id);
+      countUrl.searchParams.set('Recursive', 'true');
+      countUrl.searchParams.set('Limit', '0');
+      countUrl.searchParams.set('IncludeItemTypes', 'Movie,Series,Episode,Audio,Book');
+
+      const payload = asObject(await fetchJson(countUrl, { headers }, service));
+
+      return {
+        id,
+        name,
+        count: finiteNumber(valueOf(payload, 'TotalRecordCount', 'totalRecordCount')) ?? childCount ?? 0,
+        type,
+      };
+    }),
+  );
+
+  return libraries.flatMap((result): MediaLibraryStat[] => (
+    result.status === 'fulfilled' ? [result.value] : []
+  ));
+}
+
 function activePlexStreams(container: JsonObject) {
+  const metadataCount = arrayValue(valueOf(container, 'Metadata')).length;
+  if (metadataCount > 0) return metadataCount;
+
   return [
     ...arrayValue(valueOf(container, 'Video')),
     ...arrayValue(valueOf(container, 'Track')),
@@ -891,6 +1008,14 @@ function mediaItemCount(counts: JsonObject) {
     'SongCount',
     'BookCount',
   ].reduce((total, key) => total + (finiteNumber(valueOf(counts, key)) ?? 0), 0);
+}
+
+function marketSparkline(closes: number[], price: number, previousClose: number) {
+  const values = closes.filter((value) => Number.isFinite(value));
+  if (Number.isFinite(price) && values.at(-1) !== price) values.push(price);
+  if (values.length >= 2) return values.slice(-30);
+  if (Number.isFinite(previousClose) && Number.isFinite(price)) return [previousClose, price];
+  return values;
 }
 
 function formatWeatherLocation(place: JsonObject, fallback: string) {
@@ -1012,6 +1137,33 @@ async function fetchText(
   return text;
 }
 
+async function fetchImage(
+  url: URL,
+  init: RequestInit,
+  label: string,
+) {
+  const response = await fetchRemote(url, init, label);
+  const contentType = response.headers.get('content-type') || 'application/octet-stream';
+  if (!contentType.toLowerCase().startsWith('image/')) {
+    throw new ModuleDataError(`${label} returned a non-image response.`);
+  }
+
+  const contentLength = finiteNumber(response.headers.get('content-length'));
+  if (contentLength !== null && contentLength > MAX_IMAGE_RESPONSE_LENGTH) {
+    throw new ModuleDataError(`${label} response is too large.`);
+  }
+
+  const body = await response.arrayBuffer();
+  if (body.byteLength > MAX_IMAGE_RESPONSE_LENGTH) {
+    throw new ModuleDataError(`${label} response is too large.`);
+  }
+
+  return {
+    body,
+    contentType,
+  };
+}
+
 async function fetchRemote(url: URL, init: RequestInit, label: string) {
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
@@ -1040,6 +1192,25 @@ async function fetchRemote(url: URL, init: RequestInit, label: string) {
   return response;
 }
 
+function mediaImageEndpoint(value: string) {
+  const endpoint = value.trim();
+  if (
+    !endpoint
+    || endpoint.startsWith('//')
+    || /^[a-z][a-z0-9+.-]*:/i.test(endpoint)
+    || endpoint.includes('\\')
+  ) {
+    throw new ModuleDataError('Invalid media image path.', 400);
+  }
+
+  const [pathPart] = endpoint.split('?');
+  if (pathPart.split('/').some((part) => part === '..')) {
+    throw new ModuleDataError('Invalid media image path.', 400);
+  }
+
+  return endpoint.replace(/^\/+/, '');
+}
+
 function resolveFeedLink(value: unknown, baseUrl: URL) {
   const candidates = arrayValue(value);
   for (const candidate of candidates) {
@@ -1058,13 +1229,6 @@ function resolveFeedLink(value: unknown, baseUrl: URL) {
     }
   }
   return '';
-}
-
-function parameterText(value: ParameterValue | undefined) {
-  if (typeof value === 'string') return value;
-  return value && typeof value === 'object' && typeof value.val === 'string'
-    ? value.val
-    : '';
 }
 
 function textValue(value: unknown): string {

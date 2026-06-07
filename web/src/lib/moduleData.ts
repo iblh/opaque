@@ -15,27 +15,12 @@ export interface WeatherModuleData {
   forecast: WeatherForecastDay[];
 }
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  allDay: boolean;
-  location?: string;
-  url?: string;
-}
-
-export interface CalendarModuleData {
-  kind: 'calendar';
-  month: string;
-  events: CalendarEvent[];
-}
-
 export interface MarketQuote {
   symbol: string;
   price: number;
   previousClose: number;
   changePercent: number;
+  sparkline: number[];
   currency?: string;
 }
 
@@ -49,6 +34,21 @@ export interface MediaStat {
   value: string | number;
 }
 
+export interface MediaLibraryStat {
+  id: string;
+  name: string;
+  count: number;
+  type?: string;
+}
+
+export interface MediaRecentItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  url?: string;
+}
+
 export interface MediaModuleData {
   kind: 'media';
   service: string;
@@ -56,6 +56,8 @@ export interface MediaModuleData {
   detail?: string;
   url: string;
   stats: MediaStat[];
+  libraries?: MediaLibraryStat[];
+  recent?: MediaRecentItem[];
 }
 
 export interface PostItem {
@@ -75,7 +77,6 @@ export interface PostsModuleData {
 
 export type ModuleData =
   | WeatherModuleData
-  | CalendarModuleData
   | MarketsModuleData
   | MediaModuleData
   | PostsModuleData;

@@ -78,7 +78,7 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                   name: 'Contract Calendar',
                   moduleType: 'calendar',
                   enabled: true,
-                  config: { url: `${moduleMock.baseUrl}/calendar.ics` },
+                  config: {},
                 },
                 {
                   id: moduleIds.markets,
@@ -186,36 +186,47 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   assert.equal(weatherBody.data.kind, 'weather');
   assert.equal(typeof weatherBody.data.temperature, 'number');
 
-  const calendarBody = await getModuleData(cookie, moduleIds.calendar, {
-    month: monthKey(new Date(Date.now() + 60 * 60 * 1000)),
-  });
-  assert.equal(calendarBody.data.kind, 'calendar');
-  assert.equal(calendarBody.data.events[0].title, 'Contract review');
-
   const marketsBody = await getModuleData(cookie, moduleIds.markets);
   assert.equal(marketsBody.data.kind, 'markets');
   assert.equal(marketsBody.data.quotes[0].symbol, 'SPY');
+  assert.ok(marketsBody.data.quotes[0].sparkline.length >= 2);
 
   const plexBody = await getModuleData(cookie, moduleIds.plex);
   assert.equal(plexBody.data.kind, 'media');
   assert.equal(plexBody.data.service, 'Plex');
-  assert.equal(plexBody.data.stats.find((stat) => stat.label === 'Items').value, 24);
+  assert.equal(plexBody.data.libraries.find((library) => library.name === 'Movies').count, 24);
+  assert.equal(plexBody.data.libraries.find((library) => library.name === 'TV').count, 13);
+  assert.equal(plexBody.data.stats.find((stat) => stat.label === 'Streams').value, 2);
+  assert.equal(plexBody.data.recent[0].title, 'Contract Movie');
+  assert.match(plexBody.data.recent[0].imageUrl, /^\/api\/modules\/image\?/);
+  await assertImage(cookie, plexBody.data.recent[0].imageUrl);
 
   const jellyfinBody = await getModuleData(cookie, moduleIds.jellyfin);
   assert.equal(jellyfinBody.data.service, 'Jellyfin');
+  assert.equal(jellyfinBody.data.libraries.find((library) => library.name === 'Movies').count, 10);
+  assert.equal(jellyfinBody.data.libraries.find((library) => library.name === 'TV').count, 40);
   assert.equal(jellyfinBody.data.stats.find((stat) => stat.label === 'Streams').value, 1);
+  assert.equal(jellyfinBody.data.recent[0].title, 'Contract Episode');
+  assert.match(jellyfinBody.data.recent[0].imageUrl, /^\/api\/modules\/image\?/);
+  await assertImage(cookie, jellyfinBody.data.recent[0].imageUrl);
 
   const radarrBody = await getModuleData(cookie, moduleIds.radarr);
   assert.equal(radarrBody.data.service, 'Radarr');
   assert.equal(radarrBody.data.stats.find((stat) => stat.label === 'Queue').value, 2);
+  assert.equal(radarrBody.data.recent[0].title, 'Contract Movie');
+  assert.match(radarrBody.data.recent[0].imageUrl, /^\/api\/modules\/image\?/);
+  await assertImage(cookie, radarrBody.data.recent[0].imageUrl);
 
   const embyBody = await getModuleData(cookie, moduleIds.emby);
   assert.equal(embyBody.data.service, 'Emby');
-  assert.equal(embyBody.data.stats.find((stat) => stat.label === 'Libraries').value, 2);
+  assert.equal(embyBody.data.libraries.find((library) => library.name === 'Movies').count, 8);
+  assert.equal(embyBody.data.libraries.find((library) => library.name === 'TV').count, 20);
+  assert.equal(embyBody.data.recent[0].title, 'Contract Emby Item');
 
   const sonarrBody = await getModuleData(cookie, moduleIds.sonarr);
   assert.equal(sonarrBody.data.service, 'Sonarr');
   assert.equal(sonarrBody.data.stats.find((stat) => stat.label === 'Series').value, 1);
+  assert.equal(sonarrBody.data.recent[0].title, 'Contract Series');
 
   const rssBody = await getModuleData(cookie, moduleIds.rss);
   assert.equal(rssBody.data.kind, 'posts');
@@ -288,29 +299,19 @@ async function getModuleData(cookie, moduleId, params = {}) {
   return response.json();
 }
 
+async function assertImage(cookie, imageUrl) {
+  const response = await fetch(new URL(imageUrl, baseUrl), {
+    headers: { cookie },
+  });
+  await assertStatus(response, 200);
+  assert.match(response.headers.get('content-type') || '', /^image\//);
+  assert.ok((await response.arrayBuffer()).byteLength > 0);
+}
+
 async function startModuleMockServer() {
-  const start = new Date(Date.now() + 60 * 60 * 1000);
-  const end = new Date(start.getTime() + 30 * 60 * 1000);
   const server = createServer((request, response) => {
     const url = new URL(request.url || '/', 'http://localhost');
     const path = url.pathname;
-
-    if (path === '/calendar.ics') {
-      response.writeHead(200, { 'Content-Type': 'text/calendar' });
-      response.end([
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'BEGIN:VEVENT',
-        'UID:contract-review',
-        `DTSTAMP:${icalDate(new Date())}`,
-        `DTSTART:${icalDate(start)}`,
-        `DTEND:${icalDate(end)}`,
-        'SUMMARY:Contract review',
-        'END:VEVENT',
-        'END:VCALENDAR',
-      ].join('\r\n'));
-      return;
-    }
 
     if (path === '/feed.xml') {
       response.writeHead(200, { 'Content-Type': 'application/rss+xml' });
@@ -326,16 +327,39 @@ async function startModuleMockServer() {
     if (path.startsWith('/plex/')) {
       if (request.headers['x-plex-token'] !== 'plex-token') return sendJson(response, 401, {});
       if (path === '/plex/library/sections') {
-        return sendJson(response, 200, { MediaContainer: { Directory: [{ title: 'Movies' }] } });
+        return sendJson(response, 200, {
+          MediaContainer: {
+            Directory: [
+              { key: '1', title: 'Movies', type: 'movie' },
+              { key: '2', title: 'TV', type: 'show' },
+            ],
+          },
+        });
       }
       if (path === '/plex/status/sessions') {
         return sendJson(response, 200, { MediaContainer: { size: 2 } });
       }
-      if (path === '/plex/library/sections/all') {
+      if (path === '/plex/library/sections/1/all') {
         return sendJson(response, 200, { MediaContainer: { totalSize: 24 } });
       }
+      if (path === '/plex/library/sections/2/all') {
+        return sendJson(response, 200, { MediaContainer: { totalSize: 13 } });
+      }
       if (path === '/plex/library/recentlyAdded') {
-        return sendJson(response, 200, { MediaContainer: { Metadata: [{ title: 'Contract Movie' }] } });
+        return sendJson(response, 200, {
+          MediaContainer: {
+            Metadata: [{
+              ratingKey: 'plex-recent-1',
+              title: 'Contract Movie',
+              type: 'movie',
+              year: 2026,
+              thumb: '/library/metadata/plex-recent-1/thumb',
+            }],
+          },
+        });
+      }
+      if (path === '/plex/library/metadata/plex-recent-1/thumb') {
+        return sendPng(response);
       }
     }
 
@@ -350,10 +374,32 @@ async function startModuleMockServer() {
         return sendJson(response, 200, [{ NowPlayingItem: { Name: 'Contract Stream' } }, {}]);
       }
       if (path === '/jellyfin/Library/MediaFolders') {
-        return sendJson(response, 200, { Items: [{ Name: 'Movies' }, { Name: 'TV' }] });
+        return sendJson(response, 200, {
+          Items: [
+            { Id: 'jellyfin-movies', Name: 'Movies', CollectionType: 'movies' },
+            { Id: 'jellyfin-tv', Name: 'TV', CollectionType: 'tvshows' },
+          ],
+        });
       }
       if (path === '/jellyfin/Items') {
-        return sendJson(response, 200, { Items: [{ Name: 'Contract Episode' }] });
+        if (url.searchParams.get('ParentId') === 'jellyfin-movies') {
+          return sendJson(response, 200, { TotalRecordCount: 10 });
+        }
+        if (url.searchParams.get('ParentId') === 'jellyfin-tv') {
+          return sendJson(response, 200, { TotalRecordCount: 40 });
+        }
+        return sendJson(response, 200, {
+          Items: [{
+            Id: 'jellyfin-recent-1',
+            Name: 'Contract Episode',
+            Type: 'Episode',
+            SeriesName: 'Contract Series',
+            ImageTags: { Primary: 'primary' },
+          }],
+        });
+      }
+      if (path === '/jellyfin/Items/jellyfin-recent-1/Images/Primary') {
+        return sendPng(response);
       }
     }
 
@@ -366,10 +412,31 @@ async function startModuleMockServer() {
         return sendJson(response, 200, []);
       }
       if (path === '/emby/Library/MediaFolders') {
-        return sendJson(response, 200, { Items: [{ Name: 'Movies' }, { Name: 'TV' }] });
+        return sendJson(response, 200, {
+          Items: [
+            { Id: 'emby-movies', Name: 'Movies', CollectionType: 'movies' },
+            { Id: 'emby-tv', Name: 'TV', CollectionType: 'tvshows' },
+          ],
+        });
       }
       if (path === '/emby/Items') {
-        return sendJson(response, 200, { Items: [{ Name: 'Contract Emby Item' }] });
+        if (url.searchParams.get('ParentId') === 'emby-movies') {
+          return sendJson(response, 200, { TotalRecordCount: 8 });
+        }
+        if (url.searchParams.get('ParentId') === 'emby-tv') {
+          return sendJson(response, 200, { TotalRecordCount: 20 });
+        }
+        return sendJson(response, 200, {
+          Items: [{
+            Id: 'emby-recent-1',
+            Name: 'Contract Emby Item',
+            Type: 'Movie',
+            ImageTags: { Primary: 'primary' },
+          }],
+        });
+      }
+      if (path === '/emby/Items/emby-recent-1/Images/Primary') {
+        return sendPng(response);
       }
     }
 
@@ -379,13 +446,22 @@ async function startModuleMockServer() {
         return sendJson(response, 200, { version: '5.0.0' });
       }
       if (path === '/radarr/api/v3/movie') {
-        return sendJson(response, 200, [{ title: 'Contract Movie', added: new Date().toISOString() }]);
+        return sendJson(response, 200, [{
+          id: 1,
+          title: 'Contract Movie',
+          year: 2026,
+          added: new Date().toISOString(),
+          images: [{ coverType: 'poster', url: '/MediaCover/1/poster.jpg' }],
+        }]);
       }
       if (path === '/radarr/api/v3/queue') {
         return sendJson(response, 200, { totalRecords: 2 });
       }
       if (path === '/radarr/api/v3/wanted/missing') {
         return sendJson(response, 200, { totalRecords: 4 });
+      }
+      if (path === '/radarr/MediaCover/1/poster.jpg') {
+        return sendPng(response);
       }
     }
 
@@ -395,13 +471,22 @@ async function startModuleMockServer() {
         return sendJson(response, 200, { version: '4.0.0' });
       }
       if (path === '/sonarr/api/v3/series') {
-        return sendJson(response, 200, [{ title: 'Contract Series', added: new Date().toISOString() }]);
+        return sendJson(response, 200, [{
+          id: 1,
+          title: 'Contract Series',
+          year: 2026,
+          added: new Date().toISOString(),
+          images: [{ coverType: 'poster', url: '/MediaCover/1/poster.jpg' }],
+        }]);
       }
       if (path === '/sonarr/api/v3/queue') {
         return sendJson(response, 200, { totalRecords: 1 });
       }
       if (path === '/sonarr/api/v3/wanted/missing') {
         return sendJson(response, 200, { totalRecords: 3 });
+      }
+      if (path === '/sonarr/MediaCover/1/poster.jpg') {
+        return sendPng(response);
       }
     }
 
@@ -425,14 +510,15 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
+function sendPng(response) {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/ax3p1QAAAAASUVORK5CYII=',
+    'base64',
+  );
+  response.writeHead(200, { 'Content-Type': 'image/png' });
+  response.end(png);
+}
+
 function moduleMockUrl(request) {
   return `http://${request.headers.host}`;
-}
-
-function icalDate(date) {
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-}
-
-function monthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }

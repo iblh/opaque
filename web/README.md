@@ -55,8 +55,7 @@ its data.
 - **Weather**: location forecasts from Open-Meteo. No API key is required.
   Configure a two-letter country code such as `US` and, when needed, a
   region/state such as `California` to disambiguate city names.
-- **Calendar**: a month grid backed by an iCalendar (`.ics`) URL, including
-  recurring events.
+- **Calendar**: a local month grid. No external calendar feed is required.
 - **Markets**: stock and crypto symbols supported by the Yahoo Finance chart
   endpoint, such as `SPY`, `AAPL`, and `BTC-USD`.
 - **Plex**: Plex Media Server URL and Plex token. The server URL is usually
@@ -69,10 +68,11 @@ its data.
 - **Hacker News**: top, new, best, Ask HN, Show HN, or jobs stories through
   the public Hacker News Firebase API.
 
-Calendar feeds and media service URLs are fetched by the OPAQUE web server, not
-the browser. They must be reachable from the web process or Docker container.
-Media credentials are stored in the dashboard JSON, so use a dedicated
-service-specific key where possible.
+Media service URLs are fetched by the OPAQUE web server, not the browser. They
+must be reachable from the web process or Docker container. Media credentials
+are stored in the dashboard JSON, so use a dedicated service-specific key where
+possible. Recent media posters are fetched through OPAQUE's authenticated image
+proxy so service tokens are not placed directly in browser image URLs.
 
 Credential locations:
 
@@ -201,12 +201,6 @@ Logged-in dashboards read a saved module's live data:
 
 ```http
 GET /api/modules/data?moduleId=<dashboard-module-id>
-```
-
-Calendar modules also accept a visible month:
-
-```http
-GET /api/modules/data?moduleId=<dashboard-module-id>&month=2026-06
 ```
 
 Historical samples:

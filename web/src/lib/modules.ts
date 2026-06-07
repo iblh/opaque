@@ -76,7 +76,7 @@ function createDefaultModuleConfig(moduleType: KnownModuleType) {
     case 'weather':
       return { location: 'San Francisco', countryCode: 'US', region: '', units: 'imperial' };
     case 'calendar':
-      return { url: '' };
+      return {};
     case 'markets':
       return { symbols: ['SPY', 'AAPL', 'NVDA', 'BTC-USD'] };
     case 'plex':

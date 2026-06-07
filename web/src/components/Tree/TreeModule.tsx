@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import {
   IconActivity,
   IconAntennaBars5,
@@ -19,7 +20,6 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type {
-  CalendarModuleData,
   MarketsModuleData,
   MediaModuleData,
   ModuleData,
@@ -53,6 +53,15 @@ interface TreeModuleProps {
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
+const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3 px-4 md:px-8';
+
+function moduleGridClassName(root: string, isEditing: boolean) {
+  if (root === 'posts' && !isEditing) {
+    return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
+  }
+
+  return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
+}
 
 const TreeModule: React.FC<TreeModuleProps> = ({
   tree,
@@ -72,6 +81,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
       isEditing || (module.enabled !== false && isKnownModuleType(module.moduleType))
     ))
   ), [isEditing, tree.branches]);
+  const gridClassName = moduleGridClassName(tree.root, isEditing);
 
   const updateBranches = (branches: ModuleBranch[]) => {
     onTreeChange?.({ ...tree, branches });
@@ -121,8 +131,16 @@ const TreeModule: React.FC<TreeModuleProps> = ({
 
   if (!isEditing && visibleModules.length === 0) return null;
 
+  if (!isEditing && tree.root === 'posts') {
+    return (
+      <div className={gridClassName}>
+        <PostsStackWidget modules={visibleModules} />
+      </div>
+    );
+  }
+
   return (
-    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] items-start gap-3 px-4 md:px-8">
+    <div className={gridClassName}>
       {visibleModules.map((module) => {
         if (isEditing) {
           return (
@@ -297,27 +315,19 @@ interface ModuleDataState {
 }
 
 function ModuleWidget({ module }: { module: ModuleBranch }) {
-  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
-  const calendarMonthKey = formatMonthKey(calendarMonth);
-  const state = useModuleData(
-    module,
-    module.moduleType === 'calendar'
-      ? `month=${encodeURIComponent(calendarMonthKey)}`
-      : '',
-  );
+  if (module.moduleType === 'calendar') {
+    return <CalendarWidget module={module} />;
+  }
+
+  return <LiveModuleWidget module={module} />;
+}
+
+function LiveModuleWidget({ module }: { module: ModuleBranch }) {
+  const state = useModuleData(module);
 
   switch (module.moduleType) {
     case 'weather':
       return <WeatherWidget module={module} state={state} />;
-    case 'calendar':
-      return (
-        <CalendarWidget
-          module={module}
-          state={state}
-          visibleMonth={calendarMonth}
-          onMonthChange={setCalendarMonth}
-        />
-      );
     case 'markets':
       return <MarketsWidget module={module} state={state} />;
     case 'plex':
@@ -335,7 +345,79 @@ function ModuleWidget({ module }: { module: ModuleBranch }) {
   }
 }
 
-function useModuleData(module: ModuleBranch, queryString = ''): ModuleDataState {
+function CalendarWidget({ module }: { module: ModuleBranch }) {
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const cells = useMemo(() => calendarCells(calendarMonth), [calendarMonth]);
+
+  const moveMonth = (offset: number) => {
+    setCalendarMonth((currentMonth) => (
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1)
+    ));
+  };
+
+  return (
+    <ModulePanel module={module}>
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border-light pb-2">
+          <div className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">
+            {formatCalendarMonth(calendarMonth)}
+          </div>
+          <div className="flex items-center gap-1 text-text-muted">
+            <button
+              type="button"
+              onClick={() => moveMonth(-1)}
+              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Previous month"
+              title="Previous month"
+            >
+              &lsaquo;
+            </button>
+            <button
+              type="button"
+              onClick={() => setCalendarMonth(startOfMonth(new Date()))}
+              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Current month"
+              title="Current month"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveMonth(1)}
+              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              aria-label="Next month"
+              title="Next month"
+            >
+              &rsaquo;
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 gap-y-1 text-center">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
+            <div key={`${weekday}-${index}`} className="pb-1.5 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+              {weekday}
+            </div>
+          ))}
+          {cells.map((cell) => (
+            <button
+              key={cell.key}
+              type="button"
+              className={`mx-auto flex h-7 w-7 items-center justify-center text-xs transition-colors hover:bg-surface-sunken ${
+                cell.inMonth ? 'text-text-primary' : 'text-text-muted/45'
+              } ${cell.isToday ? 'border border-ink-500 bg-surface-sunken text-text-primary' : ''}`}
+              title={calendarCellTitle(cell.date)}
+              aria-label={calendarCellTitle(cell.date)}
+            >
+              {cell.date.getDate()}
+            </button>
+          ))}
+        </div>
+      </div>
+    </ModulePanel>
+  );
+}
+
+function useModuleData(module: ModuleBranch): ModuleDataState {
   const [data, setData] = useState<ModuleData | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -352,7 +434,7 @@ function useModuleData(module: ModuleBranch, queryString = ''): ModuleDataState 
       setError('');
 
       try {
-        const response = await fetch(`/api/modules/data?moduleId=${encodeURIComponent(module.id)}${queryString ? `&${queryString}` : ''}`, {
+        const response = await fetch(`/api/modules/data?moduleId=${encodeURIComponent(module.id)}`, {
           method: 'GET',
           cache: 'no-store',
           signal: controller.signal,
@@ -383,7 +465,7 @@ function useModuleData(module: ModuleBranch, queryString = ''): ModuleDataState 
       controller.abort();
       window.clearInterval(intervalId);
     };
-  }, [configKey, module.id, module.moduleType, queryString, requestVersion]);
+  }, [configKey, module.id, module.moduleType, requestVersion]);
 
   return { data, error, isLoading, refresh };
 }
@@ -392,19 +474,21 @@ function ModulePanel({
   module,
   state,
   href,
+  titleOverride,
   children,
 }: {
   module: ModuleBranch;
-  state: ModuleDataState;
+  state?: ModuleDataState;
   href?: string;
+  titleOverride?: string;
   children: React.ReactNode;
 }) {
-  const statusClass = state.error
+  const statusClass = state?.error
     ? 'bg-red-500'
-    : state.isLoading
+    : state?.isLoading
       ? 'bg-ink-300'
       : 'bg-accent-green';
-  const title = module.name || getModuleLabel(module.moduleType);
+  const title = titleOverride || module.name || getModuleLabel(module.moduleType);
 
   return (
     <section className="border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium hover:bg-[#fcfcfc]">
@@ -426,21 +510,23 @@ function ModulePanel({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={state.refresh}
-            className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
-            aria-label={`Refresh ${title}`}
-            title="Refresh"
-          >
-            <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <div
-            className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
-            title={state.error || (state.isLoading ? 'Loading' : 'Online')}
-          />
-        </div>
+        {state && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={state.refresh}
+              className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+              aria-label={`Refresh ${title}`}
+              title="Refresh"
+            >
+              <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <div
+              className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
+              title={state.error || (state.isLoading ? 'Loading' : 'Online')}
+            />
+          </div>
+        )}
       </div>
       {children}
     </section>
@@ -456,7 +542,7 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         <ModuleBodyState state={state} />
       ) : (
         <>
-          <div className="flex items-end justify-between gap-3">
+          <div>
             <div>
               <div className="text-3xl font-light leading-none tracking-tight text-text-primary">
                 {Math.round(data.temperature)}°
@@ -465,11 +551,13 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                 {data.condition}
               </div>
             </div>
-            <div className="max-w-[8rem] truncate text-right font-mono text-[10px] text-text-tertiary">
-              {data.location} · {Math.round(data.humidity)}%
+            <div className="mt-4 border-t border-border-light pt-3 font-mono text-[10px] leading-relaxed text-text-tertiary">
+              <span className="text-text-secondary">{data.location}</span>
+              <span className="mx-1.5 text-text-muted">·</span>
+              <span>{Math.round(data.humidity)}% humidity</span>
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+          <div className="mt-3 grid grid-cols-3 gap-2">
             {data.forecast.map((day) => (
               <div key={day.date} title={day.condition}>
                 <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
@@ -478,115 +566,14 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                 <div className="mt-1 font-mono text-[11px] text-text-secondary">
                   {Math.round(day.high)}/{Math.round(day.low)}
                 </div>
+                <div className="mt-0.5 truncate text-[10px] leading-tight text-text-muted">
+                  {day.condition}
+                </div>
               </div>
             ))}
           </div>
         </>
       )}
-    </ModulePanel>
-  );
-}
-
-function CalendarWidget({
-  module,
-  state,
-  visibleMonth,
-  onMonthChange,
-}: {
-  module: ModuleBranch;
-  state: ModuleDataState;
-  visibleMonth: Date;
-  onMonthChange: (date: Date) => void;
-}) {
-  const data = state.data?.kind === 'calendar' ? state.data as CalendarModuleData : null;
-  const monthDate = monthKeyToDate(data?.month) || visibleMonth;
-  const cells = useMemo(() => calendarCells(monthDate), [monthDate]);
-  const eventsByDay = useMemo(() => groupEventsByDay(data?.events || []), [data?.events]);
-  const monthEventCount = data?.events.length || 0;
-  const footerMessage = state.error
-    || (state.isLoading ? 'Loading calendar events...' : '')
-    || (monthEventCount === 0
-      ? 'No events on this calendar for the visible month.'
-      : `${monthEventCount} event${monthEventCount === 1 ? '' : 's'} on this calendar for the visible month.`);
-
-  const moveMonth = (offset: number) => {
-    onMonthChange(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1));
-  };
-
-  return (
-    <ModulePanel module={module} state={state}>
-      <div>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="text-2xl font-semibold tracking-tight text-text-primary">
-            {formatCalendarMonth(monthDate)}
-          </div>
-          <div className="flex items-center gap-1 text-text-muted">
-            <button
-              type="button"
-              onClick={() => moveMonth(-1)}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
-              aria-label="Previous month"
-              title="Previous month"
-            >
-              &lsaquo;
-            </button>
-            <button
-              type="button"
-              onClick={() => onMonthChange(startOfMonth(new Date()))}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
-              aria-label="Current month"
-              title="Current month"
-            >
-              <span className="h-2.5 w-2.5 rounded-full bg-current" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveMonth(1)}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-sunken hover:text-text-primary"
-              aria-label="Next month"
-              title="Next month"
-            >
-              &rsaquo;
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-y-1 text-center">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
-            <div key={`${weekday}-${index}`} className="pb-2 text-[11px] font-semibold text-text-primary">
-              {weekday}
-            </div>
-          ))}
-          {cells.map((cell) => {
-            const events = eventsByDay.get(cell.key) || [];
-            const eventDots = events.slice(0, 3);
-            return (
-              <button
-                key={cell.key}
-                type="button"
-                className={`group relative mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-colors ${
-                  cell.inMonth
-                    ? 'text-text-primary hover:bg-surface-sunken'
-                    : 'text-text-muted/50 hover:bg-surface-sunken/60'
-                } ${cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-white' : ''}`}
-                title={calendarCellTitle(cell.date, events)}
-                aria-label={calendarCellTitle(cell.date, events)}
-              >
-                <span>{cell.date.getDate()}</span>
-                {eventDots.length > 0 && (
-                  <span className="absolute bottom-0.5 left-1/2 flex -translate-x-1/2 gap-0.5">
-                    {eventDots.map((event) => (
-                      <span key={event.id} className="h-1 w-1 rounded-full bg-ink-700" />
-                    ))}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div className={`mt-4 border-t border-border-light pt-3 text-[11px] leading-relaxed ${state.error ? 'text-red-500' : 'text-text-tertiary'}`}>
-          {footerMessage}
-        </div>
-      </div>
     </ModulePanel>
   );
 }
@@ -602,7 +589,7 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         <div className="space-y-3">
           {data.quotes.map((quote) => {
             const change = `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
-            const width = `${Math.max(8, Math.min(100, 50 + quote.changePercent * 8))}%`;
+            const trendTone = quote.changePercent >= 0 ? 'text-accent-green' : 'text-red-500';
 
             return (
               <div key={quote.symbol}>
@@ -615,15 +602,48 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                     </span>
                   </div>
                 </div>
-                <div className="h-1 bg-surface-sunken">
-                  <div className="h-full bg-ink-500" style={{ width }} />
-                </div>
+                <MarketSparkline values={quote.sparkline} className={trendTone} />
               </div>
             );
           })}
         </div>
       )}
     </ModulePanel>
+  );
+}
+
+function MarketSparkline({
+  values,
+  className,
+}: {
+  values: number[];
+  className: string;
+}) {
+  const points = sparklinePoints(values);
+
+  if (!points) {
+    return <div className="h-8 border-t border-border-light" />;
+  }
+
+  return (
+    <div className="h-8 overflow-hidden border-t border-border-light pt-1">
+      <svg
+        viewBox="0 0 120 28"
+        preserveAspectRatio="none"
+        className={`h-full w-full ${className}`}
+        aria-label="Recent price trend"
+      >
+        <polyline
+          points={points}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          vectorEffect="non-scaling-stroke"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
   );
 }
 
@@ -644,20 +664,161 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
               {data.detail || data.service}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {data.stats.map((stat) => (
-              <div key={stat.label}>
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                  {stat.label}
+          {data.libraries && data.libraries.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                    Libraries
+                  </div>
+                  <div className="mt-1 font-mono text-[11px] text-text-secondary">
+                    {data.libraries.length} total
+                  </div>
                 </div>
-                <div className="mt-1 truncate text-sm font-medium text-text-primary">
-                  {typeof stat.value === 'number' ? formatCompactNumber(stat.value) : stat.value}
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                    Streaming
+                  </div>
+                  <div className="mt-1 font-mono text-[11px] font-medium text-text-primary">
+                    {formatCompactStatValue(mediaStatValue(data, 'Streams') ?? 0)}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="space-y-1.5">
+                {data.libraries.map((library) => (
+                  <div key={library.id} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs text-text-primary">
+                        {library.name}
+                      </div>
+                      {library.type && (
+                        <div className="mt-0.5 font-mono text-[9px] uppercase tracking-wider text-text-muted">
+                          {library.type}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 font-mono text-[11px] text-text-secondary">
+                      {formatCompactNumber(library.count)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {data.stats.map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                    {stat.label}
+                  </div>
+                  <div className="mt-1 truncate text-sm font-medium text-text-primary">
+                    {formatCompactStatValue(stat.value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {data.recent && data.recent.length > 0 && (
+            <div className="mt-4 border-t border-border-light pt-3">
+              <div className="mb-2 text-[10px] uppercase tracking-wider text-text-tertiary">
+                Recent
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {data.recent.map((item) => (
+                  <div key={item.id} className="min-w-0">
+                    <div className="aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
+                      {item.imageUrl ? (
+                        <Image
+                          src={item.imageUrl}
+                          alt={`${item.title} cover`}
+                          width={72}
+                          height={108}
+                          loading="lazy"
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
+                          {item.title.slice(0, 1)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1 truncate text-[10px] font-medium text-text-primary">
+                      {item.title}
+                    </div>
+                    {item.subtitle && (
+                      <div className="truncate font-mono text-[9px] text-text-tertiary">
+                        {item.subtitle}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
+    </ModulePanel>
+  );
+}
+
+function PostsStackWidget({ modules }: { modules: ModuleBranch[] }) {
+  const sources = useMemo(() => (
+    modules.filter((module) => isPostModuleType(module.moduleType))
+  ), [modules]);
+  const [selectedId, setSelectedId] = useState(() => preferredPostModuleId(sources));
+
+  useEffect(() => {
+    if (sources.some((source) => source.id === selectedId)) return;
+    setSelectedId(preferredPostModuleId(sources));
+  }, [selectedId, sources]);
+
+  const selectedModule = sources.find((source) => source.id === selectedId) || sources[0];
+  if (!selectedModule) return null;
+
+  return (
+    <PostsStackLive
+      modules={sources}
+      selectedModule={selectedModule}
+      onSelect={setSelectedId}
+    />
+  );
+}
+
+function PostsStackLive({
+  modules,
+  selectedModule,
+  onSelect,
+}: {
+  modules: ModuleBranch[];
+  selectedModule: ModuleBranch;
+  onSelect: (moduleId: string) => void;
+}) {
+  const state = useModuleData(selectedModule);
+  const data = state.data?.kind === 'posts' ? state.data as PostsModuleData : null;
+
+  return (
+    <ModulePanel module={selectedModule} state={state} titleOverride="Posts">
+      <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border-light pb-2">
+        {modules.map((source) => {
+          const isSelected = source.id === selectedModule.id;
+          return (
+            <button
+              key={source.id}
+              type="button"
+              onClick={() => onSelect(source.id)}
+              className={`border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors ${
+                isSelected
+                  ? 'border-ink-700 bg-ink-700 text-white'
+                  : 'border-border-light text-text-tertiary hover:border-border-medium hover:text-text-primary'
+              }`}
+            >
+              {postModuleTabLabel(source)}
+            </button>
+          );
+        })}
+      </div>
+      <PostsContent data={data} state={state} />
     </ModulePanel>
   );
 }
@@ -667,34 +828,43 @@ function PostsWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
 
   return (
     <ModulePanel module={module} state={state}>
-      {!data ? (
-        <ModuleBodyState state={state} />
-      ) : data.posts.length === 0 ? (
-        <EmptyModuleState>No posts found.</EmptyModuleState>
-      ) : (
-        <div className="space-y-3">
-          {data.posts.map((post) => (
-            <a
-              key={post.id}
-              href={post.url}
-              target="_blank"
-              rel="noreferrer"
-              className="group block text-inherit no-underline"
-            >
-              <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors group-hover:text-ink-800">
-                {post.title}
-              </div>
-              <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary">
-                <span>{post.source}</span>
-                {(post.meta || post.publishedAt) && <span>·</span>}
-                {post.meta && <span className="truncate">{post.meta}</span>}
-                {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
+      <PostsContent data={data} state={state} />
     </ModulePanel>
+  );
+}
+
+function PostsContent({
+  data,
+  state,
+}: {
+  data: PostsModuleData | null;
+  state: ModuleDataState;
+}) {
+  if (!data) return <ModuleBodyState state={state} />;
+  if (data.posts.length === 0) return <EmptyModuleState>No posts found.</EmptyModuleState>;
+
+  return (
+    <div className="space-y-3">
+      {data.posts.map((post) => (
+        <a
+          key={post.id}
+          href={post.url}
+          target="_blank"
+          rel="noreferrer"
+          className="group block text-inherit no-underline"
+        >
+          <div className="line-clamp-2 border-b border-transparent pb-0.5 text-xs leading-relaxed text-text-primary transition-colors group-hover:border-ink-700 group-hover:text-ink-800">
+            {post.title}
+          </div>
+          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary">
+            <span>{post.source}</span>
+            {(post.meta || post.publishedAt) && <span>·</span>}
+            {post.meta && <span className="truncate">{post.meta}</span>}
+            {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+          </div>
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -761,14 +931,9 @@ function ModuleConfigFields({
       break;
     case 'calendar':
       fields = (
-        <>
-          <ConfigInput
-            label="iCalendar URL"
-            value={configText(config, 'url')}
-            placeholder="https://.../calendar.ics"
-            onChange={(value) => setValue('url', value)}
-          />
-        </>
+        <div className="text-[10px] leading-relaxed text-text-muted">
+          No configuration required. Calendar is a local month view.
+        </div>
       );
       break;
     case 'markets':
@@ -904,9 +1069,11 @@ function ModuleConfigFields({
   return (
     <div className="space-y-2 border-t border-border-light pt-3">
       {fields}
-      <div className="text-[10px] leading-relaxed text-text-muted">
-        Live data refreshes after the dashboard is saved.
-      </div>
+      {module.moduleType !== 'calendar' && (
+        <div className="text-[10px] leading-relaxed text-text-muted">
+          Live data refreshes after the dashboard is saved.
+        </div>
+      )}
     </div>
   );
 }
@@ -1129,6 +1296,26 @@ function getModuleLabel(moduleType: string) {
   return (MODULE_LABELS as Record<string, string>)[moduleType] || 'Unknown module';
 }
 
+function isPostModuleType(moduleType: string) {
+  return ['rss', 'reddit', 'hacker-news'].includes(moduleType);
+}
+
+function preferredPostModuleId(modules: ModuleBranch[]) {
+  return modules.find(isPostModuleConfigured)?.id || modules[0]?.id || '';
+}
+
+function isPostModuleConfigured(module: ModuleBranch) {
+  if (module.moduleType !== 'rss') return true;
+  const feeds = module.config?.feeds;
+  if (Array.isArray(feeds)) return feeds.some((feed) => typeof feed === 'string' && feed.trim());
+  return typeof feeds === 'string' && feeds.trim().length > 0;
+}
+
+function postModuleTabLabel(module: ModuleBranch) {
+  const label = module.name || getModuleLabel(module.moduleType);
+  return label.length > 18 ? getModuleLabel(module.moduleType) : label;
+}
+
 function isKnownModuleType(moduleType: string): moduleType is KnownModuleType {
   return Boolean((MODULE_LABELS as Record<string, string>)[moduleType]);
 }
@@ -1163,22 +1350,6 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function formatMonthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function monthKeyToDate(monthKey: string | undefined) {
-  if (!monthKey) return null;
-  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
-  if (!match) return null;
-
-  const year = Number(match[1]);
-  const month = Number(match[2]) - 1;
-  if (!Number.isFinite(year) || month < 0 || month > 11) return null;
-
-  return new Date(year, month, 1);
-}
-
 function formatCalendarMonth(date: Date) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -1206,18 +1377,6 @@ function calendarCells(monthDate: Date) {
   });
 }
 
-function groupEventsByDay(events: CalendarModuleData['events']) {
-  const groups = new Map<string, CalendarModuleData['events']>();
-  for (const event of events) {
-    const key = dateKey(new Date(event.start));
-    const dayEvents = groups.get(key) || [];
-    dayEvents.push(event);
-    groups.set(key, dayEvents);
-  }
-
-  return groups;
-}
-
 function dateKey(date: Date) {
   return [
     date.getFullYear(),
@@ -1226,27 +1385,13 @@ function dateKey(date: Date) {
   ].join('-');
 }
 
-function calendarCellTitle(date: Date, events: CalendarModuleData['events']) {
-  const dateLabel = new Intl.DateTimeFormat(undefined, {
+function calendarCellTitle(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   }).format(date);
-
-  if (events.length === 0) return dateLabel;
-  return [
-    dateLabel,
-    ...events.map((event) => `${calendarEventTime(event)} ${event.title}`.trim()),
-  ].join('\n');
-}
-
-function calendarEventTime(event: CalendarModuleData['events'][number]) {
-  if (event.allDay) return 'All day';
-  return new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(event.start));
 }
 
 function formatWeekday(date: string) {
@@ -1261,11 +1406,41 @@ function formatMarketPrice(value: number) {
   return value.toFixed(4);
 }
 
+function sparklinePoints(values: number[]) {
+  const points = values.filter((value) => Number.isFinite(value));
+  if (points.length < 2) return '';
+
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const width = 120;
+  const height = 28;
+  const xStep = width / (points.length - 1);
+
+  return points.map((value, index) => {
+    const x = index * xStep;
+    const y = height - ((value - min) / span) * height;
+    return `${roundSvgNumber(x)},${roundSvgNumber(y)}`;
+  }).join(' ');
+}
+
+function roundSvgNumber(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
 function formatCompactNumber(value: number) {
   return new Intl.NumberFormat(undefined, {
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+function formatCompactStatValue(value: string | number) {
+  return typeof value === 'number' ? formatCompactNumber(value) : value;
+}
+
+function mediaStatValue(data: MediaModuleData, label: string) {
+  return data.stats.find((stat) => stat.label.toLowerCase() === label.toLowerCase())?.value;
 }
 
 function formatRelativeTime(value: string) {

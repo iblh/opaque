@@ -197,7 +197,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
   };
 
   return (
-    <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-4 px-4 md:px-8">
+    <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-3 px-4 md:px-8">
       {tree.branches.map((server) => {
         const stats = resolveStats(server.stats);
         const memoryPercent = percent(stats.memory.used, stats.memory.total);
@@ -209,7 +209,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
           <div
             key={server.id}
             data-drag-preview
-            className={`relative w-full max-w-[360px] rounded-sm border bg-white p-4 transition-all duration-200 ${
+            className={`relative w-[360px] max-w-full flex-none rounded-sm border bg-white p-4 transition-all duration-200 ${
               isServerEditing
                 ? 'border-border-strong'
                 : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
@@ -410,7 +410,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
         <button
           type="button"
           onClick={addServer}
-          className="flex min-h-[220px] w-full max-w-[360px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
+          className="flex min-h-[220px] w-[360px] max-w-full flex-none items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
         >
           <IconPlus className="h-3.5 w-3.5" />
           Add server
