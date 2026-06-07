@@ -1,8 +1,12 @@
 node_modules
 .next
+.next-dev
+out
 .env
 .env.*
 !.env.example
 npm-debug.log*
+*.tsbuildinfo
+.DS_Store
 Dockerfile
 docker-compose.yml

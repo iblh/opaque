@@ -419,7 +419,7 @@ function PreviewModules({ kind }: { kind: 'today' | 'media' | 'posts' }) {
     today: [
       ['Weather', '67 deg, partly cloudy'],
       ['Calendar', '3 upcoming events'],
-      ['Markets', 'SPY, AAPL, NVDA, BTC'],
+      ['Markets', 'SPY, BTC-USD, NVDA, AAPL, MSFT'],
     ],
     media: [
       ['Plex', 'online, 9 libraries'],

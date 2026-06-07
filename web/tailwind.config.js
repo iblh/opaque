@@ -13,6 +13,9 @@ module.exports = {
         'accent-green-dark': '#6B7159',
         'accent-green-subtle': 'rgba(126, 132, 107, 0.08)',
         'accent-green-hover': 'rgba(126, 132, 107, 0.15)',
+        'accent-red': '#A76767',
+        'accent-red-dark': '#8E5555',
+        'accent-red-subtle': 'rgba(167, 103, 103, 0.08)',
         'accent-blue': '#5E6AD2',
         'accent-blue-subtle': 'rgba(94, 106, 210, 0.08)',
         'accent-blue-hover': 'rgba(94, 106, 210, 0.15)',
@@ -57,4 +60,4 @@ module.exports = {
     },
   },
   plugins: [],
-} 
+}

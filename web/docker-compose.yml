@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: opaque
-      POSTGRES_USER: opaque
-      POSTGRES_PASSWORD: opaque
+      POSTGRES_DB: ${POSTGRES_DB:-opaque}
+      POSTGRES_USER: ${POSTGRES_USER:-opaque}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
       - opaque-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opaque -d opaque"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-opaque} -d ${POSTGRES_DB:-opaque}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -23,8 +23,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://opaque:opaque@postgres:5432/opaque
-      AUTH_SECRET: ${AUTH_SECRET:-replace-with-a-long-random-secret}
+      DATABASE_URL: postgres://${POSTGRES_USER:-opaque}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-opaque}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_GITHUB_ID: ${AUTH_GITHUB_ID:-}
       AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET:-}
@@ -40,7 +40,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://opaque:opaque@postgres:5432/opaque
+      DATABASE_URL: postgres://${POSTGRES_USER:-opaque}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-opaque}
       METRICS_RETENTION_DAYS: ${METRICS_RETENTION_DAYS:-7}
     command: sh -c "while true; do npm run metrics:retention; sleep 3600; done"
 

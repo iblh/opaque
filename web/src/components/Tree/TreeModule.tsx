@@ -586,23 +586,33 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
       {!data ? (
         <ModuleBodyState state={state} />
       ) : (
-        <div className="space-y-3">
+        <div className="-my-1 divide-y divide-border-light">
           {data.quotes.map((quote) => {
             const change = `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
-            const trendTone = quote.changePercent >= 0 ? 'text-accent-green' : 'text-red-500';
+            const trendTone = marketTrendTone(quote.changePercent);
 
             return (
-              <div key={quote.symbol}>
-                <div className="mb-1 flex items-center justify-between gap-3">
-                  <div className="font-mono text-[11px] text-text-primary">{quote.symbol}</div>
-                  <div className="flex items-center gap-2 font-mono text-[10px]">
-                    <span className="text-text-tertiary">{formatMarketPrice(quote.price)}</span>
-                    <span className={quote.changePercent >= 0 ? 'text-accent-green' : 'text-red-500'}>
-                      {change}
-                    </span>
+              <div
+                key={quote.symbol}
+                className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-tight text-text-primary">
+                    {quote.symbol}
+                  </div>
+                  <div className="mt-1 truncate text-[10px] leading-tight text-text-tertiary">
+                    {quote.name}
                   </div>
                 </div>
-                <MarketSparkline values={quote.sparkline} className={trendTone} />
+                <MarketSparkline values={quote.sparkline} />
+                <div className="min-w-0 text-right font-mono">
+                  <div className={`text-xs font-medium leading-tight tracking-tight ${trendTone}`}>
+                    {change}
+                  </div>
+                  <div className="mt-1 truncate text-[11px] leading-tight text-text-secondary">
+                    {formatMarketPrice(quote.price, quote.currency)}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -614,30 +624,28 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
 
 function MarketSparkline({
   values,
-  className,
 }: {
   values: number[];
-  className: string;
 }) {
-  const points = sparklinePoints(values);
+  const points = sparklinePoints(values, 96, 34);
 
   if (!points) {
-    return <div className="h-8 border-t border-border-light" />;
+    return <div className="h-9" />;
   }
 
   return (
-    <div className="h-8 overflow-hidden border-t border-border-light pt-1">
+    <div className="h-9 min-w-0 overflow-hidden">
       <svg
-        viewBox="0 0 120 28"
+        viewBox="0 0 96 34"
         preserveAspectRatio="none"
-        className={`h-full w-full ${className}`}
+        className="h-full w-full text-ink-400"
         aria-label="Recent price trend"
       >
         <polyline
           points={points}
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="1.25"
           vectorEffect="non-scaling-stroke"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -941,7 +949,7 @@ function ModuleConfigFields({
         <ConfigInput
           label="Symbols"
           value={configListText(config, 'symbols')}
-          placeholder="SPY, AAPL, NVDA, BTC-USD"
+          placeholder="SPY, BTC-USD, NVDA, AAPL, MSFT"
           onChange={(value) => setValue('symbols', value)}
         />
       );
@@ -1399,22 +1407,37 @@ function formatWeekday(date: string) {
     .format(new Date(`${date}T12:00:00`));
 }
 
-function formatMarketPrice(value: number) {
-  if (Math.abs(value) >= 100_000) return `${(value / 1000).toFixed(1)}k`;
-  if (Math.abs(value) >= 1_000) return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+function formatMarketPrice(value: number, currency?: string) {
+  if (currency && /^[A-Z]{3}$/.test(currency)) {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: value >= 100 ? 2 : 4,
+    }).format(value);
+  }
+
+  if (Math.abs(value) >= 1_000) {
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
   if (Math.abs(value) >= 10) return value.toFixed(2);
   return value.toFixed(4);
 }
 
-function sparklinePoints(values: number[]) {
+function marketTrendTone(changePercent: number) {
+  if (Math.abs(changePercent) < 0.005) return 'text-text-secondary';
+  return changePercent > 0 ? 'text-accent-green-dark' : 'text-accent-red-dark';
+}
+
+function sparklinePoints(values: number[], width = 120, height = 28) {
   const points = values.filter((value) => Number.isFinite(value));
   if (points.length < 2) return '';
 
   const min = Math.min(...points);
   const max = Math.max(...points);
   const span = max - min || 1;
-  const width = 120;
-  const height = 28;
   const xStep = width / (points.length - 1);
 
   return points.map((value, index) => {

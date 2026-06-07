@@ -1,21 +1,20 @@
 # OPAQUE Web
 
-This is the consolidated OPAQUE web app. It uses Next.js, Postgres, Drizzle,
-and Auth.js. Dashboard layout is stored as JSON in Postgres; server metrics are
-stored separately so agent writes do not rewrite dashboard documents.
+This directory contains the active OPAQUE web application.
 
-## Run Locally
+Stack:
 
-Start Postgres:
+- Next.js 15 and React 19
+- Postgres
+- Drizzle ORM and migrations
+- Auth.js
+- Tailwind CSS
 
-```bash
-docker compose up -d postgres
-```
-
-Install and run the app:
+## Local Development
 
 ```bash
 cp .env.example .env.local
+docker compose up -d postgres
 npm install
 npm run db:ensure
 npm run db:migrate
@@ -24,87 +23,120 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Environment
+Required local env:
 
-- `DATABASE_URL`: Postgres connection string.
-- `AUTH_SECRET`: Secret used by Auth.js. Generate with `openssl rand -base64 32`.
-- `AUTH_URL`: Public app URL, for local development usually `http://localhost:3000`.
-- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`: optional GitHub OAuth credentials.
-- `METRICS_RETENTION_DAYS`: number of days to keep metric samples, default `7`.
+```bash
+DATABASE_URL=postgres://opaque:change-me@localhost:5432/opaque
+AUTH_SECRET=<generate-with-openssl-rand-base64-32>
+AUTH_URL=http://localhost:3000
+```
 
-## Self-host
+Generate a secret:
+
+```bash
+openssl rand -base64 32
+```
+
+## Docker Deployment
+
+Create and edit the deploy env file:
 
 ```bash
 cp .env.example .env
-docker compose up --build
 ```
 
-The compose file starts:
+Set production values:
 
-- `postgres`: OPAQUE database.
-- `web`: Next.js app; runs migrations before starting.
-- `retention`: hourly cleanup for old metric samples.
+```bash
+POSTGRES_DB=opaque
+POSTGRES_USER=opaque
+POSTGRES_PASSWORD=<generate-a-strong-password>
+AUTH_SECRET=<generate-with-openssl-rand-base64-32>
+AUTH_URL=https://opaque.example.com
+METRICS_RETENTION_DAYS=7
+```
 
-## Dashboard Modules
+Optional GitHub OAuth:
 
-The Today, Media, and Posts sections load live data through the authenticated
-`GET /api/modules/data?moduleId=<dashboard-module-id>` endpoint. Configure a
-module in dashboard edit mode, save the dashboard, then exit edit mode to load
-its data.
+```bash
+AUTH_GITHUB_ID=
+AUTH_GITHUB_SECRET=
+```
 
-- **Weather**: location forecasts from Open-Meteo. No API key is required.
-  Configure a two-letter country code such as `US` and, when needed, a
-  region/state such as `California` to disambiguate city names.
-- **Calendar**: a local month grid. No external calendar feed is required.
-- **Markets**: stock and crypto symbols supported by the Yahoo Finance chart
-  endpoint, such as `SPY`, `AAPL`, and `BTC-USD`.
-- **Plex**: Plex Media Server URL and Plex token. The server URL is usually
-  `http://server-ip:32400`; `https://app.plex.tv` can be used only when the
-  token can discover a reachable server through the Plex account API.
-- **Jellyfin / Emby**: server URL and API key.
-- **Radarr / Sonarr**: server URL and API key.
-- **RSS**: one or more RSS or Atom feed URLs.
-- **Reddit**: subreddit posts through Reddit's Atom feed, no Reddit API key.
-- **Hacker News**: top, new, best, Ask HN, Show HN, or jobs stories through
-  the public Hacker News Firebase API.
+Start the stack:
 
-Media service URLs are fetched by the OPAQUE web server, not the browser. They
-must be reachable from the web process or Docker container. Media credentials
-are stored in the dashboard JSON, so use a dedicated service-specific key where
-possible. Recent media posters are fetched through OPAQUE's authenticated image
-proxy so service tokens are not placed directly in browser image URLs.
+```bash
+docker compose up -d --build
+```
 
-Credential locations:
+Inspect logs:
 
-- Plex: open Plex Web, inspect a server/library XML request, and copy the
-  `X-Plex-Token` value. Prefer configuring the actual Plex Media Server URL,
-  not only the Plex Web client URL.
-- Jellyfin: `Dashboard` -> `Advanced` -> `API Keys`.
-- Emby: `Server Dashboard` -> `Advanced` -> `API Keys`.
-- Radarr: `Settings` -> `General` -> `Security` -> `API Key`.
-- Sonarr: `Settings` -> `General` -> `Security` -> `API Key`.
+```bash
+docker compose logs -f web
+```
+
+Upgrade:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+Delete all persisted database data:
+
+```bash
+docker compose down -v
+```
+
+## Environment Variables
+
+- `DATABASE_URL`: local Postgres connection string used outside Docker.
+- `POSTGRES_DB`: Docker Compose database name.
+- `POSTGRES_USER`: Docker Compose database user.
+- `POSTGRES_PASSWORD`: Docker Compose database password.
+- `AUTH_SECRET`: Auth.js secret. Required.
+- `AUTH_URL`: public application URL.
+- `AUTH_GITHUB_ID`: optional GitHub OAuth client id.
+- `AUTH_GITHUB_SECRET`: optional GitHub OAuth client secret.
+- `METRICS_RETENTION_DAYS`: metric sample retention window, default `7`.
+
+Do not commit `.env` or `.env.local`.
+
+## Modules
+
+The dashboard loads module data through authenticated server routes. Configure
+a module in edit mode, save, then exit edit mode.
+
+- Weather: Open-Meteo, no API key required.
+- Calendar: local month view.
+- Markets: Yahoo Finance chart data with compact sparklines.
+- Plex: libraries, active streams, and recently added items with posters.
+- Jellyfin / Emby: media folders, active streams, and recent items with posters.
+- Radarr / Sonarr: collection status, missing queue, and recent posters.
+- RSS: RSS or Atom feeds.
+- Reddit: subreddit Atom feeds.
+- Hacker News: public Firebase API.
+
+Media images are loaded through `/api/modules/image` so service credentials do
+not appear in browser image URLs.
 
 ## Server Metrics
 
 OPAQUE uses an agent push model:
 
-- Each remote server runs a lightweight agent.
-- The agent posts metrics to `POST /api/server/metrics`.
-- The dashboard polls `GET /api/server/metrics` every 5 seconds.
-- Server cards are stale when no fresh metric has arrived for more than 30 seconds.
+1. Add a server card in edit mode.
+2. Save the dashboard.
+3. Re-open the server editor and rotate an agent token.
+4. Copy the `Agent id` and generated token.
+5. Configure the remote server agent.
 
-### 1. Add a server and create an agent token
-
-1. Sign in to OPAQUE.
-2. Enter edit mode.
-3. Add a server card.
-4. Save the dashboard.
-5. Re-open the server editor and click `Rotate` under `Agent token`.
-6. Copy the `Agent id` and the generated `Agent token`.
-
-The token is only shown once. Rotate it again if it is lost.
-
-### 2. Test locally with the mock agent
+Run the mock agent locally:
 
 ```bash
 SERVER_ID=copied-agent-id \
@@ -113,32 +145,7 @@ OPAQUE_URL=http://localhost:3000 \
 npm run mock:server-agent
 ```
 
-### 3. Manual metrics push
-
-```bash
-curl -fsS -X POST https://your-opaque-host/api/server/metrics \
-  -H "Authorization: Bearer $SERVER_AGENT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "serverId": "copied-agent-id",
-    "stats": {
-      "status": "online",
-      "uptime": "5d 03h",
-      "cores": 8,
-      "load": [0.3, 0.5, 0.6],
-      "cpu": 24.5,
-      "memory": { "used": 8589934592, "total": 17179869184 },
-      "disk": { "used": 120000000000, "total": 512000000000 },
-      "network": { "in": 42000, "out": 21000 },
-      "temperature": 48
-    }
-  }'
-```
-
-### 4. Linux agent script
-
-Copy `scripts/opaque-agent.sh` to `/usr/local/bin/opaque-agent` on each Linux
-server:
+Install the Linux agent:
 
 ```bash
 sudo cp scripts/opaque-agent.sh /usr/local/bin/opaque-agent
@@ -148,7 +155,7 @@ sudo chmod +x /usr/local/bin/opaque-agent
 Create `/etc/opaque-agent.env`:
 
 ```bash
-OPAQUE_URL=https://your-opaque-host
+OPAQUE_URL=https://opaque.example.com
 SERVER_ID=copied-agent-id
 SERVER_AGENT_TOKEN=copied-agent-token
 OPAQUE_INTERVAL_SECONDS=5
@@ -179,66 +186,23 @@ Enable it:
 sudo systemctl daemon-reload
 sudo systemctl enable --now opaque-agent.service
 sudo systemctl status opaque-agent.service
-journalctl -u opaque-agent.service -f
 ```
 
-## API Shape
-
-Agents write metrics:
-
-```http
-POST /api/server/metrics
-Authorization: Bearer <SERVER_AGENT_TOKEN>
-```
-
-Logged-in dashboards read latest metrics:
-
-```http
-GET /api/server/metrics
-```
-
-Logged-in dashboards read a saved module's live data:
-
-```http
-GET /api/modules/data?moduleId=<dashboard-module-id>
-```
-
-Historical samples:
-
-```http
-GET /api/server/metrics/history?serverId=<agent-id>&range=24h
-```
-
-Rotate an agent token:
-
-```http
-POST /api/server/token/rotate
-Content-Type: application/json
-
-{ "serverId": "copied-agent-id" }
-```
-
-## Maintenance
-
-Run metric retention manually:
+## Scripts
 
 ```bash
-npm run metrics:retention
-```
-
-The Docker Compose `retention` service runs this command hourly.
-
-If your Postgres server is reachable but the configured database has not been
-created yet, run:
-
-```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run test:contract
 npm run db:ensure
 npm run db:migrate
+npm run metrics:retention
+npm run mock:server-agent
 ```
 
-## Tests
-
-With the app running:
+Run contract tests with the app running:
 
 ```bash
 CONTRACT_BASE_URL=http://localhost:3000 npm run test:contract
@@ -246,7 +210,9 @@ CONTRACT_BASE_URL=http://localhost:3000 npm run test:contract
 
 ## Troubleshooting
 
-- `401 unauthorized`: the browser is not signed in, or the agent token is wrong/revoked.
-- `404 server not found`: save the dashboard after creating the server card, then rotate a token.
-- Server shows `stale`: the agent has not posted successfully in the last 30 seconds.
-- `500 failed to ingest metrics`: check app logs and Postgres connectivity.
+- `set POSTGRES_PASSWORD in .env`: create `web/.env` and set `POSTGRES_PASSWORD`.
+- `set AUTH_SECRET in .env`: set a generated `AUTH_SECRET`.
+- `401 unauthorized`: sign in again, or check the server agent token.
+- `404 server not found`: save the dashboard after creating a server card, then rotate a token.
+- Server card shows stale: the agent has not posted in the last 30 seconds.
+- Media service cannot connect: confirm the URL is reachable from the app container.

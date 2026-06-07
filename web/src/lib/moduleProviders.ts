@@ -269,7 +269,7 @@ async function fetchWeather(module: ModuleBranch): Promise<ModuleData> {
 }
 
 async function fetchMarkets(module: ModuleBranch): Promise<ModuleData> {
-  const symbols = configList(module, 'symbols', ['SPY', 'AAPL', 'NVDA', 'BTC-USD'])
+  const symbols = configList(module, 'symbols', defaultMarketSymbols())
     .map((symbol) => symbol.toUpperCase())
     .slice(0, 8);
 
@@ -317,6 +317,7 @@ async function fetchMarketQuote(symbol: string): Promise<MarketQuote> {
 
   return {
     symbol: stringValue(valueOf(meta, 'symbol')) || symbol,
+    name: marketDisplayName(symbol, meta),
     price,
     previousClose,
     changePercent: previousClose === 0 ? 0 : ((price - previousClose) / previousClose) * 100,
@@ -1010,12 +1011,31 @@ function mediaItemCount(counts: JsonObject) {
   ].reduce((total, key) => total + (finiteNumber(valueOf(counts, key)) ?? 0), 0);
 }
 
+function defaultMarketSymbols() {
+  return ['SPY', 'BTC-USD', 'NVDA', 'AAPL', 'MSFT'];
+}
+
 function marketSparkline(closes: number[], price: number, previousClose: number) {
   const values = closes.filter((value) => Number.isFinite(value));
   if (Number.isFinite(price) && values.at(-1) !== price) values.push(price);
   if (values.length >= 2) return values.slice(-30);
   if (Number.isFinite(previousClose) && Number.isFinite(price)) return [previousClose, price];
   return values;
+}
+
+function marketDisplayName(symbol: string, meta: JsonObject) {
+  const normalizedSymbol = (stringValue(valueOf(meta, 'symbol')) || symbol).toUpperCase();
+  const knownNames: Record<string, string> = {
+    SPY: 'S&P 500',
+    'BTC-USD': 'Bitcoin',
+    NVDA: 'NVIDIA',
+    AAPL: 'Apple',
+    MSFT: 'Microsoft',
+  };
+
+  return knownNames[normalizedSymbol]
+    || stringValue(valueOf(meta, 'shortName', 'longName', 'instrumentType', 'exchangeName'))
+    || normalizedSymbol;
 }
 
 function formatWeatherLocation(place: JsonObject, fallback: string) {

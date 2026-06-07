@@ -17,6 +17,7 @@ export interface WeatherModuleData {
 
 export interface MarketQuote {
   symbol: string;
+  name: string;
   price: number;
   previousClose: number;
   changePercent: number;

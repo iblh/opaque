@@ -78,7 +78,7 @@ function createDefaultModuleConfig(moduleType: KnownModuleType) {
     case 'calendar':
       return {};
     case 'markets':
-      return { symbols: ['SPY', 'AAPL', 'NVDA', 'BTC-USD'] };
+      return { symbols: ['SPY', 'BTC-USD', 'NVDA', 'AAPL', 'MSFT'] };
     case 'plex':
       return { url: '', token: '' };
     case 'jellyfin':
