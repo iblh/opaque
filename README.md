@@ -169,8 +169,30 @@ browser image URLs.
 
 ## Server Metrics Agent
 
-Each server card can rotate an agent token in edit mode. Copy the generated
-`Agent id` and token to the target server.
+OPAQUE uses a push model for server telemetry. The dashboard never SSHes into
+your machines; each monitored Linux server runs a lightweight agent that POSTs
+metrics to OPAQUE with a per-server token.
+
+Setup flow:
+
+1. Add a server card in dashboard edit mode.
+2. Save the dashboard so OPAQUE creates the server record.
+3. Re-open the server editor and rotate an agent token.
+4. Copy the generated `Agent id` and token to the target server.
+5. Install the Linux systemd agent below.
+
+The agent reports CPU, memory, root disk usage, aggregate non-loopback network
+throughput, load average, uptime, cores, and temperature when Linux exposes it
+through `/sys`.
+
+For local development, run the mock agent from `web/`:
+
+```bash
+SERVER_ID=copied-agent-id \
+SERVER_AGENT_TOKEN=copied-agent-token \
+OPAQUE_URL=http://localhost:3000 \
+npm run mock:server-agent
+```
 
 Run the bundled Linux agent:
 
@@ -214,6 +236,14 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now opaque-agent.service
 journalctl -u opaque-agent.service -f
 ```
+
+Troubleshooting:
+
+- `401 unauthorized`: rotate a fresh token and update `/etc/opaque-agent.env`.
+- `404 server not found`: save the dashboard after creating the server card,
+  then rotate a token.
+- Server card shows stale: the agent has not posted in the last 30 seconds.
+- Temperature stays `0`: the host may not expose readable thermal sensors.
 
 ## Useful Commands
 

@@ -252,6 +252,58 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   const { token } = await rotate.json();
   assert.match(token, /^opaque_srv_/);
 
+  const unauthorizedPush = await fetch(`${baseUrl}/api/server/metrics`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}bad`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ serverId, stats: { cpu: 1 } }),
+  });
+  await assertStatus(unauthorizedPush, 401);
+
+  const invalidJsonPush = await fetch(`${baseUrl}/api/server/metrics`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{',
+  });
+  await assertStatus(invalidJsonPush, 400);
+
+  const dirtyPush = await fetch(`${baseUrl}/api/server/metrics`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      serverId,
+      stats: {
+        status: 'strange',
+        uptime: 'x'.repeat(160),
+        cores: -4,
+        load: [0.1, 'bad', -1, 99],
+        cpu: 250,
+        memory: { used: -1, total: 'bad' },
+        disk: { used: '4096', total: '8192' },
+        network: { in: '100', out: -200 },
+        temperature: 'hot',
+      },
+    }),
+  });
+  await assertStatus(dirtyPush, 200);
+  const dirtyBody = await dirtyPush.json();
+  assert.equal(dirtyBody.stats.status, 'online');
+  assert.equal(dirtyBody.stats.cpu, 100);
+  assert.equal(dirtyBody.stats.memory.used, 0);
+  assert.equal(dirtyBody.stats.memory.total, 0);
+  assert.equal(dirtyBody.stats.network.in, 100);
+  assert.equal(dirtyBody.stats.network.out, 0);
+  assert.deepEqual(dirtyBody.stats.load, [0.1]);
+  assert.equal(dirtyBody.stats.uptime.length, 120);
+
   const stats = {
     status: 'online',
     uptime: '1m',
@@ -274,6 +326,24 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   });
   await assertStatus(push, 200);
 
+  const nextStats = {
+    ...stats,
+    uptime: '2m',
+    cpu: 45.8,
+    memory: { used: 1536, total: 2048 },
+    network: { in: 300, out: 500 },
+  };
+
+  const nextPush = await fetch(`${baseUrl}/api/server/metrics`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ serverId, stats: nextStats }),
+  });
+  await assertStatus(nextPush, 200);
+
   const metrics = await fetch(`${baseUrl}/api/server/metrics`, {
     headers: { cookie },
   });
@@ -281,7 +351,18 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   const metricsBody = await metrics.json();
   const reflected = metricsBody.servers.find((server) => server.id === serverId);
   assert.equal(reflected.stats.status, 'online');
-  assert.equal(reflected.stats.cpu, 12.5);
+  assert.equal(reflected.stats.cpu, 45.8);
+  assert.equal(reflected.stats.memory.used, 1536);
+
+  const history = await fetch(`${baseUrl}/api/server/metrics/history?serverId=${serverId}&range=24h`, {
+    headers: { cookie },
+  });
+  await assertStatus(history, 200);
+  const historyBody = await history.json();
+  assert.ok(historyBody.samples.length >= 3);
+  assert.ok(historyBody.samples.some((sample) => sample.cpu === 100));
+  assert.ok(historyBody.samples.some((sample) => sample.cpu === 45.8));
+  assert.ok(historyBody.samples.every((sample) => typeof sample.recordedAt === 'string'));
 });
 
 async function assertStatus(response, expected) {

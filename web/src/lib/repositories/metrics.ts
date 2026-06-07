@@ -10,6 +10,8 @@ import {
 } from '@/db/schema';
 import { ServerStats } from '@/lib/types';
 
+const MAX_UPTIME_LENGTH = 120;
+
 export async function getLatestMetricsForUser(userId: string) {
   const rows = await db
     .select({
@@ -175,31 +177,35 @@ export async function deleteOldMetricSamples(retentionDays: number) {
 }
 
 export function normalizeStats(input: any, now: Date = new Date()): ServerStats {
-  const memory = input.memory || {};
-  const disk = input.disk || {};
-  const network = input.network || {};
+  const source = isPlainObject(input) ? input : {};
+  const memory = isPlainObject(source.memory) ? source.memory : {};
+  const disk = isPlainObject(source.disk) ? source.disk : {};
+  const network = isPlainObject(source.network) ? source.network : {};
 
   return {
-    status: input.status === 'offline' ? 'offline' : 'online',
-    uptime: String(input.uptime || ''),
-    cores: numberOrUndefined(input.cores),
-    load: Array.isArray(input.load)
-      ? input.load.slice(0, 3).map((value: unknown) => Number(value)).filter(Number.isFinite)
+    status: source.status === 'offline' ? 'offline' : 'online',
+    uptime: normalizeText(source.uptime),
+    cores: positiveIntegerOrUndefined(source.cores),
+    load: Array.isArray(source.load)
+      ? source.load
+          .slice(0, 3)
+          .map(nonNegativeNumberOrUndefined)
+          .filter((value): value is number => value !== undefined)
       : undefined,
-    cpu: clampPercent(input.cpu?.percent ?? input.cpu ?? input.cpuPercent),
+    cpu: clampPercent(isPlainObject(source.cpu) ? source.cpu.percent : source.cpu ?? source.cpuPercent),
     memory: {
-      used: nonNegativeNumber(memory.used ?? input.memoryUsed),
-      total: nonNegativeNumber(memory.total ?? input.memoryTotal),
+      used: nonNegativeNumber(memory.used ?? source.memoryUsed),
+      total: nonNegativeNumber(memory.total ?? source.memoryTotal),
     },
     disk: {
-      used: nonNegativeNumber(disk.used ?? input.diskUsed),
-      total: nonNegativeNumber(disk.total ?? input.diskTotal),
+      used: nonNegativeNumber(disk.used ?? source.diskUsed),
+      total: nonNegativeNumber(disk.total ?? source.diskTotal),
     },
     network: {
-      in: nonNegativeNumber(network.in ?? input.networkIn),
-      out: nonNegativeNumber(network.out ?? input.networkOut),
+      in: nonNegativeNumber(network.in ?? source.networkIn),
+      out: nonNegativeNumber(network.out ?? source.networkOut),
     },
-    temperature: nonNegativeNumber(input.temperature),
+    temperature: nonNegativeNumber(source.temperature),
     updatedAt: now.toISOString(),
   };
 }
@@ -225,7 +231,23 @@ function nonNegativeNumber(value: unknown) {
   return Math.max(0, number);
 }
 
-function numberOrUndefined(value: unknown) {
+function nonNegativeNumberOrUndefined(value: unknown) {
   const number = Number(value);
-  return Number.isFinite(number) ? number : undefined;
+  if (!Number.isFinite(number) || number < 0) return undefined;
+  return number;
+}
+
+function positiveIntegerOrUndefined(value: unknown) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return undefined;
+  return Math.floor(number);
+}
+
+function normalizeText(value: unknown) {
+  if (value === null || value === undefined) return '';
+  return String(value).slice(0, MAX_UPTIME_LENGTH);
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

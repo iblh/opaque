@@ -60,6 +60,14 @@ export interface ServerStats {
   updatedAt?: string | Date;
 }
 
+export interface ServerMetricSample extends ServerStats {
+  recordedAt: string;
+}
+
+export interface ServerMetricHistory {
+  samples: ServerMetricSample[];
+}
+
 export interface BaseBranch {
   id: string;
   name: string;

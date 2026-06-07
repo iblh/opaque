@@ -23,8 +23,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const token = bearerToken(request) || request.headers.get('x-server-token') || '';
-    const body = await request.json();
-    const serverId = String(body.serverId || '').trim();
+    if (!token) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+    }
+
+    const serverId = String(body?.serverId || '').trim();
 
     if (!serverId) {
       return NextResponse.json({ error: 'serverId is required' }, { status: 400 });
@@ -33,7 +43,7 @@ export async function POST(request: NextRequest) {
     const result = await recordMetricsWithAgentToken({
       branchId: serverId,
       agentToken: token,
-      input: body.stats || body,
+      input: body?.stats || body,
     });
 
     if ('error' in result) {

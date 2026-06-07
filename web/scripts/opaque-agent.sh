@@ -5,21 +5,80 @@ set -euo pipefail
 : "${SERVER_ID:?missing SERVER_ID}"
 : "${SERVER_AGENT_TOKEN:?missing SERVER_AGENT_TOKEN}"
 
+opaque_url="${OPAQUE_URL%/}"
 interval="${OPAQUE_INTERVAL_SECONDS:-5}"
 if ! [[ "$interval" =~ ^[0-9]+$ ]] || (( interval < 2 )); then
   interval=5
 fi
+
+for command in awk curl df nproc sed sleep uptime; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    printf 'opaque-agent: missing required command: %s\n' "$command" >&2
+    exit 1
+  fi
+done
 
 json_escape() {
   sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
 read_cpu() {
-  awk '/^cpu / {print $2+$3+$4+$5+$6+$7+$8, $5}' /proc/stat
+  awk '/^cpu / {
+    total = 0;
+    for (i = 2; i <= NF; i++) total += $i;
+    print total, $5;
+  }' /proc/stat
+}
+
+read_memory() {
+  awk '
+    /^MemTotal:/ { total = $2 * 1024 }
+    /^MemAvailable:/ { available = $2 * 1024 }
+    END {
+      if (!total) total = 0;
+      if (!available) available = 0;
+      used = total - available;
+      if (used < 0) used = 0;
+      printf "%.0f %.0f\n", total, used;
+    }
+  ' /proc/meminfo
 }
 
 read_net() {
-  awk -F'[: ]+' 'NR > 2 && $2 != "lo" {rx += $3; tx += $11} END {print rx+0, tx+0}' /proc/net/dev
+  awk -F'[: ]+' '
+    NR > 2 && $2 != "lo" {
+      rx += $3;
+      tx += $11;
+    }
+    END { print rx + 0, tx + 0 }
+  ' /proc/net/dev
+}
+
+read_temperature() {
+  local path raw value
+
+  for path in /sys/class/thermal/thermal_zone*/temp /sys/class/hwmon/hwmon*/temp*_input; do
+    [[ -r "$path" ]] || continue
+    read -r raw < "$path" || continue
+    [[ "$raw" =~ ^-?[0-9]+$ ]] || continue
+
+    value="$(
+      awk -v raw="$raw" 'BEGIN {
+      value = raw;
+      if (value > 1000 || value < -1000) value = value / 1000;
+      if (value >= -50 && value <= 150) {
+        printf "%.1f\n", value;
+        exit 0;
+      }
+    }'
+    )"
+    if [[ -n "$value" ]]; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  done
+
+  printf '0\n'
 }
 
 collect_and_push() {
@@ -47,12 +106,13 @@ collect_and_push() {
   (( network_in < 0 )) && network_in=0
   (( network_out < 0 )) && network_out=0
 
-  local memory_total memory_used disk_total disk_used load1 load5 load15 ignored cores uptime_text
-  read -r memory_total memory_used < <(free -b | awk '/Mem:/ {print $2, $3}')
+  local memory_total memory_used disk_total disk_used load1 load5 load15 ignored cores uptime_text temperature
+  read -r memory_total memory_used < <(read_memory)
   read -r disk_total disk_used < <(df -B1 / | awk 'NR == 2 {print $2, $3}')
   read -r load1 load5 load15 ignored < /proc/loadavg
   cores="$(nproc)"
   uptime_text="$(uptime -p | sed 's/^up //')"
+  temperature="$(read_temperature)"
 
   local escaped_server_id escaped_uptime payload
   escaped_server_id="$(printf '%s' "$SERVER_ID" | json_escape)"
@@ -70,13 +130,13 @@ collect_and_push() {
     "memory": { "used": $memory_used, "total": $memory_total },
     "disk": { "used": $disk_used, "total": $disk_total },
     "network": { "in": $network_in, "out": $network_out },
-    "temperature": 0
+    "temperature": $temperature
   }
 }
 JSON
 )"
 
-  curl -fsS -X POST "$OPAQUE_URL/api/server/metrics" \
+  curl -fsS --connect-timeout 5 --max-time 10 -X POST "$opaque_url/api/server/metrics" \
     -H "Authorization: Bearer $SERVER_AGENT_TOKEN" \
     -H "Content-Type: application/json" \
     -d "$payload"

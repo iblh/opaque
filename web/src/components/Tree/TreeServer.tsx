@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconCheck,
   IconCopy,
@@ -9,7 +9,7 @@ import {
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
-import { ServerBranch, ServerStats } from '@/lib/types';
+import { ServerBranch, ServerMetricHistory, ServerMetricSample, ServerStats } from '@/lib/types';
 import {
   getSpatialDropPlacement,
   setDragPreview,
@@ -51,6 +51,8 @@ const emptyStats: ServerStats = {
   temperature: 0,
 };
 
+const SERVER_HISTORY_POLL_INTERVAL_MS = 60_000;
+
 const TreeServer: React.FC<TreeServerProps> = ({
   tree,
   isEditing = false,
@@ -61,11 +63,62 @@ const TreeServer: React.FC<TreeServerProps> = ({
   const [rotatingTokenId, setRotatingTokenId] = useState<string | null>(null);
   const [agentTokens, setAgentTokens] = useState<Record<string, string>>({});
   const [agentTokenErrors, setAgentTokenErrors] = useState<Record<string, string>>({});
+  const [metricHistories, setMetricHistories] = useState<Record<string, ServerMetricSample[]>>({});
   const draggedServerId = useRef<string | null>(null);
   const draggedServerPreview = useRef<DragPreviewState | null>(null);
+  const historyServerKey = useMemo(
+    () => tree.branches.map((server) => server.id).filter(Boolean).join('|'),
+    [tree.branches],
+  );
   const serverInputClass =
     'opaque-input w-full focus:border-ink-700';
   const monoServerInputClass = `${serverInputClass} font-mono text-[11px]`;
+
+  useEffect(() => {
+    if (isEditing || !historyServerKey) {
+      if (!historyServerKey) setMetricHistories({});
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+    const serverIds = historyServerKey.split('|').filter(Boolean);
+
+    const fetchHistories = async () => {
+      const entries = await Promise.all(serverIds.map(async (serverId) => {
+        try {
+          const params = new URLSearchParams({ serverId, range: '24h' });
+          const response = await fetch(`/api/server/metrics/history?${params.toString()}`, {
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+
+          if (!response.ok) return [serverId, []] as const;
+
+          const body = await response.json() as ServerMetricHistory;
+          return [
+            serverId,
+            Array.isArray(body.samples) ? body.samples : [],
+          ] as const;
+        } catch {
+          return [serverId, []] as const;
+        }
+      }));
+
+      if (!isCancelled) {
+        setMetricHistories(Object.fromEntries(entries));
+      }
+    };
+
+    fetchHistories();
+    const intervalId = window.setInterval(fetchHistories, SERVER_HISTORY_POLL_INTERVAL_MS);
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [historyServerKey, isEditing]);
 
   const updateBranches = (branches: ServerBranch[]) => {
     onTreeChange?.({ ...tree, branches });
@@ -400,6 +453,13 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   <MetaRow label="Network out" value={formatBandwidth(stats.network.out)} />
                   <MetaRow label="Uptime" value={stats.uptime || '-'} />
                 </div>
+
+                {!isEditing && (
+                  <ServerTrendPanel
+                    samples={metricHistories[server.id] || []}
+                    stats={stats}
+                  />
+                )}
               </>
             )}
           </div>
@@ -456,6 +516,104 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ServerTrendPanel({
+  samples,
+  stats,
+}: {
+  samples: ServerMetricSample[];
+  stats: ServerStats;
+}) {
+  const cpuValues = samples.length ? samples.map((sample) => sample.cpu) : [stats.cpu];
+  const memoryValues = samples.length
+    ? samples.map((sample) => percent(sample.memory.used, sample.memory.total))
+    : [percent(stats.memory.used, stats.memory.total)];
+  const networkValues = samples.length
+    ? samples.map((sample) => sample.network.in + sample.network.out)
+    : [stats.network.in + stats.network.out];
+  const sampleLabel = samples.length
+    ? `${samples.length} sample${samples.length === 1 ? '' : 's'}`
+    : 'waiting';
+
+  return (
+    <div className="mt-4 border-t border-border-light pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+          24h telemetry
+        </div>
+        <div className="font-mono text-[10px] text-text-muted">
+          {sampleLabel}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <TrendMini label="CPU" valueLabel={`${stats.cpu.toFixed(0)}%`} values={cpuValues} />
+        <TrendMini
+          label="Memory"
+          valueLabel={`${percent(stats.memory.used, stats.memory.total)}%`}
+          values={memoryValues}
+        />
+        <TrendMini
+          label="Network"
+          valueLabel={formatBandwidth(stats.network.in + stats.network.out)}
+          values={networkValues}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TrendMini({
+  label,
+  valueLabel,
+  values,
+}: {
+  label: string;
+  valueLabel: string;
+  values: number[];
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex items-center justify-between gap-1">
+        <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
+          {label}
+        </div>
+        <div className="truncate font-mono text-[10px] text-text-secondary">
+          {valueLabel}
+        </div>
+      </div>
+      <TrendSparkline values={values} />
+    </div>
+  );
+}
+
+function TrendSparkline({ values }: { values: number[] }) {
+  const points = sparklinePoints(values);
+
+  if (!points) {
+    return <div className="h-7 border-t border-border-light" />;
+  }
+
+  return (
+    <div className="h-7 overflow-hidden">
+      <svg
+        viewBox="0 0 72 28"
+        preserveAspectRatio="none"
+        className="h-full w-full text-ink-500"
+        aria-label="Server telemetry trend"
+      >
+        <polyline
+          points={points}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          vectorEffect="non-scaling-stroke"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
 function resolveStats(stats?: ServerStats): ServerStats {
   return {
     ...emptyStats,
@@ -484,7 +642,7 @@ function isStatsStale(stats: ServerStats) {
 
 function percent(used: number, total: number) {
   if (!total) return 0;
-  return Math.round((used / total) * 100);
+  return Math.max(0, Math.min(100, Math.round((used / total) * 100)));
 }
 
 function formatBytes(bytes: number, decimals = 1): string {
@@ -497,6 +655,29 @@ function formatBytes(bytes: number, decimals = 1): string {
 
 function formatBandwidth(bytesPerSecond: number): string {
   return `${formatBytes(bytesPerSecond)}/s`;
+}
+
+function sparklinePoints(values: number[], width = 72, height = 28) {
+  const finiteValues = values.map(Number).filter(Number.isFinite);
+  if (finiteValues.length === 0) return '';
+
+  const points = finiteValues.length === 1
+    ? [finiteValues[0], finiteValues[0]]
+    : finiteValues;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const xStep = width / (points.length - 1);
+
+  return points.map((value, index) => {
+    const x = index * xStep;
+    const y = height - ((value - min) / span) * (height - 4) - 2;
+    return `${roundCoordinate(x)},${roundCoordinate(y)}`;
+  }).join(' ');
+}
+
+function roundCoordinate(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 function reorder<T>(

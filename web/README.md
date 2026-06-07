@@ -128,13 +128,19 @@ not appear in browser image URLs.
 
 ## Server Metrics
 
-OPAQUE uses an agent push model:
+OPAQUE uses an agent push model. The app does not SSH into your machines; each
+monitored Linux server runs a lightweight agent that POSTs metrics to OPAQUE
+with a per-server token.
 
 1. Add a server card in edit mode.
 2. Save the dashboard.
 3. Re-open the server editor and rotate an agent token.
 4. Copy the `Agent id` and generated token.
 5. Configure the remote server agent.
+
+The Linux agent reports CPU, memory, root disk usage, aggregate non-loopback
+network throughput, load average, uptime, cores, and temperature when readable
+thermal sensors are available.
 
 Run the mock agent locally:
 
@@ -186,6 +192,7 @@ Enable it:
 sudo systemctl daemon-reload
 sudo systemctl enable --now opaque-agent.service
 sudo systemctl status opaque-agent.service
+journalctl -u opaque-agent.service -f
 ```
 
 ## Scripts
@@ -215,4 +222,5 @@ CONTRACT_BASE_URL=http://localhost:3000 npm run test:contract
 - `401 unauthorized`: sign in again, or check the server agent token.
 - `404 server not found`: save the dashboard after creating a server card, then rotate a token.
 - Server card shows stale: the agent has not posted in the last 30 seconds.
+- Temperature stays `0`: the host may not expose readable thermal sensors.
 - Media service cannot connect: confirm the URL is reachable from the app container.
