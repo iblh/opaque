@@ -277,11 +277,15 @@ function insertTreeAsRow(
   // If source is already alone in its row, this can be a pure reorder.
   const sourceTree = forest.find((tree) => tree.root === root);
   const sourceRowId = sourceTree?.layout?.rowId;
-  const sourceRow = sourceRowId ? rows.find((row) => row.rowId === sourceRowId) : undefined;
-  const sourceIsSolo = sourceRow && sourceRow.cells.length === 1;
+  const sourceIndex = sourceRowId ? rows.findIndex((row) => row.rowId === sourceRowId) : -1;
+  const sourceRow = sourceIndex >= 0 ? rows[sourceIndex] : undefined;
+  const sourceIsSolo = sourceRow?.cells.length === 1;
 
   if (sourceIsSolo && sourceRowId) {
-    const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
+    const insertAtBeforeRemoval = position === 'above' ? targetIndex : targetIndex + 1;
+    const insertAt = sourceIndex < insertAtBeforeRemoval
+      ? insertAtBeforeRemoval - 1
+      : insertAtBeforeRemoval;
     return reorderRows(forest, sourceRowId, insertAt);
   }
 

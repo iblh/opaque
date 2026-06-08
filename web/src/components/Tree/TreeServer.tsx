@@ -5,7 +5,6 @@ import {
   IconGripVertical,
   IconKey,
   IconPencil,
-  IconPlus,
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
@@ -20,6 +19,7 @@ import SvgIcon from '@/components/SvgIcon';
 import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 import { SERVER_ICON_PRESETS } from '@/lib/iconPresets';
 import IconField from '@/components/IconField';
+import SectionAddControl from '@/components/Tree/SectionAddControl';
 
 interface ServerTree {
   root: string;
@@ -251,6 +251,13 @@ const TreeServer: React.FC<TreeServerProps> = ({
 
   return (
     <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-3 px-4 md:px-8">
+      {isEditing && (
+        <div className="pointer-events-none absolute -top-8 right-4 z-10 md:right-8">
+          <div className="pointer-events-auto">
+            <SectionAddControl label="Add server" onAdd={addServer} />
+          </div>
+        </div>
+      )}
       {tree.branches.map((server) => {
         const stats = resolveStats(server.stats);
         const memoryPercent = percent(stats.memory.used, stats.memory.total);
@@ -466,16 +473,6 @@ const TreeServer: React.FC<TreeServerProps> = ({
         );
       })}
 
-      {isEditing && (
-        <button
-          type="button"
-          onClick={addServer}
-          className="flex min-h-[220px] w-[360px] max-w-full flex-none items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-ink-600 hover:text-text-primary"
-        >
-          <IconPlus className="h-3.5 w-3.5" />
-          Add server
-        </button>
-      )}
     </div>
   );
 };

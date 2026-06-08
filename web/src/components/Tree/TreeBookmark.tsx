@@ -18,6 +18,7 @@ import {
 } from '@/lib/drag';
 import SvgIcon from '@/components/SvgIcon';
 import IconField from '@/components/IconField';
+import SectionAddControl from '@/components/Tree/SectionAddControl';
 
 interface BookmarkTree {
   root: string;
@@ -43,7 +44,6 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   onTreeChange,
 }) => {
   const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
-  const [newBranchName, setNewBranchName] = useState('');
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedBranchId = useRef<string | null>(null);
   const draggedBranchPreview = useRef<DragPreviewState | null>(null);
@@ -74,18 +74,14 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   };
 
   const addBranch = () => {
-    const name = newBranchName.trim();
-    if (!name) return;
-
     updateBranches([
       ...tree.branches,
       {
         id: newId(),
-        name,
+        name: 'New group',
         leaves: [],
       },
     ]);
-    setNewBranchName('');
   };
 
   const removeBranch = (branchId: string) => {
@@ -195,6 +191,13 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
 
   return (
     <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] items-start gap-4 px-4 md:px-8">
+      {isEditing && (
+        <div className="pointer-events-none absolute -top-8 right-4 z-10 md:right-8">
+          <div className="pointer-events-auto">
+            <SectionAddControl label="Add group" onAdd={addBranch} />
+          </div>
+        </div>
+      )}
       {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
@@ -449,33 +452,6 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
         </div>
       ))}
 
-      {isEditing && (
-        <div className="relative flex w-full animate-fade-in flex-col rounded-sm border border-dashed border-border-medium bg-white p-4">
-          <div className="mb-3 text-xs uppercase tracking-wider text-text-tertiary">
-            New group
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              value={newBranchName}
-              onChange={(event) => setNewBranchName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') addBranch();
-              }}
-              placeholder="Name"
-              className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-sm text-text-primary focus:border-accent-green focus:ring-0"
-            />
-            <button
-              type="button"
-              onClick={addBranch}
-              className="opaque-icon-button"
-              aria-label="Add group"
-              title="Add group"
-            >
-              <IconPlus className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import { IconGripVertical } from '@tabler/icons-react';
 import {
   DashboardLayoutRow,
   LayoutDropTarget,
+  RowDropEdge,
   applyLayoutDrop,
   assignTreeToNewRow,
   getLayoutRows,
@@ -28,16 +30,63 @@ import { Tree } from '@/lib/types';
 
 // Movement (px) before a press on the grip becomes a drag — keeps clicks clean.
 const DRAG_START_THRESHOLD = 4;
-// Fraction of a cell's height that counts as the top/bottom "new row" band.
-const ROW_BAND_RATIO = 0.3;
-// Hysteresis (px) the pointer must travel past a zone boundary before the
-// drop target flips. This is what kills the reflow-induced flutter.
-const ZONE_HYSTERESIS = 14;
+// Half-thickness (px) of the "new row" gap band centered on each row boundary.
+// Cursor within ±this of a boundary → new-row; deeper inside a row → merge.
+const NEW_ROW_BAND = 22;
+// Extra distance (px) the cursor must travel past a band edge before the target
+// type flips. A directional buffer that prevents jitter near the boundary.
+const SWITCH_BUFFER = 10;
 // The drag clone caps its width here; a full-width section becomes a tidy card
 // instead of a screen-wide slab. Height still follows the source body height.
 const MAX_CLONE_WIDTH = 360;
 // How many skeleton blocks the clone draws at most (one per branch, capped).
 const MAX_CLONE_SKELETON_BLOCKS = 4;
+
+interface GeomCell {
+  root: string;
+  colIndex: number;
+  left: number;
+  right: number;
+}
+
+interface GeomRow {
+  rowId: string;
+  top: number;
+  bottom: number;
+  cells: GeomCell[];
+}
+
+// Row boundaries and cell rects in page coordinates (viewport + scroll), so the
+// snapshot stays valid even if the user scrolls mid-drag.
+interface LayoutGeometry {
+  rows: GeomRow[];
+}
+
+function captureGeometry(container: HTMLElement): LayoutGeometry {
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  const rowEls = [...container.querySelectorAll('[data-layout-row]')];
+  const rows: GeomRow[] = rowEls.map((rowEl) => {
+    const rowRect = rowEl.getBoundingClientRect();
+    const cellEls = [...rowEl.querySelectorAll('[data-section-root]')];
+    const cells: GeomCell[] = cellEls.map((cellEl) => {
+      const rect = cellEl.getBoundingClientRect();
+      return {
+        root: cellEl.getAttribute('data-section-root') || '',
+        colIndex: Number(cellEl.getAttribute('data-col-index') || '0'),
+        left: rect.left + scrollX,
+        right: rect.right + scrollX,
+      };
+    });
+    return {
+      rowId: (rowEl.getAttribute('data-row-id') || ''),
+      top: rowRect.top + scrollY,
+      bottom: rowRect.bottom + scrollY,
+      cells: cells.sort((a, b) => a.colIndex - b.colIndex),
+    };
+  });
+  return { rows };
+}
 
 interface DashboardLayoutEditorProps {
   forest: Tree[];
@@ -91,8 +140,13 @@ export default function DashboardLayoutEditor({
   // While dragging, render the *result* of the pending drop so the layout
   // reflows live to exactly what releasing would commit. The dragged section
   // is shown as a placeholder in that target position.
+  //
+  // Exception: row-edge (new-row) targets are previewed with a slim highlighted
+  // rail between rows instead of reflowing the whole layout — so section heights
+  // stay put and the cursor can sweep across a rail to reach the row beyond it.
   const previewForest = useMemo(() => {
     if (!drag || !dropTarget) return forest;
+    if (dropTarget.kind === 'row-edge') return forest;
     return applyLayoutDrop(forest, drag.root, dropTarget);
   }, [forest, drag, dropTarget]);
 
@@ -102,7 +156,6 @@ export default function DashboardLayoutEditor({
   // Refs the global pointer handlers read without re-subscribing every render.
   const dragRef = useRef<DragState | null>(null);
   const dropTargetRef = useRef<LayoutDropTarget | null>(null);
-  const lastZoneRef = useRef<{ key: string; x: number; y: number } | null>(null);
   const pendingStart = useRef<
     | {
         root: string;
@@ -116,15 +169,30 @@ export default function DashboardLayoutEditor({
     | null
   >(null);
   const bootstrapRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // Stable geometry of the layout, captured once when the drag activates (rails
+  // present, no merge preview yet). Hit-testing reads this — never the live,
+  // reflowing preview DOM — so the merge preview can't feed back into the drop
+  // decision and cause oscillation.
+  const geomRef = useRef<LayoutGeometry | null>(null);
   dragRef.current = drag;
   dropTargetRef.current = dropTarget;
+
+  // Capture geometry synchronously when a drag begins, before the user can move
+  // far enough to change the target. At this first paint dropTarget is still
+  // null, so the layout shows the stable "drag active, no merge" baseline.
+  useLayoutEffect(() => {
+    if (drag && !geomRef.current && containerRef.current) {
+      geomRef.current = captureGeometry(containerRef.current);
+    }
+  }, [drag]);
 
   useEffect(() => {
     if (!isEditing) {
       setDrag(null);
       setDropTarget(null);
       pendingStart.current = null;
-      lastZoneRef.current = null;
+      geomRef.current = null;
     }
   }, [isEditing]);
 
@@ -185,70 +253,91 @@ export default function DashboardLayoutEditor({
   };
 
   // ---- Section drag (pointer based) ---------------------------------------
-  // Hit-test the cell under the pointer and derive a drop target, applying
-  // hysteresis so the live reflow can't cause a flutter loop.
+  // Decide the drop target from the cursor position against a *stable* geometry
+  // snapshot of the committed layout (captured at drag start), never from the
+  // live reflowing DOM. This is what removes the row-edge ↔ cell-edge
+  // oscillation: the merge preview can shift the visible layout, but it can't
+  // change the geometry the decision is based on.
   const computeDropTarget = useCallback((clientX: number, clientY: number): LayoutDropTarget | null => {
     const active = dragRef.current;
-    if (!active) return null;
+    const geom = geomRef.current;
+    if (!active || !geom || geom.rows.length === 0) return dropTargetRef.current;
 
+    // Unassigned tray is a small static target; the DOM hit-test is fine here.
     const el = document.elementFromPoint(clientX, clientY);
-    if (!el) return dropTargetRef.current;
+    if (el?.closest('[data-unassigned-tray]')) return { kind: 'unassign' };
 
-    const tray = el.closest('[data-unassigned-tray]');
-    if (tray) return { kind: 'unassign' };
-
-    const cellEl = el.closest('[data-section-root]');
-    if (!(cellEl instanceof HTMLElement)) {
-      // Outside any cell — keep the last target so the preview stays put.
-      return dropTargetRef.current;
-    }
-
-    // Hovering the dragged section's own placeholder: leave the target as-is so
-    // the preview doesn't oscillate as the placeholder tracks the cursor.
-    if (cellEl.getAttribute('data-section-root') === active.root) {
-      return dropTargetRef.current;
-    }
-
-    const rowEl = cellEl.closest('[data-layout-row]');
-    const rowId = rowEl instanceof HTMLElement ? rowEl.getAttribute('data-row-id') : null;
-    const colIndexAttr = cellEl.getAttribute('data-col-index');
-    if (!rowId || colIndexAttr === null) return dropTargetRef.current;
-    const colIndex = Number(colIndexAttr);
-
-    const rect = cellEl.getBoundingClientRect();
-    const yRatio = (clientY - rect.top) / rect.height;
-    const xRatio = (clientX - rect.left) / rect.width;
-
-    let candidate: LayoutDropTarget;
-    if (yRatio < ROW_BAND_RATIO) {
-      candidate = { kind: 'row-edge', rowId, edge: 'top' };
-    } else if (yRatio > 1 - ROW_BAND_RATIO) {
-      candidate = { kind: 'row-edge', rowId, edge: 'bottom' };
-    } else {
-      candidate = { kind: 'cell-edge', rowId, colIndex, edge: xRatio >= 0.5 ? 'right' : 'left' };
-    }
-
-    // Hysteresis: if the new candidate differs from the committed target, only
-    // accept it once the pointer has moved beyond a small deadzone from where
-    // the last zone was entered. This prevents oscillation while the DOM
-    // reflows underneath the cursor.
+    const x = clientX + window.scrollX;
+    const y = clientY + window.scrollY;
+    const rows = geom.rows;
     const prev = dropTargetRef.current;
-    if (sameTarget(prev, candidate)) {
-      return prev;
-    }
-    const key = targetKey(candidate);
-    const last = lastZoneRef.current;
-    if (last && last.key === key) {
-      lastZoneRef.current = { key, x: clientX, y: clientY };
-      return candidate;
-    }
-    if (last) {
-      const dist = Math.hypot(clientX - last.x, clientY - last.y);
-      if (dist < ZONE_HYSTERESIS) {
-        return prev; // not committed enough to a new zone yet
+
+    // Find the row whose vertical span contains y (or the nearest one).
+    let rowIndex = rows.findIndex((r) => y >= r.top && y <= r.bottom);
+    if (rowIndex === -1) {
+      // Above the first row, below the last, or in a gap between rows.
+      if (y < rows[0].top) {
+        rowIndex = 0;
+      } else if (y > rows[rows.length - 1].bottom) {
+        rowIndex = rows.length - 1;
+      } else {
+        // In a gap: attach to the nearer of the two rows bracketing y.
+        const upper = [...rows].reverse().find((r) => r.bottom < y);
+        rowIndex = upper ? rows.indexOf(upper) : 0;
       }
     }
-    lastZoneRef.current = { key, x: clientX, y: clientY };
+    const row = rows[rowIndex];
+
+    // Distance from the row's top/bottom edges. Inside the NEW_ROW_BAND of an
+    // edge → a new-row drop on that side; deeper inside → merge into this row.
+    const distTop = y - row.top;
+    const distBottom = row.bottom - y;
+    const nearTop = distTop <= NEW_ROW_BAND;
+    const nearBottom = distBottom <= NEW_ROW_BAND;
+
+    // Build the geometric candidate.
+    let candidate: LayoutDropTarget;
+    const isOwnSoloRow = row.cells.length === 1 && row.cells[0]?.root === active.root;
+    if (isOwnSoloRow) return null;
+
+    if (nearTop && (!nearBottom || distTop <= distBottom)) {
+      candidate = { kind: 'row-edge', rowId: row.rowId, edge: 'top' };
+    } else if (nearBottom) {
+      candidate = { kind: 'row-edge', rowId: row.rowId, edge: 'bottom' };
+    } else {
+      // Merge into this row: pick the cell under x (clamped) and the near side.
+      const cells = row.cells.filter((c) => c.root !== active.root);
+      if (cells.length === 0) return null;
+      let cell = cells.find((c) => x >= c.left && x <= c.right);
+      if (!cell) cell = x < cells[0].left ? cells[0] : cells[cells.length - 1];
+      const mid = (cell.left + cell.right) / 2;
+      candidate = {
+        kind: 'cell-edge',
+        rowId: row.rowId,
+        colIndex: cells.indexOf(cell),
+        edge: x >= mid ? 'right' : 'left',
+      };
+    }
+
+    if (sameTarget(prev, candidate)) return prev;
+
+    // Directional hysteresis between *kinds*: switching merge↔new-row requires
+    // the cursor to be clearly past the band edge, not just barely over it. This
+    // stops flips when the cursor sits right on the boundary.
+    if (prev && prev.kind !== candidate.kind) {
+      const intoNewRow = candidate.kind === 'row-edge';
+      const edgeDist = candidate.kind === 'row-edge'
+        ? (candidate.edge === 'top' ? distTop : distBottom)
+        : Math.min(distTop, distBottom);
+      if (intoNewRow) {
+        // Becoming a new-row target: require being well inside the band.
+        if (edgeDist > NEW_ROW_BAND - SWITCH_BUFFER) return prev;
+      } else {
+        // Becoming a merge target: require being well past the band.
+        if (edgeDist < NEW_ROW_BAND + SWITCH_BUFFER) return prev;
+      }
+    }
+
     return candidate;
   }, []);
 
@@ -277,7 +366,7 @@ export default function DashboardLayoutEditor({
         onForestChange(applyLayoutDrop(forest, active.root, target));
       }
       pendingStart.current = null;
-      lastZoneRef.current = null;
+      geomRef.current = null;
       dragRef.current = null;
       dropTargetRef.current = null;
       setDrag(null);
@@ -381,8 +470,15 @@ export default function DashboardLayoutEditor({
     window.addEventListener('pointercancel', onUp);
   };
 
+  const isDragActive = Boolean(drag);
+  const activeRowEdge = dropTarget?.kind === 'row-edge' ? dropTarget : null;
+
   return (
-    <div className="mx-4 flex flex-col gap-5 md:mx-8">
+    <div
+      ref={containerRef}
+      data-layout-editor
+      className="mx-4 flex flex-col gap-5 md:mx-8"
+    >
       {rows.map((row) => (
         <LayoutRow
           key={row.rowId}
@@ -391,7 +487,10 @@ export default function DashboardLayoutEditor({
           renderSection={renderSection}
           draggingRoot={drag?.root ?? null}
           dragHeight={drag?.bodyHeight ?? null}
-          isDragActive={Boolean(drag)}
+          isDragActive={isDragActive}
+          newRowEdge={
+            activeRowEdge?.rowId === row.rowId ? activeRowEdge.edge : null
+          }
           resize={resize}
           onGripPointerDown={beginPress}
           onResizeStart={startResize}
@@ -417,6 +516,24 @@ export default function DashboardLayoutEditor({
   );
 }
 
+// A "new row" indicator line drawn into the gap above or below a row while
+// dragging, when that row boundary is the active drop target. It is absolutely
+// positioned so it never affects layout (no gap toggling, no reflow), which —
+// together with geometry-based hit-testing — keeps the interaction smooth.
+function NewRowIndicator({ edge }: { edge: RowDropEdge }) {
+  const position = edge === 'top' ? '-top-2.5' : '-bottom-2.5';
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute ${position} left-0 right-0 flex items-center`}
+    >
+      <span className="h-2 w-2 flex-shrink-0 rounded-full bg-accent-green" />
+      <span className="h-[2px] flex-1 bg-accent-green" />
+      <span className="h-2 w-2 flex-shrink-0 rounded-full bg-accent-green" />
+    </div>
+  );
+}
+
 interface LayoutRowProps {
   row: DashboardLayoutRow;
   isEditing: boolean;
@@ -424,6 +541,7 @@ interface LayoutRowProps {
   draggingRoot: string | null;
   dragHeight: number | null;
   isDragActive: boolean;
+  newRowEdge: RowDropEdge | null;
   resize: ResizeState | null;
   onGripPointerDown: (event: ReactPointerEvent<HTMLElement>, root: string, label: string) => void;
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>, rowId: string, leftColIndex: number) => void;
@@ -436,6 +554,7 @@ function LayoutRow({
   draggingRoot,
   dragHeight,
   isDragActive,
+  newRowEdge,
   resize,
   onGripPointerDown,
   onResizeStart,
@@ -451,6 +570,7 @@ function LayoutRow({
       data-row-id={row.rowId}
       className="relative [--row-gap:1rem] md:[--row-gap:1.25rem]"
     >
+      {newRowEdge && <NewRowIndicator edge={newRowEdge} />}
       <div
         className="grid items-start transition-[grid-template-columns] duration-200 ease-out"
         style={{ gridTemplateColumns, columnGap: 'var(--row-gap)', rowGap: 'var(--row-gap)' } as CSSProperties}
@@ -712,19 +832,6 @@ function UnassignedTray({
       </div>
     </div>
   );
-}
-
-function targetKey(target: LayoutDropTarget): string {
-  switch (target.kind) {
-    case 'row-edge':
-      return `row:${target.rowId}:${target.edge}`;
-    case 'cell-edge':
-      return `cell:${target.rowId}:${target.colIndex}:${target.edge}`;
-    case 'unassign':
-      return 'unassign';
-    default:
-      return 'none';
-  }
 }
 
 function sameTarget(a: LayoutDropTarget | null, b: LayoutDropTarget | null) {
