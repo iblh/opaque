@@ -14,7 +14,6 @@ import {
   IconNews,
   IconPhotoVideo,
   IconPlayerPlay,
-  IconPlus,
   IconRefresh,
   IconRss,
   IconTrash,
@@ -39,6 +38,7 @@ import {
   type DragPreviewState,
   type DropPlacement,
 } from '@/lib/drag';
+import SectionAddControl from '@/components/Tree/SectionAddControl';
 
 interface ModuleTree {
   root: string;
@@ -55,8 +55,10 @@ const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
 const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3 px-4 md:px-8';
 
-function moduleGridClassName(root: string, isEditing: boolean) {
-  if (root === 'posts' && !isEditing) {
+function moduleGridClassName(root: string) {
+  // Posts use a wider reading column; the width must match between view and
+  // edit modes so entering edit mode doesn't reshape the section (WYSIWYG).
+  if (root === 'posts') {
     return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
   }
 
@@ -69,9 +71,6 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   onTreeChange,
 }) => {
   const allowedTypes = getAllowedModuleTypes(tree.root);
-  const [newModuleType, setNewModuleType] = useState<KnownModuleType | ''>(
-    allowedTypes[0] || '',
-  );
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const draggedModuleId = useRef<string | null>(null);
   const draggedModulePreview = useRef<DragPreviewState | null>(null);
@@ -81,7 +80,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
       isEditing || (module.enabled !== false && isKnownModuleType(module.moduleType))
     ))
   ), [isEditing, tree.branches]);
-  const gridClassName = moduleGridClassName(tree.root, isEditing);
+  const gridClassName = moduleGridClassName(tree.root);
 
   const updateBranches = (branches: ModuleBranch[]) => {
     onTreeChange?.({ ...tree, branches });
@@ -120,7 +119,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     )));
   };
 
-  const addModule = (moduleType = newModuleType) => {
+  const addModule = (moduleType: KnownModuleType) => {
     if (!moduleType) return;
     updateBranches([...tree.branches, createDefaultModuleBranch(moduleType)]);
   };
@@ -131,6 +130,21 @@ const TreeModule: React.FC<TreeModuleProps> = ({
 
   if (!isEditing && visibleModules.length === 0) return null;
 
+  const addControl = isEditing && allowedTypes.length > 0 ? (
+    <div className="pointer-events-none absolute -top-8 right-4 z-10 md:right-8">
+      <div className="pointer-events-auto">
+        <SectionAddControl
+          label="Add module"
+          options={allowedTypes.map((moduleType) => ({
+            value: moduleType,
+            label: MODULE_LABELS[moduleType],
+          }))}
+          onSelect={(value) => addModule(value as KnownModuleType)}
+        />
+      </div>
+    </div>
+  ) : null;
+
   if (!isEditing && tree.root === 'posts') {
     return (
       <div className={gridClassName}>
@@ -140,7 +154,9 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   }
 
   return (
-    <div className={gridClassName}>
+    <div className="relative">
+      {addControl}
+      <div className={gridClassName}>
       {visibleModules.map((module) => {
         if (isEditing) {
           return (
@@ -268,41 +284,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
           <ModuleWidget key={module.id} module={module} />
         );
       })}
-
-      {isEditing && allowedTypes.length > 0 && (
-        <div className="flex min-h-[10rem] flex-col justify-between border border-dashed border-border-medium bg-white/60 p-3">
-          <div>
-            <div className="text-xs font-medium text-text-primary">
-              Add module
-            </div>
-            <div className="mt-1 text-[11px] leading-relaxed text-text-tertiary">
-              Configure the module, save the dashboard, then live data will load here.
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <select
-              value={newModuleType}
-              onChange={(event) => setNewModuleType(event.target.value as KnownModuleType)}
-              className={moduleInputClass}
-            >
-              {allowedTypes.map((moduleType) => (
-                <option key={moduleType} value={moduleType}>
-                  {MODULE_LABELS[moduleType]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => addModule()}
-              className="opaque-icon-button flex-shrink-0"
-              aria-label="Add module"
-              title="Add module"
-            >
-              <IconPlus className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

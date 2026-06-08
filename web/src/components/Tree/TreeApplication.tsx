@@ -18,6 +18,7 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import IconField from '@/components/IconField';
+import SectionAddControl from '@/components/Tree/SectionAddControl';
 
 interface ApplicationTree {
   root: string;
@@ -43,7 +44,6 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   onTreeChange,
 }) => {
   const [editingLeafId, setEditingLeafId] = useState<string | null>(null);
-  const [newShelfName, setNewShelfName] = useState('');
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
   const draggedShelfId = useRef<string | null>(null);
   const draggedShelfPreview = useRef<DragPreviewState | null>(null);
@@ -77,18 +77,14 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   };
 
   const addShelf = () => {
-    const name = newShelfName.trim();
-    if (!name) return;
-
     updateBranches([
       ...tree.branches,
       {
         id: newId(),
-        name,
+        name: 'New shelf',
         leaves: [],
       },
     ]);
-    setNewShelfName('');
   };
 
   const removeShelf = (branchId: string) => {
@@ -251,6 +247,11 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 
   return (
     <div className="relative flex w-full max-w-[90rem] flex-1 flex-col gap-4 px-4 md:px-8">
+      <div className="pointer-events-none absolute -top-8 right-4 z-10 md:right-8">
+        <div className="pointer-events-auto">
+          <SectionAddControl label="Add shelf" onAdd={addShelf} />
+        </div>
+      </div>
       {tree.branches.map((branch) => (
         <section
           key={branch.id}
@@ -468,37 +469,6 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
         </section>
       ))}
 
-      {tree.branches.length === 0 && (
-        <button
-          type="button"
-          onClick={() => addApplication()}
-          className="flex h-[88px] w-full max-w-[320px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white text-xs text-text-tertiary hover:border-accent-blue hover:text-text-primary"
-        >
-          <IconPlus className="h-3.5 w-3.5" />
-          Add first application
-        </button>
-      )}
-
-      <div className="flex w-full max-w-[320px] items-center gap-2 rounded-sm border border-dashed border-border-medium bg-white p-4">
-        <input
-          value={newShelfName}
-          onChange={(event) => setNewShelfName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') addShelf();
-          }}
-          placeholder="New shelf"
-          className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-sm text-text-primary focus:border-accent-blue focus:ring-0"
-        />
-        <button
-          type="button"
-          onClick={addShelf}
-          className="opaque-icon-button"
-          aria-label="Add shelf"
-          title="Add shelf"
-        >
-          <IconPlus className="h-4 w-4" />
-        </button>
-      </div>
     </div>
   );
 };
