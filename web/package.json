@@ -7,6 +7,7 @@
     "build": "NODE_OPTIONS=--no-experimental-webstorage next build",
     "start": "NODE_OPTIONS=--no-experimental-webstorage next start",
     "lint": "eslint",
+    "test:unit": "node --test test/unit/*.test.mjs",
     "test:contract": "node --test test/contract/*.test.mjs",
     "db:ensure": "node scripts/ensure-database.mjs",
     "db:generate": "drizzle-kit generate",

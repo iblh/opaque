@@ -297,6 +297,9 @@ export default function DashboardLayoutEditor({
 
     // Build the geometric candidate.
     let candidate: LayoutDropTarget;
+    const isOwnSoloRow = row.cells.length === 1 && row.cells[0]?.root === active.root;
+    if (isOwnSoloRow) return null;
+
     if (nearTop && (!nearBottom || distTop <= distBottom)) {
       candidate = { kind: 'row-edge', rowId: row.rowId, edge: 'top' };
     } else if (nearBottom) {
@@ -304,21 +307,16 @@ export default function DashboardLayoutEditor({
     } else {
       // Merge into this row: pick the cell under x (clamped) and the near side.
       const cells = row.cells.filter((c) => c.root !== active.root);
-      if (cells.length === 0) {
-        // The row holds only the dragged section — treat as a new row so the
-        // user isn't stuck merging it into itself.
-        candidate = { kind: 'row-edge', rowId: row.rowId, edge: 'bottom' };
-      } else {
-        let cell = cells.find((c) => x >= c.left && x <= c.right);
-        if (!cell) cell = x < cells[0].left ? cells[0] : cells[cells.length - 1];
-        const mid = (cell.left + cell.right) / 2;
-        candidate = {
-          kind: 'cell-edge',
-          rowId: row.rowId,
-          colIndex: cell.colIndex,
-          edge: x >= mid ? 'right' : 'left',
-        };
-      }
+      if (cells.length === 0) return null;
+      let cell = cells.find((c) => x >= c.left && x <= c.right);
+      if (!cell) cell = x < cells[0].left ? cells[0] : cells[cells.length - 1];
+      const mid = (cell.left + cell.right) / 2;
+      candidate = {
+        kind: 'cell-edge',
+        rowId: row.rowId,
+        colIndex: cells.indexOf(cell),
+        edge: x >= mid ? 'right' : 'left',
+      };
     }
 
     if (sameTarget(prev, candidate)) return prev;
