@@ -51,6 +51,18 @@ interface TreeModuleProps {
   onTreeChange?: (tree: ModuleTree) => void;
 }
 
+type ModuleRenderItem =
+  | { kind: 'module'; module: ModuleBranch }
+  | { kind: 'post-stack'; stackId: string; modules: ModuleBranch[] };
+
+interface TabDragProps {
+  draggable: boolean;
+  onDragStart: (event: React.DragEvent<HTMLElement>) => void;
+  onDragEnd: (event: React.DragEvent<HTMLElement>) => void;
+  onDragOver: (event: React.DragEvent<HTMLElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLElement>) => void;
+}
+
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
 const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3 px-4 md:px-8';
@@ -71,7 +83,10 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   onTreeChange,
 }) => {
   const allowedTypes = getAllowedModuleTypes(tree.root);
+  const isPostsRoot = tree.root === 'posts';
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  // The id of the module/stack currently highlighted as a *merge* drop target.
+  const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
   const draggedModuleId = useRef<string | null>(null);
   const draggedModulePreview = useRef<DragPreviewState | null>(null);
 
@@ -80,6 +95,9 @@ const TreeModule: React.FC<TreeModuleProps> = ({
       isEditing || (module.enabled !== false && isKnownModuleType(module.moduleType))
     ))
   ), [isEditing, tree.branches]);
+  const renderItems = useMemo(() => (
+    moduleRenderItems(tree.root, visibleModules)
+  ), [tree.root, visibleModules]);
   const gridClassName = moduleGridClassName(tree.root);
 
   const updateBranches = (branches: ModuleBranch[]) => {
@@ -104,10 +122,164 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     getSpatialDropPlacement(event, draggedModulePreview.current)
   );
 
+  // Whether the current drag can merge into the given target (both posts, and
+  // not the same module). Used to light up the merge zone and to commit on drop.
+  const canMergeInto = (targetId: string) => {
+    if (!isPostsRoot) return false;
+    const sourceId = draggedModuleId.current;
+    if (!sourceId || sourceId === targetId) return false;
+    const source = tree.branches.find((m) => m.id === sourceId);
+    const target = tree.branches.find((m) => m.id === targetId);
+    return Boolean(source && target
+      && isPostModuleType(source.moduleType)
+      && isPostModuleType(target.moduleType));
+  };
+
+  const mergeInto = (targetId: string) => {
+    const sourceId = draggedModuleId.current;
+    if (!sourceId) return;
+    // Always apply: a merge changes config.stackId even when the visual order
+    // is unchanged (sameOrder only compares id order, so it can't gate this).
+    const next = mergePostIntoStack(tree.branches, sourceId, targetId);
+    if (next !== tree.branches) updateBranches(next);
+  };
+
+  const unmerge = (moduleId: string) => {
+    const next = unmergePost(tree.branches, moduleId);
+    if (next !== tree.branches) updateBranches(next);
+  };
+
+  // Reposition the dragged module just before/after a group's block (reorder
+  // around the group, without joining it).
+  const reorderAroundGroup = (stackId: string, placement: DropPlacement) => {
+    const sourceId = draggedModuleId.current;
+    if (!sourceId) return;
+    const next = reorderAroundStack(tree.branches, sourceId, stackId, placement);
+    if (next !== tree.branches) updateBranches(next);
+  };
+
+  // Handle a tab-to-tab drop. Within the same group it reorders the members;
+  // dropping a tab onto a *different* group's tab moves the source into that
+  // group (merge) rather than corrupting the array with a cross-group reorder.
+  const reorderTab = (targetId: string, placement: DropPlacement) => {
+    const sourceId = draggedModuleId.current;
+    if (!sourceId || sourceId === targetId) return;
+    const source = tree.branches.find((m) => m.id === sourceId);
+    const target = tree.branches.find((m) => m.id === targetId);
+    if (!source || !target) return;
+
+    const sourceStack = postStackId(source);
+    const sameStack = Boolean(sourceStack) && sourceStack === postStackId(target);
+
+    let next: ModuleBranch[];
+    if (sameStack) {
+      next = reorderWithinStack(tree.branches, sourceId, targetId, placement);
+    } else {
+      // Move the source into the target's group, then collapse the source's old
+      // group if it's now down to a single member (a group of one is standalone).
+      next = mergePostIntoStack(tree.branches, sourceId, targetId);
+      next = collapseStrayStack(next, sourceStack);
+    }
+    if (next !== tree.branches) updateBranches(next);
+  };
+
   const finishDrag = () => {
     draggedModuleId.current = null;
     draggedModulePreview.current = null;
     setActiveDragId(null);
+    setMergeTargetId(null);
+  };
+
+  // Drag props shared by every module/stack card. For posts, dropping near the
+  // vertical center of another posts card *merges* into a tab group; dropping
+  // near the top/bottom edge *reorders*. Non-posts roots only reorder.
+  const cardDragHandlers = (moduleId: string) => ({
+    onDragStart: (event: React.DragEvent<HTMLElement>) => {
+      draggedModuleId.current = moduleId;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `module:${moduleId}`);
+      draggedModulePreview.current = setDragPreview(event);
+      setActiveDragId(moduleId);
+    },
+    onDragEnd: finishDrag,
+    onDragOver: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      if (isMergeZone(event, moduleId)) {
+        setMergeTargetId(moduleId);
+      } else {
+        if (mergeTargetId !== null) setMergeTargetId(null);
+        moveModule(moduleId, getModuleDropPlacement(event));
+      }
+    },
+    onDrop: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      if (isMergeZone(event, moduleId)) {
+        mergeInto(moduleId);
+      } else {
+        moveModule(moduleId, getModuleDropPlacement(event));
+      }
+      finishDrag();
+    },
+  });
+
+  // Drag props for a tab inside a group: dragging a tab reorders it relative to
+  // the other tabs (left/right) within the same group.
+  const tabDragHandlers = (moduleId: string) => ({
+    draggable: true,
+    onDragStart: (event: React.DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      draggedModuleId.current = moduleId;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `module:${moduleId}`);
+      draggedModulePreview.current = setDragPreview(event);
+      setActiveDragId(moduleId);
+    },
+    onDragEnd: (event: React.DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      finishDrag();
+    },
+    onDragOver: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = 'move';
+      reorderTab(moduleId, tabEdgePlacement(event));
+    },
+    onDrop: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      reorderTab(moduleId, tabEdgePlacement(event));
+      finishDrag();
+    },
+  });
+
+  // Tabs lay out horizontally, so left half → 'before', right half → 'after'.
+  const tabEdgePlacement = (event: React.DragEvent<HTMLElement>): DropPlacement => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return 'after';
+    return (event.clientX - rect.left) / rect.width < 0.5 ? 'before' : 'after';
+  };
+
+  // True when the pointer is over the central band of the target card (merge),
+  // and a merge is actually possible between the dragged module and this target.
+  const isMergeZone = (event: React.DragEvent<HTMLElement>, targetId: string) => {
+    if (!canMergeInto(targetId)) return false;
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.height <= 0) return false;
+    const ratio = (event.clientY - rect.top) / rect.height;
+    return ratio >= 0.3 && ratio <= 0.7;
+  };
+
+  // Top half → 'before', bottom half → 'after', measured against the target's
+  // own box (used for the group container's edge-reorder zones).
+  const edgePlacement = (event: React.DragEvent<HTMLElement>): DropPlacement => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.height <= 0) return 'after';
+    return (event.clientY - rect.top) / rect.height < 0.5 ? 'before' : 'after';
   };
 
   const updateModule = (
@@ -145,149 +317,236 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     </div>
   ) : null;
 
-  if (!isEditing && tree.root === 'posts') {
-    return (
-      <div className={gridClassName}>
-        <PostsStackWidget modules={visibleModules} />
-      </div>
-    );
-  }
-
   return (
     <div className="relative">
       {addControl}
       <div className={gridClassName}>
-      {visibleModules.map((module) => {
-        if (isEditing) {
-          return (
-            <div
-              key={module.id}
-              data-drag-preview
-              className={`group border border-border-light bg-white p-3 transition-all duration-200 hover:border-border-medium ${
-                activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''
-              }`}
-              onDragOver={(event) => {
-                if (!draggedModuleId.current) return;
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-                moveModule(module.id, getModuleDropPlacement(event));
-              }}
-              onDrop={(event) => {
-                if (!draggedModuleId.current) return;
-                event.preventDefault();
-                moveModule(module.id, getModuleDropPlacement(event));
-                finishDrag();
-              }}
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    draggable
-                    onDragStart={(event) => {
-                      draggedModuleId.current = module.id;
-                      event.dataTransfer.effectAllowed = 'move';
-                      event.dataTransfer.setData('text/plain', `module:${module.id}`);
-                      draggedModulePreview.current = setDragPreview(event);
-                      setActiveDragId(module.id);
-                    }}
-                    onDragEnd={finishDrag}
-                    className="flex h-6 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
-                    aria-label={`Move ${module.name}`}
-                    title="Move module"
-                  >
-                    <IconGripVertical className="h-4 w-4" />
-                  </div>
-                  <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-                  <div className="min-w-0">
-                    <div className="truncate text-xs font-medium text-text-primary">
-                      {module.name || getModuleLabel(module.moduleType)}
-                    </div>
-                    <div className="mt-0.5 truncate font-mono text-[10px] text-text-tertiary">
-                      {module.moduleType}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeModule(module.id)}
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
-                  aria-label={`Delete ${module.name}`}
-                  title="Delete module"
-                >
-                  <IconTrash className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <input
-                  value={module.name}
-                  onChange={(event) => updateModule(module.id, (item) => ({
-                    ...item,
-                    name: event.target.value,
-                  }))}
-                  className={moduleInputClass}
-                  placeholder="Name"
-                />
-                <select
-                  value={isKnownModuleType(module.moduleType) ? module.moduleType : ''}
-                  onChange={(event) => {
-                    const moduleType = event.target.value as KnownModuleType;
-                    if (!moduleType) return;
-                    const nextModule = createDefaultModuleBranch(moduleType);
-                    updateModule(module.id, (item) => ({
-                      ...item,
-                      moduleType,
-                      name: nextModule.name,
-                      config: nextModule.config,
-                    }));
-                  }}
-                  className={moduleInputClass}
-                >
-                  {!isKnownModuleType(module.moduleType) && (
-                    <option value="">Unknown type</option>
-                  )}
-                  {allowedTypes.map((moduleType) => (
-                    <option key={moduleType} value={moduleType}>
-                      {MODULE_LABELS[moduleType]}
-                    </option>
-                  ))}
-                </select>
-                <label className="flex h-6 items-center gap-2 text-xs text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={module.enabled !== false}
-                    onChange={(event) => updateModule(module.id, (item) => ({
-                      ...item,
-                      enabled: event.target.checked,
-                    }))}
-                    className="h-3 w-3 rounded-sm border-border-medium text-ink-700 focus:ring-0"
-                  />
-                  Enabled
-                </label>
-                {isKnownModuleType(module.moduleType) && (
-                  <ModuleConfigFields
+        {renderItems.map((item) => {
+          if (item.kind === 'post-stack') {
+            // The stack's representative id for drag/merge intent (its first member).
+            const stackTargetId = item.modules[0]?.id ?? '';
+            return isEditing ? (
+              <PostsStackEditor
+                key={`post-stack-${item.stackId}`}
+                modules={item.modules}
+                onUnmerge={unmerge}
+                getTabDragProps={tabDragHandlers}
+                isDropTarget={mergeTargetId === stackTargetId}
+                onDragOver={(event) => {
+                  if (!draggedModuleId.current || !canMergeInto(stackTargetId)) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                  // Center band → merge into the group; top/bottom edge →
+                  // reorder around the group (place before/after it).
+                  if (isMergeZone(event, stackTargetId)) {
+                    setMergeTargetId(stackTargetId);
+                  } else {
+                    if (mergeTargetId !== null) setMergeTargetId(null);
+                    reorderAroundGroup(item.stackId, edgePlacement(event));
+                  }
+                }}
+                onDrop={(event) => {
+                  if (!draggedModuleId.current || !canMergeInto(stackTargetId)) return;
+                  event.preventDefault();
+                  if (isMergeZone(event, stackTargetId)) {
+                    mergeInto(stackTargetId);
+                  } else {
+                    reorderAroundGroup(item.stackId, edgePlacement(event));
+                  }
+                  finishDrag();
+                }}
+                renderModule={(module) => (
+                  <ModuleEditCard
                     module={module}
-                    onChange={(config) => updateModule(module.id, (item) => ({
-                      ...item,
-                      config,
-                    }))}
+                    allowedTypes={allowedTypes}
+                    activeDragId={activeDragId}
+                    embedded
+                    onUpdate={(updater) => updateModule(module.id, updater)}
+                    onRemove={() => removeModule(module.id)}
+                    {...cardDragHandlers(module.id)}
                   />
                 )}
-              </div>
-            </div>
-          );
-        }
+              />
+            ) : (
+              <PostsStackWidget
+                key={`post-stack-${item.stackId}`}
+                modules={item.modules}
+                title="Posts"
+              />
+            );
+          }
 
-        return (
-          <ModuleWidget key={module.id} module={module} />
-        );
-      })}
+          const { module } = item;
+
+          if (isEditing) {
+            return (
+              <ModuleEditCard
+                key={module.id}
+                module={module}
+                allowedTypes={allowedTypes}
+                activeDragId={activeDragId}
+                isMergeTarget={mergeTargetId === module.id}
+                {...cardDragHandlers(module.id)}
+                onUpdate={(updater) => updateModule(module.id, updater)}
+                onRemove={() => removeModule(module.id)}
+              />
+            );
+          }
+
+          return (
+            <ModuleWidget key={module.id} module={module} />
+          );
+        })}
       </div>
     </div>
   );
 };
+
+interface ModuleEditCardProps {
+  module: ModuleBranch;
+  allowedTypes: KnownModuleType[];
+  activeDragId: string | null;
+  embedded?: boolean;
+  isMergeTarget?: boolean;
+  onUpdate: (updater: (module: ModuleBranch) => ModuleBranch) => void;
+  onRemove: () => void;
+  onDragStart: (event: React.DragEvent<HTMLElement>) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: React.DragEvent<HTMLElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLElement>) => void;
+}
+
+function ModuleEditCard({
+  module,
+  allowedTypes,
+  activeDragId,
+  embedded = false,
+  isMergeTarget = false,
+  onUpdate,
+  onRemove,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}: ModuleEditCardProps) {
+  const mergeRing = isMergeTarget ? 'border-ink-700 bg-[#fcfcfc]' : '';
+  const shellClassName = embedded
+    ? `relative transition-all duration-200 ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
+    : `group relative border bg-white p-3 transition-all duration-200 ${
+        mergeRing || 'border-border-light hover:border-border-medium'
+      } ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`;
+
+  return (
+    <div
+      data-drag-preview
+      className={shellClassName}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {isMergeTarget && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+          <span className="rounded-sm border border-ink-700 bg-white px-2 py-1 text-[10px] uppercase tracking-wider text-ink-700">
+            Merge into tab group
+          </span>
+        </div>
+      )}
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            role="button"
+            tabIndex={0}
+            draggable
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            className="flex h-6 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+            aria-label={`Move ${module.name}`}
+            title="Move module"
+          >
+            <IconGripVertical className="h-4 w-4" />
+          </div>
+          <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
+          <div className="min-w-0">
+            <div className="truncate text-xs font-medium text-text-primary">
+              {module.name || getModuleLabel(module.moduleType)}
+            </div>
+            <div className="mt-0.5 truncate font-mono text-[10px] text-text-tertiary">
+              {module.moduleType}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+          aria-label={`Delete ${module.name}`}
+          title="Delete module"
+        >
+          <IconTrash className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        <input
+          value={module.name}
+          onChange={(event) => onUpdate((item) => ({
+            ...item,
+            name: event.target.value,
+          }))}
+          className={moduleInputClass}
+          placeholder="Name"
+        />
+        <select
+          value={isKnownModuleType(module.moduleType) ? module.moduleType : ''}
+          onChange={(event) => {
+            const moduleType = event.target.value as KnownModuleType;
+            if (!moduleType) return;
+            const nextModule = createDefaultModuleBranch(moduleType);
+            const stackId = postStackId(module);
+            onUpdate((item) => ({
+              ...item,
+              moduleType,
+              name: nextModule.name,
+              config: stackId && isPostModuleType(moduleType)
+                ? { ...nextModule.config, stackId }
+                : nextModule.config,
+            }));
+          }}
+          className={moduleInputClass}
+        >
+          {!isKnownModuleType(module.moduleType) && (
+            <option value="">Unknown type</option>
+          )}
+          {allowedTypes.map((moduleType) => (
+            <option key={moduleType} value={moduleType}>
+              {MODULE_LABELS[moduleType]}
+            </option>
+          ))}
+        </select>
+        <label className="flex h-6 items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={module.enabled !== false}
+            onChange={(event) => onUpdate((item) => ({
+              ...item,
+              enabled: event.target.checked,
+            }))}
+            className="h-3 w-3 rounded-sm border-border-medium text-ink-700 focus:ring-0"
+          />
+          Enabled
+        </label>
+        {isKnownModuleType(module.moduleType) && (
+          <ModuleConfigFields
+            module={module}
+            onChange={(config) => onUpdate((item) => ({
+              ...item,
+              config,
+            }))}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface ModuleDataState {
   data: ModuleData | null;
@@ -752,7 +1011,78 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
-function PostsStackWidget({ modules }: { modules: ModuleBranch[] }) {
+function PostsStackEditor({
+  modules,
+  renderModule,
+  onUnmerge,
+  getTabDragProps,
+  isDropTarget,
+  onDragOver,
+  onDrop,
+}: {
+  modules: ModuleBranch[];
+  renderModule: (module: ModuleBranch) => React.ReactNode;
+  onUnmerge: (moduleId: string) => void;
+  getTabDragProps: (moduleId: string) => TabDragProps;
+  isDropTarget: boolean;
+  onDragOver: (event: React.DragEvent<HTMLElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLElement>) => void;
+}) {
+  const [selectedId, setSelectedId] = useState(() => modules[0]?.id || '');
+
+  useEffect(() => {
+    if (modules.some((module) => module.id === selectedId)) return;
+    setSelectedId(modules[0]?.id || '');
+  }, [modules, selectedId]);
+
+  const selectedModule = modules.find((module) => module.id === selectedId) || modules[0];
+  if (!selectedModule) return null;
+
+  return (
+    <div
+      className={`border bg-white p-3 transition-colors duration-200 ${
+        isDropTarget ? 'border-ink-700 bg-[#fcfcfc]' : 'border-border-light hover:border-border-medium'
+      }`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="text-xs font-medium text-text-primary">Posts group</div>
+        <div className="font-mono text-[10px] text-text-muted">
+          {modules.length} sources · tabs
+        </div>
+      </div>
+
+      <PostStackTabs
+        modules={modules}
+        selectedId={selectedModule.id}
+        onSelect={setSelectedId}
+        getTabDragProps={getTabDragProps}
+      />
+
+      <div className="mb-2 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => onUnmerge(selectedModule.id)}
+          className="text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:text-text-primary"
+          title="Move this source out of the group"
+        >
+          Ungroup
+        </button>
+      </div>
+
+      {renderModule(selectedModule)}
+    </div>
+  );
+}
+
+function PostsStackWidget({
+  modules,
+  title = 'Posts',
+}: {
+  modules: ModuleBranch[];
+  title?: string;
+}) {
   const sources = useMemo(() => (
     modules.filter((module) => isPostModuleType(module.moduleType))
   ), [modules]);
@@ -771,6 +1101,7 @@ function PostsStackWidget({ modules }: { modules: ModuleBranch[] }) {
       modules={sources}
       selectedModule={selectedModule}
       onSelect={setSelectedId}
+      title={title}
     />
   );
 }
@@ -779,37 +1110,73 @@ function PostsStackLive({
   modules,
   selectedModule,
   onSelect,
+  title,
 }: {
   modules: ModuleBranch[];
   selectedModule: ModuleBranch;
   onSelect: (moduleId: string) => void;
+  title: string;
 }) {
   const state = useModuleData(selectedModule);
   const data = state.data?.kind === 'posts' ? state.data as PostsModuleData : null;
 
   return (
-    <ModulePanel module={selectedModule} state={state} titleOverride="Posts">
-      <div className="mb-3 flex flex-wrap items-center gap-1 border-b border-border-light pb-2">
-        {modules.map((source) => {
-          const isSelected = source.id === selectedModule.id;
-          return (
-            <button
-              key={source.id}
-              type="button"
-              onClick={() => onSelect(source.id)}
-              className={`border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors ${
-                isSelected
-                  ? 'border-ink-700 bg-ink-700 text-white'
-                  : 'border-border-light text-text-tertiary hover:border-border-medium hover:text-text-primary'
-              }`}
-            >
-              {postModuleTabLabel(source)}
-            </button>
-          );
-        })}
-      </div>
+    <ModulePanel module={selectedModule} state={state} titleOverride={title}>
+      <PostStackTabs
+        modules={modules}
+        selectedId={selectedModule.id}
+        onSelect={onSelect}
+      />
       <PostsContent data={data} state={state} />
     </ModulePanel>
+  );
+}
+
+function PostStackTabs({
+  modules,
+  selectedId,
+  onSelect,
+  getTabDragProps,
+}: {
+  modules: ModuleBranch[];
+  selectedId: string;
+  onSelect: (moduleId: string) => void;
+  getTabDragProps?: (moduleId: string) => TabDragProps;
+}) {
+  const draggable = Boolean(getTabDragProps);
+  return (
+    <div className="mb-3 flex min-w-0 flex-wrap items-end gap-4 border-b border-border-light">
+      {modules.map((source) => {
+        const isSelected = source.id === selectedId;
+        const dragProps = getTabDragProps?.(source.id);
+        return (
+          <button
+            key={source.id}
+            type="button"
+            onClick={() => onSelect(source.id)}
+            {...dragProps}
+            className={`group relative -mb-px pb-2 text-[10px] uppercase tracking-wider transition-colors ${
+              draggable ? 'cursor-grab active:cursor-grabbing' : ''
+            } ${
+              isSelected
+                ? 'text-text-primary'
+                : 'text-text-tertiary hover:text-text-primary'
+            }`}
+            title={draggable ? 'Drag to reorder · click to select' : undefined}
+          >
+            <span className="inline-block max-w-[9rem] truncate">
+              {postModuleTabLabel(source)}
+            </span>
+            <span
+              aria-hidden
+              className={`absolute bottom-0 left-0 h-px w-full transition-colors ${
+                isSelected ? 'bg-ink-700' : 'bg-transparent group-hover:bg-border-medium'
+              }`}
+            />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -834,19 +1201,23 @@ function PostsContent({
   if (data.posts.length === 0) return <EmptyModuleState>No posts found.</EmptyModuleState>;
 
   return (
-    <div className="space-y-3">
+    <div className="-mx-2 space-y-0.5">
       {data.posts.map((post) => (
         <a
           key={post.id}
           href={post.url}
           target="_blank"
           rel="noreferrer"
-          className="group block text-inherit no-underline"
+          className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors duration-200 hover:bg-surface-sunken/70"
         >
-          <div className="line-clamp-2 border-b border-transparent pb-0.5 text-xs leading-relaxed text-text-primary transition-colors group-hover:border-ink-700 group-hover:text-ink-800">
+          <span
+            aria-hidden
+            className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform duration-200 group-hover:scale-y-100"
+          />
+          <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors duration-200 group-hover:text-ink-900">
             {post.title}
           </div>
-          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary">
+          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary transition-colors duration-200 group-hover:text-text-secondary">
             <span>{post.source}</span>
             {(post.meta || post.publishedAt) && <span>·</span>}
             {post.meta && <span className="truncate">{post.meta}</span>}
@@ -1282,12 +1653,198 @@ function getModuleIcon(moduleType: string) {
   }
 }
 
+function moduleRenderItems(root: string, modules: ModuleBranch[]): ModuleRenderItem[] {
+  if (root !== 'posts') {
+    return modules.map((module) => ({ kind: 'module', module }));
+  }
+
+  // Count members per stack so a group of one collapses back to a plain module.
+  const stackCounts = new Map<string, number>();
+  modules.forEach((module) => {
+    const stackId = postStackId(module);
+    if (stackId && isPostModuleType(module.moduleType)) {
+      stackCounts.set(stackId, (stackCounts.get(stackId) || 0) + 1);
+    }
+  });
+
+  const items: ModuleRenderItem[] = [];
+  const stackItems = new Map<string, Extract<ModuleRenderItem, { kind: 'post-stack' }>>();
+
+  modules.forEach((module) => {
+    const stackId = postStackId(module);
+    const inRealStack = Boolean(stackId)
+      && isPostModuleType(module.moduleType)
+      && (stackCounts.get(stackId) || 0) > 1;
+
+    if (!inRealStack) {
+      items.push({ kind: 'module', module });
+      return;
+    }
+
+    let stack = stackItems.get(stackId);
+    if (!stack) {
+      stack = { kind: 'post-stack', stackId, modules: [] };
+      stackItems.set(stackId, stack);
+      items.push(stack);
+    }
+
+    stack.modules.push(module);
+  });
+
+  return items;
+}
+
 function getModuleLabel(moduleType: string) {
   return (MODULE_LABELS as Record<string, string>)[moduleType] || 'Unknown module';
 }
 
 function isPostModuleType(moduleType: string) {
   return ['rss', 'reddit', 'hacker-news'].includes(moduleType);
+}
+
+function postStackId(module: ModuleBranch) {
+  const value = module.config?.stackId;
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function withStackId(module: ModuleBranch, stackId: string | null): ModuleBranch {
+  const config = { ...(module.config || {}) };
+  if (stackId) {
+    config.stackId = stackId;
+  } else {
+    delete config.stackId;
+  }
+  return { ...module, config };
+}
+
+function newStackId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `stack-${crypto.randomUUID().slice(0, 8)}`;
+  }
+  return `stack-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Merge the source posts module into the same tab group as the target, placing
+// it immediately after the target. If the target has no group yet, a new group
+// id is created and applied to both — so two standalone posts become a stack.
+function mergePostIntoStack(
+  branches: ModuleBranch[],
+  sourceId: string,
+  targetId: string,
+): ModuleBranch[] {
+  if (sourceId === targetId) return branches;
+  const source = branches.find((m) => m.id === sourceId);
+  const target = branches.find((m) => m.id === targetId);
+  if (!source || !target) return branches;
+  if (!isPostModuleType(source.moduleType) || !isPostModuleType(target.moduleType)) return branches;
+
+  const stackId = postStackId(target) || newStackId();
+  const targetStackMemberIds = new Set(
+    branches
+      .filter((m) => postStackId(m) === stackId || m.id === targetId)
+      .map((m) => m.id),
+  );
+
+  const updatedSource = withStackId(source, stackId);
+  const updatedTarget = postStackId(target) ? target : withStackId(target, stackId);
+
+  // Rebuild order: drop source from its old spot, then insert it right after the
+  // last member of the target's group so grouped sources stay contiguous.
+  const withoutSource = branches
+    .filter((m) => m.id !== sourceId)
+    .map((m) => (m.id === targetId ? updatedTarget : m));
+
+  let lastGroupIndex = -1;
+  withoutSource.forEach((m, index) => {
+    if (m.id === targetId || targetStackMemberIds.has(m.id) || postStackId(m) === stackId) {
+      lastGroupIndex = index;
+    }
+  });
+
+  const next = [...withoutSource];
+  next.splice(lastGroupIndex + 1, 0, updatedSource);
+  return next;
+}
+
+// Move a source module to just before/after a target group's contiguous block,
+// leaving it outside the group. If the source belonged to a different group it
+// is detached first (dropping at a group's edge means "place next to it", not
+// "join it"). Members of the *same* group are reordered by reorderWithinStack.
+function reorderAroundStack(
+  branches: ModuleBranch[],
+  sourceId: string,
+  stackId: string,
+  placement: DropPlacement,
+): ModuleBranch[] {
+  const source = branches.find((m) => m.id === sourceId);
+  if (!source) return branches;
+  // Dropping a member of this same group on its own edge is a no-op here.
+  if (postStackId(source) === stackId) return branches;
+
+  const detachedSource = withStackId(source, null);
+  const withoutSource = branches.filter((m) => m.id !== sourceId);
+
+  const groupIndices = withoutSource
+    .map((m, index) => (postStackId(m) === stackId ? index : -1))
+    .filter((index) => index >= 0);
+  if (groupIndices.length === 0) return branches;
+
+  const insertAt = placement === 'before'
+    ? groupIndices[0]
+    : groupIndices[groupIndices.length - 1] + 1;
+
+  const next = [...withoutSource];
+  next.splice(insertAt, 0, detachedSource);
+  return next;
+}
+
+// Reorder one group member relative to another *within the same tab group*.
+// Only applies when both modules already share a (non-empty) stackId; a
+// cross-group drop would interleave the flat array and desync persisted vs
+// visual order, so it is rejected here (the caller routes that case to merge).
+function reorderWithinStack(
+  branches: ModuleBranch[],
+  sourceId: string,
+  targetId: string,
+  placement: DropPlacement,
+): ModuleBranch[] {
+  if (sourceId === targetId) return branches;
+  const source = branches.find((m) => m.id === sourceId);
+  const target = branches.find((m) => m.id === targetId);
+  if (!source || !target) return branches;
+  const stackId = postStackId(source);
+  if (!stackId || stackId !== postStackId(target)) return branches;
+
+  const sourceIndex = branches.indexOf(source);
+  const targetIndex = branches.indexOf(target);
+  const next = reorder(branches, sourceIndex, targetIndex, placement);
+  return sameOrder(branches, next) ? branches : next;
+}
+
+// If the given stack now has exactly one member, free it (a group of one is a
+// standalone module). No-op for empty/missing ids or stacks with 2+ members.
+function collapseStrayStack(branches: ModuleBranch[], stackId: string): ModuleBranch[] {
+  if (!stackId) return branches;
+  const members = branches.filter((m) => postStackId(m) === stackId);
+  if (members.length !== 1) return branches;
+  return branches.map((m) => (m.id === members[0].id ? withStackId(m, null) : m));
+}
+
+// Remove a posts module from its tab group (becomes standalone again). If only
+// one module would remain in the group, that one is freed too — a group of one
+// is just a standalone module.
+function unmergePost(branches: ModuleBranch[], sourceId: string): ModuleBranch[] {
+  const source = branches.find((m) => m.id === sourceId);
+  if (!source) return branches;
+  const stackId = postStackId(source);
+  if (!stackId) return branches;
+
+  let next = branches.map((m) => (m.id === sourceId ? withStackId(m, null) : m));
+  const remaining = next.filter((m) => postStackId(m) === stackId);
+  if (remaining.length === 1) {
+    next = next.map((m) => (m.id === remaining[0].id ? withStackId(m, null) : m));
+  }
+  return next;
 }
 
 function preferredPostModuleId(modules: ModuleBranch[]) {
