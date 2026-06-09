@@ -295,9 +295,9 @@ export default function HomePage() {
       <div className="relative flex-1 overflow-x-hidden bg-background">
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
-            <div className="animate-fade-in pl-20">
+            <div className="mx-4 animate-fade-in md:mx-8">
               <div className="h-0.5 w-6 bg-ink-300"></div>
-              <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
+              <div className="mt-3 font-serif text-2xl leading-none text-text-primary">
                 Welcome{displayName ? `, ${displayName}` : ''}
               </div>
             </div>

@@ -833,14 +833,24 @@ function mediaContainer(value: unknown) {
 
 function plexRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
   const id = stringValue(valueOf(item, 'ratingKey', 'key', 'guid'));
-  const title = stringValue(valueOf(item, 'title', 'grandparentTitle')) || 'Untitled';
-  const seriesTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
+  const ownTitle = stringValue(valueOf(item, 'title')) || 'Untitled';
+  // For TV content the show is the meaningful headline: an episode carries the
+  // show in grandparentTitle, a season carries it in parentTitle. Lead with the
+  // show name and demote the season/episode detail to the subtitle.
+  const showTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
   const year = finiteNumber(valueOf(item, 'year'));
   const type = stringValue(valueOf(item, 'type'));
-  const subtitle = [
-    seriesTitle && seriesTitle !== title ? seriesTitle : '',
-    year ? String(year) : type,
-  ].filter(Boolean).join(' · ') || undefined;
+
+  let title: string;
+  let subtitleParts: string[];
+  if (showTitle && showTitle !== ownTitle) {
+    title = showTitle;
+    subtitleParts = [ownTitle, year ? String(year) : ''];
+  } else {
+    title = ownTitle;
+    subtitleParts = [year ? String(year) : type];
+  }
+  const subtitle = subtitleParts.filter(Boolean).join(' · ') || undefined;
   const imagePath = stringValue(valueOf(item, 'thumb', 'parentThumb', 'grandparentThumb', 'art'));
 
   return [{

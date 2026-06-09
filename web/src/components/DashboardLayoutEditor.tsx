@@ -647,7 +647,7 @@ function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: Se
           <IconGripVertical className="h-3.5 w-3.5" />
         </button>
       )}
-      <div className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
+      <div className="font-serif text-base leading-none text-text-secondary">
         {label}
       </div>
       <div className="h-px flex-1 bg-border-light" />
