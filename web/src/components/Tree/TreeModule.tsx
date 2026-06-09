@@ -55,6 +55,14 @@ type ModuleRenderItem =
   | { kind: 'module'; module: ModuleBranch }
   | { kind: 'post-stack'; stackId: string; modules: ModuleBranch[] };
 
+interface TabDragProps {
+  draggable: boolean;
+  onDragStart: (event: React.DragEvent<HTMLElement>) => void;
+  onDragEnd: (event: React.DragEvent<HTMLElement>) => void;
+  onDragOver: (event: React.DragEvent<HTMLElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLElement>) => void;
+}
+
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
 const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3 px-4 md:px-8';
@@ -141,6 +149,23 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     if (next !== tree.branches) updateBranches(next);
   };
 
+  // Reposition the dragged module just before/after a group's block (reorder
+  // around the group, without joining it).
+  const reorderAroundGroup = (stackId: string, placement: DropPlacement) => {
+    const sourceId = draggedModuleId.current;
+    if (!sourceId) return;
+    const next = reorderAroundStack(tree.branches, sourceId, stackId, placement);
+    if (next !== tree.branches) updateBranches(next);
+  };
+
+  // Reorder a tab within its group relative to another tab.
+  const reorderTab = (targetId: string, placement: DropPlacement) => {
+    const sourceId = draggedModuleId.current;
+    if (!sourceId) return;
+    const next = reorderWithinStack(tree.branches, sourceId, targetId, placement);
+    if (next !== tree.branches) updateBranches(next);
+  };
+
   const finishDrag = () => {
     draggedModuleId.current = null;
     draggedModulePreview.current = null;
@@ -183,6 +208,45 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     },
   });
 
+  // Drag props for a tab inside a group: dragging a tab reorders it relative to
+  // the other tabs (left/right) within the same group.
+  const tabDragHandlers = (moduleId: string) => ({
+    draggable: true,
+    onDragStart: (event: React.DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      draggedModuleId.current = moduleId;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `module:${moduleId}`);
+      draggedModulePreview.current = setDragPreview(event);
+      setActiveDragId(moduleId);
+    },
+    onDragEnd: (event: React.DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      finishDrag();
+    },
+    onDragOver: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = 'move';
+      reorderTab(moduleId, tabEdgePlacement(event));
+    },
+    onDrop: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedModuleId.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      reorderTab(moduleId, tabEdgePlacement(event));
+      finishDrag();
+    },
+  });
+
+  // Tabs lay out horizontally, so left half → 'before', right half → 'after'.
+  const tabEdgePlacement = (event: React.DragEvent<HTMLElement>): DropPlacement => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return 'after';
+    return (event.clientX - rect.left) / rect.width < 0.5 ? 'before' : 'after';
+  };
+
   // True when the pointer is over the central band of the target card (merge),
   // and a merge is actually possible between the dragged module and this target.
   const isMergeZone = (event: React.DragEvent<HTMLElement>, targetId: string) => {
@@ -191,6 +255,14 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     if (rect.height <= 0) return false;
     const ratio = (event.clientY - rect.top) / rect.height;
     return ratio >= 0.3 && ratio <= 0.7;
+  };
+
+  // Top half → 'before', bottom half → 'after', measured against the target's
+  // own box (used for the group container's edge-reorder zones).
+  const edgePlacement = (event: React.DragEvent<HTMLElement>): DropPlacement => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.height <= 0) return 'after';
+    return (event.clientY - rect.top) / rect.height < 0.5 ? 'before' : 'after';
   };
 
   const updateModule = (
@@ -241,19 +313,29 @@ const TreeModule: React.FC<TreeModuleProps> = ({
                 key={`post-stack-${item.stackId}`}
                 modules={item.modules}
                 onUnmerge={unmerge}
+                getTabDragProps={tabDragHandlers}
                 isDropTarget={mergeTargetId === stackTargetId}
                 onDragOver={(event) => {
-                  if (!draggedModuleId.current) return;
-                  // Dropping anywhere on an existing group merges into it.
-                  if (!canMergeInto(stackTargetId)) return;
+                  if (!draggedModuleId.current || !canMergeInto(stackTargetId)) return;
                   event.preventDefault();
                   event.dataTransfer.dropEffect = 'move';
-                  setMergeTargetId(stackTargetId);
+                  // Center band → merge into the group; top/bottom edge →
+                  // reorder around the group (place before/after it).
+                  if (isMergeZone(event, stackTargetId)) {
+                    setMergeTargetId(stackTargetId);
+                  } else {
+                    if (mergeTargetId !== null) setMergeTargetId(null);
+                    reorderAroundGroup(item.stackId, edgePlacement(event));
+                  }
                 }}
                 onDrop={(event) => {
                   if (!draggedModuleId.current || !canMergeInto(stackTargetId)) return;
                   event.preventDefault();
-                  mergeInto(stackTargetId);
+                  if (isMergeZone(event, stackTargetId)) {
+                    mergeInto(stackTargetId);
+                  } else {
+                    reorderAroundGroup(item.stackId, edgePlacement(event));
+                  }
                   finishDrag();
                 }}
                 renderModule={(module) => (
@@ -916,6 +998,7 @@ function PostsStackEditor({
   modules,
   renderModule,
   onUnmerge,
+  getTabDragProps,
   isDropTarget,
   onDragOver,
   onDrop,
@@ -923,6 +1006,7 @@ function PostsStackEditor({
   modules: ModuleBranch[];
   renderModule: (module: ModuleBranch) => React.ReactNode;
   onUnmerge: (moduleId: string) => void;
+  getTabDragProps: (moduleId: string) => TabDragProps;
   isDropTarget: boolean;
   onDragOver: (event: React.DragEvent<HTMLElement>) => void;
   onDrop: (event: React.DragEvent<HTMLElement>) => void;
@@ -956,6 +1040,7 @@ function PostsStackEditor({
         modules={modules}
         selectedId={selectedModule.id}
         onSelect={setSelectedId}
+        getTabDragProps={getTabDragProps}
       />
 
       <div className="mb-2 flex items-center justify-end">
@@ -1034,25 +1119,33 @@ function PostStackTabs({
   modules,
   selectedId,
   onSelect,
+  getTabDragProps,
 }: {
   modules: ModuleBranch[];
   selectedId: string;
   onSelect: (moduleId: string) => void;
+  getTabDragProps?: (moduleId: string) => TabDragProps;
 }) {
+  const draggable = Boolean(getTabDragProps);
   return (
     <div className="mb-3 flex min-w-0 flex-wrap items-end gap-4 border-b border-border-light">
       {modules.map((source) => {
         const isSelected = source.id === selectedId;
+        const dragProps = getTabDragProps?.(source.id);
         return (
           <button
             key={source.id}
             type="button"
             onClick={() => onSelect(source.id)}
+            {...dragProps}
             className={`group relative -mb-px pb-2 text-[10px] uppercase tracking-wider transition-colors ${
+              draggable ? 'cursor-grab active:cursor-grabbing' : ''
+            } ${
               isSelected
                 ? 'text-text-primary'
                 : 'text-text-tertiary hover:text-text-primary'
             }`}
+            title={draggable ? 'Drag to reorder · click to select' : undefined}
           >
             <span className="inline-block max-w-[9rem] truncate">
               {postModuleTabLabel(source)}
@@ -1654,6 +1747,53 @@ function mergePostIntoStack(
   const next = [...withoutSource];
   next.splice(lastGroupIndex + 1, 0, updatedSource);
   return next;
+}
+
+// Move a source module to just before/after a target group's contiguous block,
+// leaving it outside the group. If the source belonged to a different group it
+// is detached first (dropping at a group's edge means "place next to it", not
+// "join it"). Members of the *same* group are reordered by reorderWithinStack.
+function reorderAroundStack(
+  branches: ModuleBranch[],
+  sourceId: string,
+  stackId: string,
+  placement: DropPlacement,
+): ModuleBranch[] {
+  const source = branches.find((m) => m.id === sourceId);
+  if (!source) return branches;
+  // Dropping a member of this same group on its own edge is a no-op here.
+  if (postStackId(source) === stackId) return branches;
+
+  const detachedSource = withStackId(source, null);
+  const withoutSource = branches.filter((m) => m.id !== sourceId);
+
+  const groupIndices = withoutSource
+    .map((m, index) => (postStackId(m) === stackId ? index : -1))
+    .filter((index) => index >= 0);
+  if (groupIndices.length === 0) return branches;
+
+  const insertAt = placement === 'before'
+    ? groupIndices[0]
+    : groupIndices[groupIndices.length - 1] + 1;
+
+  const next = [...withoutSource];
+  next.splice(insertAt, 0, detachedSource);
+  return next;
+}
+
+// Reorder one group member relative to another within the same tab group.
+function reorderWithinStack(
+  branches: ModuleBranch[],
+  sourceId: string,
+  targetId: string,
+  placement: DropPlacement,
+): ModuleBranch[] {
+  if (sourceId === targetId) return branches;
+  const sourceIndex = branches.findIndex((m) => m.id === sourceId);
+  const targetIndex = branches.findIndex((m) => m.id === targetId);
+  if (sourceIndex < 0 || targetIndex < 0) return branches;
+  const next = reorder(branches, sourceIndex, targetIndex, placement);
+  return sameOrder(branches, next) ? branches : next;
 }
 
 // Remove a posts module from its tab group (becomes standalone again). If only
