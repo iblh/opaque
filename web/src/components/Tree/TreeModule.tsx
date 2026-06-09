@@ -158,11 +158,28 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     if (next !== tree.branches) updateBranches(next);
   };
 
-  // Reorder a tab within its group relative to another tab.
+  // Handle a tab-to-tab drop. Within the same group it reorders the members;
+  // dropping a tab onto a *different* group's tab moves the source into that
+  // group (merge) rather than corrupting the array with a cross-group reorder.
   const reorderTab = (targetId: string, placement: DropPlacement) => {
     const sourceId = draggedModuleId.current;
-    if (!sourceId) return;
-    const next = reorderWithinStack(tree.branches, sourceId, targetId, placement);
+    if (!sourceId || sourceId === targetId) return;
+    const source = tree.branches.find((m) => m.id === sourceId);
+    const target = tree.branches.find((m) => m.id === targetId);
+    if (!source || !target) return;
+
+    const sourceStack = postStackId(source);
+    const sameStack = Boolean(sourceStack) && sourceStack === postStackId(target);
+
+    let next: ModuleBranch[];
+    if (sameStack) {
+      next = reorderWithinStack(tree.branches, sourceId, targetId, placement);
+    } else {
+      // Move the source into the target's group, then collapse the source's old
+      // group if it's now down to a single member (a group of one is standalone).
+      next = mergePostIntoStack(tree.branches, sourceId, targetId);
+      next = collapseStrayStack(next, sourceStack);
+    }
     if (next !== tree.branches) updateBranches(next);
   };
 
@@ -1781,7 +1798,10 @@ function reorderAroundStack(
   return next;
 }
 
-// Reorder one group member relative to another within the same tab group.
+// Reorder one group member relative to another *within the same tab group*.
+// Only applies when both modules already share a (non-empty) stackId; a
+// cross-group drop would interleave the flat array and desync persisted vs
+// visual order, so it is rejected here (the caller routes that case to merge).
 function reorderWithinStack(
   branches: ModuleBranch[],
   sourceId: string,
@@ -1789,11 +1809,25 @@ function reorderWithinStack(
   placement: DropPlacement,
 ): ModuleBranch[] {
   if (sourceId === targetId) return branches;
-  const sourceIndex = branches.findIndex((m) => m.id === sourceId);
-  const targetIndex = branches.findIndex((m) => m.id === targetId);
-  if (sourceIndex < 0 || targetIndex < 0) return branches;
+  const source = branches.find((m) => m.id === sourceId);
+  const target = branches.find((m) => m.id === targetId);
+  if (!source || !target) return branches;
+  const stackId = postStackId(source);
+  if (!stackId || stackId !== postStackId(target)) return branches;
+
+  const sourceIndex = branches.indexOf(source);
+  const targetIndex = branches.indexOf(target);
   const next = reorder(branches, sourceIndex, targetIndex, placement);
   return sameOrder(branches, next) ? branches : next;
+}
+
+// If the given stack now has exactly one member, free it (a group of one is a
+// standalone module). No-op for empty/missing ids or stacks with 2+ members.
+function collapseStrayStack(branches: ModuleBranch[], stackId: string): ModuleBranch[] {
+  if (!stackId) return branches;
+  const members = branches.filter((m) => postStackId(m) === stackId);
+  if (members.length !== 1) return branches;
+  return branches.map((m) => (m.id === members[0].id ? withStackId(m, null) : m));
 }
 
 // Remove a posts module from its tab group (becomes standalone again). If only
