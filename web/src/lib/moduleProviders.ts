@@ -407,6 +407,8 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     .slice(0, 4)
     .flatMap((item) => jellyfinLikeRecentItem(module.id, item));
   const nowPlaying = jellyfinLikeNowPlaying(module.id, sessionItems);
+  // Count every active session for the stat; nowPlaying is capped for display.
+  const activeStreams = countActiveJellyfinSessions(sessionItems);
 
   return {
     kind: 'media',
@@ -416,7 +418,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     stats: [
       {
         label: 'Streams',
-        value: nowPlaying.length,
+        value: activeStreams,
       },
     ],
     libraries: libraries.length > 0
@@ -1083,10 +1085,18 @@ function plexNowPlaying(moduleId: string, container: JsonObject): MediaNowPlayin
   });
 }
 
+function hasNowPlayingItem(session: unknown): boolean {
+  return Boolean(valueOf(asObject(session), 'NowPlayingItem', 'nowPlayingItem'));
+}
+
+function countActiveJellyfinSessions(sessions: unknown[]): number {
+  return sessions.filter(hasNowPlayingItem).length;
+}
+
 function jellyfinLikeNowPlaying(moduleId: string, sessions: unknown[]): MediaNowPlayingItem[] {
   return sessions
     .map(asObject)
-    .filter((session) => Boolean(valueOf(session, 'NowPlayingItem', 'nowPlayingItem')))
+    .filter(hasNowPlayingItem)
     .slice(0, 3)
     .map((session, index) => {
       const np = asObject(valueOf(session, 'NowPlayingItem', 'nowPlayingItem'));

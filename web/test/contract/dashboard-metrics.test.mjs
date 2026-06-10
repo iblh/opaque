@@ -205,7 +205,8 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   assert.equal(jellyfinBody.data.service, 'Jellyfin');
   assert.equal(jellyfinBody.data.libraries.find((library) => library.name === 'Movies').count, 10);
   assert.equal(jellyfinBody.data.libraries.find((library) => library.name === 'TV').count, 40);
-  assert.equal(jellyfinBody.data.stats.find((stat) => stat.label === 'Streams').value, 1);
+  assert.equal(jellyfinBody.data.stats.find((stat) => stat.label === 'Streams').value, 4);
+  assert.equal(jellyfinBody.data.nowPlaying.length, 3);
   assert.equal(jellyfinBody.data.recent[0].title, 'Contract Episode');
   assert.match(jellyfinBody.data.recent[0].imageUrl, /^\/api\/modules\/image\?/);
   await assertImage(cookie, jellyfinBody.data.recent[0].imageUrl);
@@ -452,7 +453,13 @@ async function startModuleMockServer() {
         return sendJson(response, 200, { MovieCount: 10, SeriesCount: 3, EpisodeCount: 40 });
       }
       if (path === '/jellyfin/Sessions') {
-        return sendJson(response, 200, [{ NowPlayingItem: { Name: 'Contract Stream' } }, {}]);
+        return sendJson(response, 200, [
+          { NowPlayingItem: { Name: 'Contract Stream 1' } },
+          { NowPlayingItem: { Name: 'Contract Stream 2' } },
+          { NowPlayingItem: { Name: 'Contract Stream 3' } },
+          { NowPlayingItem: { Name: 'Contract Stream 4' } },
+          {},
+        ]);
       }
       if (path === '/jellyfin/Library/MediaFolders') {
         return sendJson(response, 200, {

@@ -921,6 +921,11 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   const data = state.data?.kind === 'media' ? state.data as MediaModuleData : null;
   const nowPlaying = data?.nowPlaying ?? [];
   const queue = data?.queue ?? [];
+  // The Streams stat carries the true session count; nowPlaying is capped for
+  // display, so prefer the stat for the "N playing" label on busy servers.
+  const streamCount = data
+    ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
+    : 0;
 
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
@@ -930,8 +935,8 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <>
           <div className="mb-4 flex items-baseline justify-between">
             <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
-              <span className={`h-1.5 w-1.5 rounded-full ${nowPlaying.length > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
-              {nowPlaying.length > 0 ? `${nowPlaying.length} playing` : data.status}
+              <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
+              {streamCount > 0 ? `${streamCount} playing` : data.status}
             </div>
             <div className="font-mono text-[10px] text-text-tertiary">
               {data.detail || data.service}
@@ -2136,6 +2141,13 @@ function formatCompactStatValue(value: string | number) {
 
 function mediaStatValue(data: MediaModuleData, label: string) {
   return data.stats.find((stat) => stat.label.toLowerCase() === label.toLowerCase())?.value;
+}
+
+function toCount(value: string | number | undefined) {
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, value) : 0;
+  if (typeof value !== 'string') return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 function formatRelativeTime(value: string) {
