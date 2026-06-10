@@ -48,6 +48,33 @@ export interface MediaRecentItem {
   subtitle?: string;
   imageUrl?: string;
   url?: string;
+  /** ISO timestamp the item was added to the library, when known. */
+  addedAt?: string;
+}
+
+export interface MediaNowPlayingItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  /** Who is watching / listening. */
+  user?: string;
+  /** Player / device name. */
+  device?: string;
+  /** Playback progress 0–1, when known. */
+  progress?: number;
+  /** Whether playback is paused. */
+  paused?: boolean;
+  imageUrl?: string;
+}
+
+export interface MediaQueueItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  /** Download progress 0–1, when known. */
+  progress?: number;
+  /** Status label, e.g. "downloading", "queued". */
+  status?: string;
 }
 
 export interface MediaModuleData {
@@ -59,6 +86,12 @@ export interface MediaModuleData {
   stats: MediaStat[];
   libraries?: MediaLibraryStat[];
   recent?: MediaRecentItem[];
+  /** Active playback sessions (Plex / Jellyfin / Emby). */
+  nowPlaying?: MediaNowPlayingItem[];
+  /** Active download queue items (Sonarr / Radarr). */
+  queue?: MediaQueueItem[];
+  /** ISO timestamp of the most recently added item, for a "last added" hint. */
+  lastAddedAt?: string;
 }
 
 export interface PostItem {

@@ -3,6 +3,8 @@ import type {
   MarketQuote,
   MediaLibraryStat,
   MediaModuleData,
+  MediaNowPlayingItem,
+  MediaQueueItem,
   MediaRecentItem,
   ModuleData,
   PostItem,
@@ -355,6 +357,7 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
     .map(asObject)
     .slice(0, 4)
     .flatMap((item) => plexRecentItem(module.id, item));
+  const nowPlaying = plexNowPlaying(module.id, sessionContainer);
 
   return {
     kind: 'media',
@@ -367,6 +370,8 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
     ],
     libraries,
     recent: recentItems,
+    nowPlaying,
+    lastAddedAt: latestAddedAt(recentItems),
   };
 }
 
@@ -401,6 +406,9 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     .map(asObject)
     .slice(0, 4)
     .flatMap((item) => jellyfinLikeRecentItem(module.id, item));
+  const nowPlaying = jellyfinLikeNowPlaying(module.id, sessionItems);
+  // Count every active session for the stat; nowPlaying is capped for display.
+  const activeStreams = countActiveJellyfinSessions(sessionItems);
 
   return {
     kind: 'media',
@@ -410,7 +418,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     stats: [
       {
         label: 'Streams',
-        value: sessionItems.filter((session) => Boolean(valueOf(asObject(session), 'NowPlayingItem', 'nowPlayingItem'))).length,
+        value: activeStreams,
       },
     ],
     libraries: libraries.length > 0
@@ -421,6 +429,8 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
           count: mediaItemCount(asObject(counts)),
         }],
     recent: recentItems,
+    nowPlaying,
+    lastAddedAt: latestAddedAt(recentItems),
   };
 }
 
@@ -437,10 +447,14 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
     Accept: 'application/json',
     'X-Api-Key': apiKey,
   };
+  const isSonarr = module.moduleType === 'sonarr';
+  const queueParams = isSonarr
+    ? 'api/v3/queue?page=1&pageSize=4&includeSeries=true&includeEpisode=true'
+    : 'api/v3/queue?page=1&pageSize=4&includeMovie=true';
   const [status, collection, queue, missing] = await Promise.all([
     fetchJson(serviceEndpoint(baseUrl, 'api/v3/system/status'), { headers }, service),
     fetchJson(serviceEndpoint(baseUrl, `api/v3/${collectionPath}`), { headers }, service),
-    fetchJson(serviceEndpoint(baseUrl, 'api/v3/queue?page=1&pageSize=1'), { headers }, service),
+    fetchJson(serviceEndpoint(baseUrl, queueParams), { headers }, service),
     fetchJson(serviceEndpoint(baseUrl, 'api/v3/wanted/missing?page=1&pageSize=1'), { headers }, service),
   ]);
 
@@ -449,6 +463,8 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
     Date.parse(stringValue(valueOf(b, 'added')) || '') - Date.parse(stringValue(valueOf(a, 'added')) || '')
   )).slice(0, 4).flatMap((item) => arrRecentItem(module.id, item));
   const statusObject = asObject(status);
+  const queueObject = asObject(queue);
+  const queueItems = arrQueueItems(arrayValue(valueOf(queueObject, 'records', 'Records')), isSonarr);
 
   return {
     kind: 'media',
@@ -457,11 +473,13 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
     detail: stringValue(valueOf(statusObject, 'version')) || undefined,
     url: cleanBaseUrl(baseUrl),
     stats: [
-      { label: module.moduleType === 'sonarr' ? 'Series' : 'Movies', value: items.length },
+      { label: isSonarr ? 'Series' : 'Movies', value: items.length },
       { label: 'Missing', value: finiteNumber(valueOf(asObject(missing), 'totalRecords')) ?? 0 },
-      { label: 'Queue', value: finiteNumber(valueOf(asObject(queue), 'totalRecords')) ?? 0 },
+      { label: 'Queue', value: finiteNumber(valueOf(queueObject, 'totalRecords')) ?? 0 },
     ],
     recent: recentItems,
+    queue: queueItems,
+    lastAddedAt: latestAddedAt(recentItems),
   };
 }
 
@@ -833,21 +851,38 @@ function mediaContainer(value: unknown) {
 
 function plexRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
   const id = stringValue(valueOf(item, 'ratingKey', 'key', 'guid'));
-  const title = stringValue(valueOf(item, 'title', 'grandparentTitle')) || 'Untitled';
-  const seriesTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
+  const ownTitle = stringValue(valueOf(item, 'title')) || 'Untitled';
+  const parentTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
   const year = finiteNumber(valueOf(item, 'year'));
-  const type = stringValue(valueOf(item, 'type'));
-  const subtitle = [
-    seriesTitle && seriesTitle !== title ? seriesTitle : '',
-    year ? String(year) : type,
-  ].filter(Boolean).join(' · ') || undefined;
+  const type = stringValue(valueOf(item, 'type')).toLowerCase();
+
+  let title: string;
+  let subtitleParts: string[];
+  if ((type === 'episode' || type === 'season') && parentTitle && parentTitle !== ownTitle) {
+    // TV: the show is the meaningful headline (an episode carries it in
+    // grandparentTitle, a season in parentTitle); the episode/season is detail.
+    title = parentTitle;
+    subtitleParts = [ownTitle, year ? String(year) : ''];
+  } else {
+    // Movies, music tracks, etc. keep their own title. For these the parent
+    // (artist/album for music) is context, so it stays in the subtitle.
+    title = ownTitle;
+    subtitleParts = [
+      parentTitle && parentTitle !== ownTitle ? parentTitle : '',
+      year ? String(year) : type,
+    ];
+  }
+  const subtitle = subtitleParts.filter(Boolean).join(' · ') || undefined;
   const imagePath = stringValue(valueOf(item, 'thumb', 'parentThumb', 'grandparentThumb', 'art'));
+  // Plex addedAt is a Unix timestamp in seconds.
+  const addedAtSeconds = finiteNumber(valueOf(item, 'addedAt'));
 
   return [{
     id: id || `${title}-${imagePath}`,
     title,
     subtitle,
     imageUrl: imagePath ? mediaImageUrl(moduleId, imagePath) : undefined,
+    addedAt: addedAtSeconds ? new Date(addedAtSeconds * 1000).toISOString() : undefined,
   }];
 }
 
@@ -862,6 +897,7 @@ function jellyfinLikeRecentItem(moduleId: string, item: JsonObject): MediaRecent
     stringValue(valueOf(imageTags, 'Primary', 'primary'))
       || stringValue(valueOf(item, 'PrimaryImageTag', 'primaryImageTag')),
   );
+  const dateCreated = stringValue(valueOf(item, 'DateCreated', 'dateCreated'));
 
   return [{
     id: id || title,
@@ -870,6 +906,7 @@ function jellyfinLikeRecentItem(moduleId: string, item: JsonObject): MediaRecent
     imageUrl: id && hasPrimaryImage
       ? mediaImageUrl(moduleId, `Items/${encodeURIComponent(id)}/Images/Primary?maxWidth=240&quality=80`)
       : undefined,
+    addedAt: isoOrUndefined(dateCreated),
   }];
 }
 
@@ -882,13 +919,21 @@ function arrRecentItem(moduleId: string, item: JsonObject): MediaRecentItem[] {
     || images[0]
     || {};
   const rawImageUrl = stringValue(valueOf(poster, 'url', 'remoteUrl'));
+  const added = stringValue(valueOf(item, 'added'));
 
   return [{
     id: id || title,
     title,
     subtitle: year ? String(year) : undefined,
     imageUrl: mediaCoverImageUrl(moduleId, rawImageUrl),
+    addedAt: isoOrUndefined(added),
   }];
+}
+
+function isoOrUndefined(value: string): string | undefined {
+  if (!value) return undefined;
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? undefined : new Date(ms).toISOString();
 }
 
 function mediaCoverImageUrl(moduleId: string, rawImageUrl: string) {
@@ -999,6 +1044,128 @@ function activePlexStreams(container: JsonObject) {
     ...arrayValue(valueOf(container, 'Track')),
     ...arrayValue(valueOf(container, 'Photo')),
   ].length;
+}
+
+function plexNowPlaying(moduleId: string, container: JsonObject): MediaNowPlayingItem[] {
+  const sessions = [
+    ...arrayValue(valueOf(container, 'Metadata')),
+    ...arrayValue(valueOf(container, 'Video')),
+    ...arrayValue(valueOf(container, 'Track')),
+  ].map(asObject);
+
+  return sessions.slice(0, 3).map((item, index) => {
+    const ownTitle = stringValue(valueOf(item, 'title')) || 'Untitled';
+    const parentTitle = stringValue(valueOf(item, 'grandparentTitle', 'parentTitle'));
+    const type = stringValue(valueOf(item, 'type')).toLowerCase();
+    // Lead with the show name only for TV; tracks (artist in grandparentTitle)
+    // and movies keep their own title with the parent shown as context.
+    const promoteParent = (type === 'episode' || type === 'season')
+      && Boolean(parentTitle) && parentTitle !== ownTitle;
+    const title = promoteParent ? parentTitle : ownTitle;
+    const subtitle = promoteParent
+      ? ownTitle
+      : (parentTitle && parentTitle !== ownTitle ? parentTitle : undefined);
+    const user = stringValue(valueOf(asObject(valueOf(item, 'User')), 'title'));
+    const device = stringValue(valueOf(asObject(valueOf(item, 'Player')), 'title', 'product'));
+    const state = stringValue(valueOf(asObject(valueOf(item, 'Player')), 'state'));
+    const offset = finiteNumber(valueOf(item, 'viewOffset'));
+    const duration = finiteNumber(valueOf(item, 'duration'));
+    const imagePath = stringValue(valueOf(item, 'thumb', 'parentThumb', 'grandparentThumb', 'art'));
+
+    return {
+      id: stringValue(valueOf(item, 'sessionKey', 'ratingKey')) || `np-${index}`,
+      title,
+      subtitle,
+      user: user || undefined,
+      device: device || undefined,
+      paused: state === 'paused',
+      progress: offset && duration ? clampUnit(offset / duration) : undefined,
+      imageUrl: imagePath ? mediaImageUrl(moduleId, imagePath) : undefined,
+    };
+  });
+}
+
+function hasNowPlayingItem(session: unknown): boolean {
+  return Boolean(valueOf(asObject(session), 'NowPlayingItem', 'nowPlayingItem'));
+}
+
+function countActiveJellyfinSessions(sessions: unknown[]): number {
+  return sessions.filter(hasNowPlayingItem).length;
+}
+
+function jellyfinLikeNowPlaying(moduleId: string, sessions: unknown[]): MediaNowPlayingItem[] {
+  return sessions
+    .map(asObject)
+    .filter(hasNowPlayingItem)
+    .slice(0, 3)
+    .map((session, index) => {
+      const np = asObject(valueOf(session, 'NowPlayingItem', 'nowPlayingItem'));
+      const ownTitle = stringValue(valueOf(np, 'Name', 'name')) || 'Untitled';
+      const seriesName = stringValue(valueOf(np, 'SeriesName', 'seriesName'));
+      const title = seriesName || ownTitle;
+      const subtitle = seriesName ? ownTitle : undefined;
+      const user = stringValue(valueOf(session, 'UserName', 'userName'));
+      const device = stringValue(valueOf(session, 'DeviceName', 'deviceName', 'Client', 'client'));
+      const playState = asObject(valueOf(session, 'PlayState', 'playState'));
+      const paused = valueOf(playState, 'IsPaused', 'isPaused') === true;
+      const positionTicks = finiteNumber(valueOf(playState, 'PositionTicks', 'positionTicks'));
+      const runtimeTicks = finiteNumber(valueOf(np, 'RunTimeTicks', 'runTimeTicks'));
+      const npId = stringValue(valueOf(np, 'Id', 'id'));
+      const hasPrimary = Boolean(stringValue(valueOf(asObject(valueOf(np, 'ImageTags', 'imageTags')), 'Primary', 'primary')));
+
+      return {
+        id: stringValue(valueOf(session, 'Id', 'id')) || `np-${index}`,
+        title,
+        subtitle,
+        user: user || undefined,
+        device: device || undefined,
+        paused,
+        progress: positionTicks && runtimeTicks ? clampUnit(positionTicks / runtimeTicks) : undefined,
+        imageUrl: npId && hasPrimary
+          ? mediaImageUrl(moduleId, `Items/${encodeURIComponent(npId)}/Images/Primary?maxWidth=240&quality=80`)
+          : undefined,
+      };
+    });
+}
+
+function arrQueueItems(records: unknown[], isSonarr: boolean): MediaQueueItem[] {
+  return records.map(asObject).slice(0, 4).map((record, index) => {
+    const title = isSonarr
+      ? stringValue(valueOf(asObject(valueOf(record, 'series')), 'title')) || stringValue(valueOf(record, 'title'))
+      : stringValue(valueOf(asObject(valueOf(record, 'movie')), 'title')) || stringValue(valueOf(record, 'title'));
+    const episode = isSonarr ? asObject(valueOf(record, 'episode')) : null;
+    const seasonNum = episode ? finiteNumber(valueOf(episode, 'seasonNumber')) : null;
+    const epNum = episode ? finiteNumber(valueOf(episode, 'episodeNumber')) : null;
+    const size = finiteNumber(valueOf(record, 'size'));
+    const sizeLeft = finiteNumber(valueOf(record, 'sizeleft', 'sizeLeft'));
+    const progress = size !== null && size > 0 && sizeLeft !== null
+      ? clampUnit((size - sizeLeft) / size)
+      : undefined;
+    const status = stringValue(valueOf(record, 'status')).toLowerCase() || undefined;
+
+    return {
+      id: stringValue(valueOf(record, 'id', 'downloadId')) || `q-${index}`,
+      title: title || 'Untitled',
+      subtitle: seasonNum && epNum
+        ? `S${String(seasonNum).padStart(2, '0')}E${String(epNum).padStart(2, '0')}`
+        : undefined,
+      progress,
+      status,
+    };
+  });
+}
+
+function clampUnit(value: number) {
+  if (!Number.isFinite(value)) return undefined;
+  return Math.max(0, Math.min(1, value));
+}
+
+function latestAddedAt(items: MediaRecentItem[]): string | undefined {
+  const times = items
+    .map((item) => (item.addedAt ? Date.parse(item.addedAt) : NaN))
+    .filter((ms) => !Number.isNaN(ms));
+  if (times.length === 0) return undefined;
+  return new Date(Math.max(...times)).toISOString();
 }
 
 function mediaItemCount(counts: JsonObject) {

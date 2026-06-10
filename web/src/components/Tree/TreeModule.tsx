@@ -8,11 +8,14 @@ import {
   IconChartLine,
   IconCloud,
   IconDeviceTv,
+  IconDownload,
   IconGripVertical,
   IconHelpCircle,
+  IconLayersOff,
   IconMovie,
   IconNews,
   IconPhotoVideo,
+  IconPlayerPause,
   IconPlayerPlay,
   IconRefresh,
   IconRss,
@@ -21,6 +24,8 @@ import {
 import type {
   MarketsModuleData,
   MediaModuleData,
+  MediaNowPlayingItem,
+  MediaQueueItem,
   ModuleData,
   ModuleDataResponse,
   PostsModuleData,
@@ -65,7 +70,7 @@ interface TabDragProps {
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
-const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3 px-4 md:px-8';
+const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3';
 
 function moduleGridClassName(root: string) {
   // Posts use a wider reading column; the width must match between view and
@@ -303,7 +308,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   if (!isEditing && visibleModules.length === 0) return null;
 
   const addControl = isEditing && allowedTypes.length > 0 ? (
-    <div className="pointer-events-none absolute -top-8 right-4 z-10 md:right-8">
+    <div className="pointer-events-none absolute -top-8 right-0 z-10">
       <div className="pointer-events-auto">
         <SectionAddControl
           label="Add module"
@@ -329,7 +334,6 @@ const TreeModule: React.FC<TreeModuleProps> = ({
               <PostsStackEditor
                 key={`post-stack-${item.stackId}`}
                 modules={item.modules}
-                onUnmerge={unmerge}
                 getTabDragProps={tabDragHandlers}
                 isDropTarget={mergeTargetId === stackTargetId}
                 onDragOver={(event) => {
@@ -363,6 +367,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
                     embedded
                     onUpdate={(updater) => updateModule(module.id, updater)}
                     onRemove={() => removeModule(module.id)}
+                    onUnmerge={() => unmerge(module.id)}
                     {...cardDragHandlers(module.id)}
                   />
                 )}
@@ -410,6 +415,7 @@ interface ModuleEditCardProps {
   isMergeTarget?: boolean;
   onUpdate: (updater: (module: ModuleBranch) => ModuleBranch) => void;
   onRemove: () => void;
+  onUnmerge?: () => void;
   onDragStart: (event: React.DragEvent<HTMLElement>) => void;
   onDragEnd: () => void;
   onDragOver: (event: React.DragEvent<HTMLElement>) => void;
@@ -424,6 +430,7 @@ function ModuleEditCard({
   isMergeTarget = false,
   onUpdate,
   onRemove,
+  onUnmerge,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -452,18 +459,32 @@ function ModuleEditCard({
       )}
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <div
-            role="button"
-            tabIndex={0}
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            className="flex h-6 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
-            aria-label={`Move ${module.name}`}
-            title="Move module"
-          >
-            <IconGripVertical className="h-4 w-4" />
-          </div>
+          {embedded ? (
+            // Inside a tab group, a source isn't dragged out — it's ungrouped.
+            // The handle slot becomes the ungroup action; reorder is via tabs.
+            <button
+              type="button"
+              onClick={onUnmerge}
+              className="flex h-6 w-5 flex-shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+              aria-label={`Ungroup ${module.name}`}
+              title="Ungroup — move out of the tab group"
+            >
+              <IconLayersOff className="h-4 w-4" />
+            </button>
+          ) : (
+            <div
+              role="button"
+              tabIndex={0}
+              draggable
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              className="flex h-6 w-5 flex-shrink-0 cursor-grab items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+              aria-label={`Move ${module.name}`}
+              title="Move module"
+            >
+              <IconGripVertical className="h-4 w-4" />
+            </div>
+          )}
           <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
           <div className="min-w-0">
             <div className="truncate text-xs font-medium text-text-primary">
@@ -741,12 +762,12 @@ function ModulePanel({
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="truncate text-xs font-medium text-text-primary no-underline hover:text-ink-800"
+              className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
             >
               {title}
             </a>
           ) : (
-            <div className="truncate text-xs font-medium text-text-primary">
+            <div className="truncate font-serif text-sm text-text-primary">
               {title}
             </div>
           )}
@@ -898,6 +919,13 @@ function MarketSparkline({
 
 function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
   const data = state.data?.kind === 'media' ? state.data as MediaModuleData : null;
+  const nowPlaying = data?.nowPlaying ?? [];
+  const queue = data?.queue ?? [];
+  // The Streams stat carries the true session count; nowPlaying is capped for
+  // display, so prefer the stat for the "N playing" label on busy servers.
+  const streamCount = data
+    ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
+    : 0;
 
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
@@ -906,13 +934,37 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
       ) : (
         <>
           <div className="mb-4 flex items-baseline justify-between">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-accent-green">
-              {data.status}
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
+              <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
+              {streamCount > 0 ? `${streamCount} playing` : data.status}
             </div>
             <div className="font-mono text-[10px] text-text-tertiary">
               {data.detail || data.service}
             </div>
           </div>
+
+          {nowPlaying.length > 0 && (
+            <div className="mb-4 space-y-2.5">
+              {nowPlaying.map((item) => (
+                <NowPlayingRow key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+
+          {queue.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+                <IconDownload className="h-3 w-3" />
+                Downloading
+              </div>
+              <div className="space-y-2">
+                {queue.map((item) => (
+                  <QueueRow key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {data.libraries && data.libraries.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
@@ -969,13 +1021,20 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
           {data.recent && data.recent.length > 0 && (
             <div className="mt-4 border-t border-border-light pt-3">
-              <div className="mb-2 text-[10px] uppercase tracking-wider text-text-tertiary">
-                Recent
+              <div className="mb-2 flex items-baseline justify-between gap-2">
+                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                  Recently added
+                </div>
+                {data.lastAddedAt && (
+                  <div className="font-mono text-[9px] text-text-muted" title={`Last added ${formatRelativeTime(data.lastAddedAt)}`}>
+                    {formatRelativeTime(data.lastAddedAt)}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {data.recent.map((item) => (
-                  <div key={item.id} className="min-w-0">
-                    <div className="aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
+                  <div key={item.id} className="group/recent min-w-0">
+                    <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
@@ -991,12 +1050,23 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
                           {item.title.slice(0, 1)}
                         </div>
                       )}
+                      {item.addedAt && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
+                          {formatRelativeTime(item.addedAt)}
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-1 truncate text-[10px] font-medium text-text-primary">
+                    <div
+                      className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
+                      title={item.title}
+                    >
                       {item.title}
                     </div>
                     {item.subtitle && (
-                      <div className="truncate font-mono text-[9px] text-text-tertiary">
+                      <div
+                        className="mt-0.5 line-clamp-2 font-mono text-[9px] leading-tight text-text-tertiary"
+                        title={item.subtitle}
+                      >
                         {item.subtitle}
                       </div>
                     )}
@@ -1011,10 +1081,88 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
+function NowPlayingRow({ item }: { item: MediaNowPlayingItem }) {
+  const meta = [item.user, item.device].filter(Boolean).join(' · ');
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-sm border border-border-light bg-surface-sunken">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt=""
+            width={32}
+            height={48}
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-text-muted">
+            {item.paused ? <IconPlayerPause className="h-3 w-3" /> : <IconPlayerPlay className="h-3 w-3" />}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          {item.paused
+            ? <IconPlayerPause className="h-3 w-3 flex-shrink-0 text-text-muted" />
+            : <IconPlayerPlay className="h-3 w-3 flex-shrink-0 text-accent-green" />}
+          <div className="truncate text-xs font-medium text-text-primary" title={item.title}>
+            {item.title}
+          </div>
+        </div>
+        <div className="mt-0.5 truncate font-mono text-[9px] text-text-tertiary">
+          {item.subtitle ? `${item.subtitle}${meta ? ' · ' : ''}` : ''}{meta}
+        </div>
+        {item.progress !== undefined && (
+          <MediaProgressBar value={item.progress} className="mt-1.5" tone="accent" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function QueueRow({ item }: { item: MediaQueueItem }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="min-w-0 truncate text-xs text-text-primary" title={item.title}>
+          {item.title}
+          {item.subtitle && <span className="ml-1.5 font-mono text-[9px] text-text-tertiary">{item.subtitle}</span>}
+        </div>
+        <div className="flex-shrink-0 font-mono text-[9px] text-text-tertiary">
+          {item.progress !== undefined ? `${Math.round(item.progress * 100)}%` : (item.status || '')}
+        </div>
+      </div>
+      {item.progress !== undefined && (
+        <MediaProgressBar value={item.progress} className="mt-1" tone="ink" />
+      )}
+    </div>
+  );
+}
+
+function MediaProgressBar({
+  value,
+  className = '',
+  tone = 'accent',
+}: {
+  value: number;
+  className?: string;
+  tone?: 'accent' | 'ink';
+}) {
+  const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  return (
+    <div className={`h-0.5 w-full overflow-hidden rounded-full bg-border-light ${className}`}>
+      <div
+        className={`h-full rounded-full ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
 function PostsStackEditor({
   modules,
   renderModule,
-  onUnmerge,
   getTabDragProps,
   isDropTarget,
   onDragOver,
@@ -1022,7 +1170,6 @@ function PostsStackEditor({
 }: {
   modules: ModuleBranch[];
   renderModule: (module: ModuleBranch) => React.ReactNode;
-  onUnmerge: (moduleId: string) => void;
   getTabDragProps: (moduleId: string) => TabDragProps;
   isDropTarget: boolean;
   onDragOver: (event: React.DragEvent<HTMLElement>) => void;
@@ -1047,7 +1194,7 @@ function PostsStackEditor({
       onDrop={onDrop}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="text-xs font-medium text-text-primary">Posts group</div>
+        <div className="font-serif text-sm text-text-primary">Posts group</div>
         <div className="font-mono text-[10px] text-text-muted">
           {modules.length} sources · tabs
         </div>
@@ -1060,18 +1207,9 @@ function PostsStackEditor({
         getTabDragProps={getTabDragProps}
       />
 
-      <div className="mb-2 flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => onUnmerge(selectedModule.id)}
-          className="text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:text-text-primary"
-          title="Move this source out of the group"
-        >
-          Ungroup
-        </button>
+      <div className="mt-2">
+        {renderModule(selectedModule)}
       </div>
-
-      {renderModule(selectedModule)}
     </div>
   );
 }
@@ -2003,6 +2141,13 @@ function formatCompactStatValue(value: string | number) {
 
 function mediaStatValue(data: MediaModuleData, label: string) {
   return data.stats.find((stat) => stat.label.toLowerCase() === label.toLowerCase())?.value;
+}
+
+function toCount(value: string | number | undefined) {
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, value) : 0;
+  if (typeof value !== 'string') return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 function formatRelativeTime(value: string) {
