@@ -8,12 +8,14 @@ import {
   IconChartLine,
   IconCloud,
   IconDeviceTv,
+  IconDownload,
   IconGripVertical,
   IconHelpCircle,
   IconLayersOff,
   IconMovie,
   IconNews,
   IconPhotoVideo,
+  IconPlayerPause,
   IconPlayerPlay,
   IconRefresh,
   IconRss,
@@ -22,6 +24,8 @@ import {
 import type {
   MarketsModuleData,
   MediaModuleData,
+  MediaNowPlayingItem,
+  MediaQueueItem,
   ModuleData,
   ModuleDataResponse,
   PostsModuleData,
@@ -915,6 +919,8 @@ function MarketSparkline({
 
 function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
   const data = state.data?.kind === 'media' ? state.data as MediaModuleData : null;
+  const nowPlaying = data?.nowPlaying ?? [];
+  const queue = data?.queue ?? [];
 
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
@@ -923,13 +929,37 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
       ) : (
         <>
           <div className="mb-4 flex items-baseline justify-between">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-accent-green">
-              {data.status}
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
+              <span className={`h-1.5 w-1.5 rounded-full ${nowPlaying.length > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
+              {nowPlaying.length > 0 ? `${nowPlaying.length} playing` : data.status}
             </div>
             <div className="font-mono text-[10px] text-text-tertiary">
               {data.detail || data.service}
             </div>
           </div>
+
+          {nowPlaying.length > 0 && (
+            <div className="mb-4 space-y-2.5">
+              {nowPlaying.map((item) => (
+                <NowPlayingRow key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+
+          {queue.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+                <IconDownload className="h-3 w-3" />
+                Downloading
+              </div>
+              <div className="space-y-2">
+                {queue.map((item) => (
+                  <QueueRow key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {data.libraries && data.libraries.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
@@ -986,13 +1016,20 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
           {data.recent && data.recent.length > 0 && (
             <div className="mt-4 border-t border-border-light pt-3">
-              <div className="mb-2 text-[10px] uppercase tracking-wider text-text-tertiary">
-                Recent
+              <div className="mb-2 flex items-baseline justify-between gap-2">
+                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                  Recently added
+                </div>
+                {data.lastAddedAt && (
+                  <div className="font-mono text-[9px] text-text-muted" title={`Last added ${formatRelativeTime(data.lastAddedAt)}`}>
+                    {formatRelativeTime(data.lastAddedAt)}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {data.recent.map((item) => (
-                  <div key={item.id} className="min-w-0">
-                    <div className="aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
+                  <div key={item.id} className="group/recent min-w-0">
+                    <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
@@ -1006,6 +1043,11 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
                           {item.title.slice(0, 1)}
+                        </div>
+                      )}
+                      {item.addedAt && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
+                          {formatRelativeTime(item.addedAt)}
                         </div>
                       )}
                     </div>
@@ -1031,6 +1073,85 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         </>
       )}
     </ModulePanel>
+  );
+}
+
+function NowPlayingRow({ item }: { item: MediaNowPlayingItem }) {
+  const meta = [item.user, item.device].filter(Boolean).join(' · ');
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-sm border border-border-light bg-surface-sunken">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt=""
+            width={32}
+            height={48}
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-text-muted">
+            {item.paused ? <IconPlayerPause className="h-3 w-3" /> : <IconPlayerPlay className="h-3 w-3" />}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          {item.paused
+            ? <IconPlayerPause className="h-3 w-3 flex-shrink-0 text-text-muted" />
+            : <IconPlayerPlay className="h-3 w-3 flex-shrink-0 text-accent-green" />}
+          <div className="truncate text-xs font-medium text-text-primary" title={item.title}>
+            {item.title}
+          </div>
+        </div>
+        <div className="mt-0.5 truncate font-mono text-[9px] text-text-tertiary">
+          {item.subtitle ? `${item.subtitle}${meta ? ' · ' : ''}` : ''}{meta}
+        </div>
+        {item.progress !== undefined && (
+          <MediaProgressBar value={item.progress} className="mt-1.5" tone="accent" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function QueueRow({ item }: { item: MediaQueueItem }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="min-w-0 truncate text-xs text-text-primary" title={item.title}>
+          {item.title}
+          {item.subtitle && <span className="ml-1.5 font-mono text-[9px] text-text-tertiary">{item.subtitle}</span>}
+        </div>
+        <div className="flex-shrink-0 font-mono text-[9px] text-text-tertiary">
+          {item.progress !== undefined ? `${Math.round(item.progress * 100)}%` : (item.status || '')}
+        </div>
+      </div>
+      {item.progress !== undefined && (
+        <MediaProgressBar value={item.progress} className="mt-1" tone="ink" />
+      )}
+    </div>
+  );
+}
+
+function MediaProgressBar({
+  value,
+  className = '',
+  tone = 'accent',
+}: {
+  value: number;
+  className?: string;
+  tone?: 'accent' | 'ink';
+}) {
+  const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  return (
+    <div className={`h-0.5 w-full overflow-hidden rounded-full bg-border-light ${className}`}>
+      <div
+        className={`h-full rounded-full ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }
 
