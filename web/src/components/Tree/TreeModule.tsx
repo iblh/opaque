@@ -79,6 +79,11 @@ function moduleGridClassName(root: string) {
     return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
   }
 
+  // Today widgets are glanceable summaries; a narrower column keeps them tidy.
+  if (root === 'today') {
+    return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
+  }
+
   return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
 }
 
@@ -376,7 +381,6 @@ const TreeModule: React.FC<TreeModuleProps> = ({
               <PostsStackWidget
                 key={`post-stack-${item.stackId}`}
                 modules={item.modules}
-                title="Posts"
               />
             );
           }
@@ -679,13 +683,29 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
   );
 }
 
+// Session-scoped cache of module data so remounts and tab switches show the
+// last known content instantly while a silent refresh runs in the background.
+const moduleDataCache = new Map<string, ModuleData>();
+
 function useModuleData(module: ModuleBranch): ModuleDataState {
-  const [data, setData] = useState<ModuleData | null>(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [requestVersion, setRequestVersion] = useState(0);
   const configKey = JSON.stringify(module.config || {});
+  const cacheKey = `${module.id}:${configKey}`;
+  const [data, setData] = useState<ModuleData | null>(() => moduleDataCache.get(cacheKey) ?? null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(() => !moduleDataCache.has(cacheKey));
+  const [requestVersion, setRequestVersion] = useState(0);
   const refresh = useCallback(() => setRequestVersion((version) => version + 1), []);
+
+  // When this hook instance is reused for a different module (switching tabs
+  // in a posts group), swap to that module's cached data during render so the
+  // previous tab's content never lingers under the new tab's header.
+  const lastCacheKeyRef = useRef(cacheKey);
+  if (lastCacheKeyRef.current !== cacheKey) {
+    lastCacheKeyRef.current = cacheKey;
+    setData(moduleDataCache.get(cacheKey) ?? null);
+    setError('');
+    setIsLoading(!moduleDataCache.has(cacheKey));
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -708,7 +728,9 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
         }
 
         if (!cancelled) {
-          setData((payload as ModuleDataResponse).data);
+          const nextData = (payload as ModuleDataResponse).data;
+          moduleDataCache.set(cacheKey, nextData);
+          setData(nextData);
         }
       } catch (loadError) {
         if (!cancelled && !controller.signal.aborted) {
@@ -719,7 +741,8 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
       }
     };
 
-    load();
+    // With cached data on screen, refresh silently (stale-while-revalidate).
+    load(moduleDataCache.has(cacheKey));
     const intervalId = window.setInterval(() => load(true), moduleRefreshInterval(module.moduleType));
 
     return () => {
@@ -727,9 +750,16 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
       controller.abort();
       window.clearInterval(intervalId);
     };
-  }, [configKey, module.id, module.moduleType, requestVersion]);
+  }, [cacheKey, module.id, module.moduleType, requestVersion]);
 
   return { data, error, isLoading, refresh };
+}
+
+// Mounts the data hook for a module without rendering anything — used to warm
+// the cache for a posts group's hidden tabs so switching is instant.
+function ModulePrefetch({ module }: { module: ModuleBranch }) {
+  useModuleData(module);
+  return null;
 }
 
 function ModulePanel({
@@ -737,12 +767,15 @@ function ModulePanel({
   state,
   href,
   titleOverride,
+  header,
   children,
 }: {
   module: ModuleBranch;
   state?: ModuleDataState;
   href?: string;
   titleOverride?: string;
+  /** Replaces the icon + title cluster, e.g. a tab bar acting as the header. */
+  header?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const statusClass = state?.error
@@ -755,23 +788,27 @@ function ModulePanel({
   return (
     <section className="border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium hover:bg-[#fcfcfc]">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
-            >
-              {title}
-            </a>
-          ) : (
-            <div className="truncate font-serif text-sm text-text-primary">
-              {title}
-            </div>
-          )}
-        </div>
+        {header ? (
+          <div className="min-w-0 flex-1">{header}</div>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
+            {href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
+              >
+                {title}
+              </a>
+            ) : (
+              <div className="truncate font-serif text-sm text-text-primary">
+                {title}
+              </div>
+            )}
+          </div>
+        )}
         {state && (
           <div className="flex items-center gap-2">
             <button
@@ -801,7 +838,7 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   return (
     <ModulePanel module={module} state={state}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
           <div>
@@ -846,7 +883,7 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   return (
     <ModulePanel module={module} state={state}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="markets" />
       ) : (
         <div className="-my-1 divide-y divide-border-light">
           {data.quotes.map((quote) => {
@@ -889,16 +926,16 @@ function MarketSparkline({
 }: {
   values: number[];
 }) {
-  const points = sparklinePoints(values, 96, 34);
+  const points = sparklinePoints(values, 80, 26);
 
   if (!points) {
-    return <div className="h-9" />;
+    return <div className="h-[26px]" />;
   }
 
   return (
-    <div className="h-9 min-w-0 overflow-hidden">
+    <div className="h-[26px] min-w-0 overflow-hidden">
       <svg
-        viewBox="0 0 96 34"
+        viewBox="0 0 80 26"
         preserveAspectRatio="none"
         className="h-full w-full text-ink-400"
         aria-label="Recent price trend"
@@ -930,7 +967,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
           <div className="mb-4 flex items-baseline justify-between">
@@ -1194,18 +1231,19 @@ function PostsStackEditor({
       onDrop={onDrop}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="font-serif text-sm text-text-primary">Posts group</div>
-        <div className="font-mono text-[10px] text-text-muted">
+        <div className="min-w-0 flex-1">
+          <PostStackTabs
+            modules={modules}
+            selectedId={selectedModule.id}
+            onSelect={setSelectedId}
+            getTabDragProps={getTabDragProps}
+            framed={false}
+          />
+        </div>
+        <div className="flex-shrink-0 font-mono text-[10px] text-text-muted">
           {modules.length} sources · tabs
         </div>
       </div>
-
-      <PostStackTabs
-        modules={modules}
-        selectedId={selectedModule.id}
-        onSelect={setSelectedId}
-        getTabDragProps={getTabDragProps}
-      />
 
       <div className="mt-2">
         {renderModule(selectedModule)}
@@ -1216,10 +1254,8 @@ function PostsStackEditor({
 
 function PostsStackWidget({
   modules,
-  title = 'Posts',
 }: {
   modules: ModuleBranch[];
-  title?: string;
 }) {
   const sources = useMemo(() => (
     modules.filter((module) => isPostModuleType(module.moduleType))
@@ -1239,7 +1275,6 @@ function PostsStackWidget({
       modules={sources}
       selectedModule={selectedModule}
       onSelect={setSelectedId}
-      title={title}
     />
   );
 }
@@ -1248,24 +1283,33 @@ function PostsStackLive({
   modules,
   selectedModule,
   onSelect,
-  title,
 }: {
   modules: ModuleBranch[];
   selectedModule: ModuleBranch;
   onSelect: (moduleId: string) => void;
-  title: string;
 }) {
   const state = useModuleData(selectedModule);
   const data = state.data?.kind === 'posts' ? state.data as PostsModuleData : null;
 
   return (
-    <ModulePanel module={selectedModule} state={state} titleOverride={title}>
-      <PostStackTabs
-        modules={modules}
-        selectedId={selectedModule.id}
-        onSelect={onSelect}
-      />
+    <ModulePanel
+      module={selectedModule}
+      state={state}
+      header={(
+        <PostStackTabs
+          modules={modules}
+          selectedId={selectedModule.id}
+          onSelect={onSelect}
+          framed={false}
+        />
+      )}
+    >
       <PostsContent data={data} state={state} />
+      {modules
+        .filter((source) => source.id !== selectedModule.id)
+        .map((source) => (
+          <ModulePrefetch key={source.id} module={source} />
+        ))}
     </ModulePanel>
   );
 }
@@ -1275,15 +1319,22 @@ function PostStackTabs({
   selectedId,
   onSelect,
   getTabDragProps,
+  framed = true,
 }: {
   modules: ModuleBranch[];
   selectedId: string;
   onSelect: (moduleId: string) => void;
   getTabDragProps?: (moduleId: string) => TabDragProps;
+  /** false renders a bare tab row (no baseline rule) for use as a panel header. */
+  framed?: boolean;
 }) {
   const draggable = Boolean(getTabDragProps);
   return (
-    <div className="mb-3 flex min-w-0 flex-wrap items-end gap-4 border-b border-border-light">
+    <div
+      className={`flex min-w-0 flex-wrap items-end gap-4 ${
+        framed ? 'mb-3 border-b border-border-light' : ''
+      }`}
+    >
       {modules.map((source) => {
         const isSelected = source.id === selectedId;
         const dragProps = getTabDragProps?.(source.id);
@@ -1293,7 +1344,9 @@ function PostStackTabs({
             type="button"
             onClick={() => onSelect(source.id)}
             {...dragProps}
-            className={`group relative -mb-px pb-2 text-[10px] uppercase tracking-wider transition-colors ${
+            className={`group relative text-[10px] uppercase tracking-wider transition-colors ${
+              framed ? '-mb-px pb-2' : 'pb-1'
+            } ${
               draggable ? 'cursor-grab active:cursor-grabbing' : ''
             } ${
               isSelected
@@ -1335,7 +1388,7 @@ function PostsContent({
   data: PostsModuleData | null;
   state: ModuleDataState;
 }) {
-  if (!data) return <ModuleBodyState state={state} />;
+  if (!data) return <ModuleBodyState state={state} skeleton="posts" />;
   if (data.posts.length === 0) return <EmptyModuleState>No posts found.</EmptyModuleState>;
 
   return (
@@ -1367,10 +1420,118 @@ function PostsContent({
   );
 }
 
-function ModuleBodyState({ state }: { state: ModuleDataState }) {
+type ModuleSkeletonKind = 'weather' | 'markets' | 'media' | 'posts' | 'generic';
+
+function ModuleBodyState({
+  state,
+  skeleton = 'generic',
+}: {
+  state: ModuleDataState;
+  skeleton?: ModuleSkeletonKind;
+}) {
+  if (state.error) {
+    return (
+      <div className="min-h-16 text-[11px] leading-relaxed text-red-500">
+        {state.error}
+      </div>
+    );
+  }
+
+  return <ModuleSkeleton kind={skeleton} />;
+}
+
+const skeletonBar = 'rounded-sm bg-surface-sunken';
+const skeletonBarSoft = 'rounded-sm bg-[#f1f1f1]';
+
+// Loading placeholders that echo each module's real content structure, so the
+// panel doesn't reshape when live data arrives.
+function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
+  if (kind === 'weather') {
+    return (
+      <div className="animate-pulse" aria-hidden>
+        <div className={`h-8 w-20 ${skeletonBar}`} />
+        <div className={`mt-2 h-2.5 w-24 ${skeletonBarSoft}`} />
+        <div className={`mt-4 h-2 w-36 ${skeletonBarSoft}`} />
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index}>
+              <div className={`h-2 w-8 ${skeletonBarSoft}`} />
+              <div className={`mt-1.5 h-2.5 w-12 ${skeletonBar}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'markets') {
+    return (
+      <div className="-my-1 animate-pulse divide-y divide-border-light" aria-hidden>
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5">
+            <div>
+              <div className={`h-2.5 w-12 ${skeletonBar}`} />
+              <div className={`mt-1.5 h-2 w-16 ${skeletonBarSoft}`} />
+            </div>
+            <div className={`h-[26px] w-full ${skeletonBarSoft}`} />
+            <div className="justify-self-end">
+              <div className={`h-2.5 w-12 ${skeletonBar}`} />
+              <div className={`mt-1.5 h-2 w-14 ${skeletonBarSoft}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === 'media') {
+    return (
+      <div className="animate-pulse" aria-hidden>
+        <div className="mb-4 flex items-baseline justify-between">
+          <div className={`h-2 w-12 ${skeletonBar}`} />
+          <div className={`h-2 w-16 ${skeletonBarSoft}`} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1].map((index) => (
+            <div key={index}>
+              <div className={`h-2 w-14 ${skeletonBarSoft}`} />
+              <div className={`mt-1.5 h-3.5 w-10 ${skeletonBar}`} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 border-t border-border-light pt-3">
+          <div className={`h-2 w-24 ${skeletonBarSoft}`} />
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index}>
+                <div className={`aspect-[2/3] ${skeletonBar}`} />
+                <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'posts') {
+    return (
+      <div className="animate-pulse space-y-3.5" aria-hidden>
+        {[0, 1, 2, 3, 4].map((index) => (
+          <div key={index}>
+            <div className={`h-2.5 ${skeletonBar}`} style={{ width: `${82 - (index % 3) * 14}%` }} />
+            <div className={`mt-1.5 h-2 w-2/5 ${skeletonBarSoft}`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-16 text-[11px] leading-relaxed ${state.error ? 'text-red-500' : 'text-text-tertiary'}`}>
-      {state.error || 'Loading live data...'}
+    <div className="min-h-16 animate-pulse space-y-2.5" aria-hidden>
+      <div className={`h-2.5 w-3/4 ${skeletonBar}`} />
+      <div className={`h-2.5 w-1/2 ${skeletonBarSoft}`} />
+      <div className={`h-2.5 w-2/3 ${skeletonBarSoft}`} />
     </div>
   );
 }

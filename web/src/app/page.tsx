@@ -10,6 +10,8 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
+import DashboardSkeleton, { saveLayoutSnapshot } from '@/components/DashboardSkeleton'
+import { getLayoutRows } from '@/lib/dashboardLayout'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
 import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
 import {
@@ -120,6 +122,17 @@ export default function HomePage() {
   const displayName = activeDashboard?.name || activeDashboard?.username || activeDashboard?.email
   const isDashboardEmpty = visibleDashboard?.forest.every((tree) => tree.branches.length === 0) ?? false
 
+  // Remember the layout's shape so the next visit's loading skeleton can
+  // mirror the user's real structure instead of a generic frame.
+  useEffect(() => {
+    if (!dashboard) return
+    const rows = getLayoutRows(materializeImplicitLayout(dashboard.forest, false))
+    saveLayoutSnapshot(rows.map((row) => ({
+      roots: row.cells.map((cell) => String(cell.tree.root)),
+      widths: row.cells.map((cell) => cell.widthPct),
+    })))
+  }, [dashboard])
+
   const layoutForest = useMemo(() => (
     visibleDashboard ? materializeImplicitLayout(visibleDashboard.forest, isEditing) : []
   ), [visibleDashboard, isEditing])
@@ -214,13 +227,8 @@ export default function HomePage() {
       <div className="flex min-h-screen flex-col">
         <Header />
         <div className="relative flex-1 overflow-x-hidden bg-background">
-          <div className="relative z-10 flex min-h-full items-center justify-center">
-            <div className="space-y-4 text-center">
-              <div className="mx-auto h-0.5 w-8 animate-pulse bg-ink-400"></div>
-              <div className="animate-fade-in text-sm font-light tracking-wide text-text-tertiary">
-                Loading dashboard...
-              </div>
-            </div>
+          <div className="relative z-10">
+            <DashboardSkeleton />
           </div>
         </div>
       </div>
@@ -297,9 +305,10 @@ export default function HomePage() {
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
             <div className="mx-4 animate-fade-in md:mx-8">
               <div className="h-0.5 w-6 bg-ink-300"></div>
-              <div className="mt-3 font-serif text-2xl leading-none text-text-primary">
-                Welcome{displayName ? `, ${displayName}` : ''}
-              </div>
+              <p className="mt-2.5 font-serif text-sm leading-none text-text-secondary">
+                {timeGreeting()}{displayName ? `, ${displayName}` : ''}
+                <span className="text-text-muted"> — {todayLabel()}</span>
+              </p>
             </div>
 
             {!isEditing && isDashboardEmpty ? (
@@ -476,6 +485,22 @@ function hasRenderableTree(tree: Tree) {
   }
 
   return true
+}
+
+function timeGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 5) return 'Good night'
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function todayLabel() {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date())
 }
 
 function newId() {
