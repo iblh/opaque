@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
@@ -13,6 +13,11 @@ import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnbo
 import DashboardSkeleton, { saveLayoutSnapshot } from '@/components/DashboardSkeleton'
 import { getLayoutRows } from '@/lib/dashboardLayout'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
+import {
+  clearCachedDashboard,
+  readCachedDashboard,
+  saveCachedDashboard,
+} from '@/lib/dashboardCache'
 import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
 import {
   createDefaultModulesForRoot,
@@ -38,7 +43,26 @@ export default function HomePage() {
   const [isSaving, setIsSaving] = useState(false)
   const router = useRouter()
 
+  // Mirrors edit state for the background fetch below, so a slow response
+  // never clobbers a session the user has already started editing.
+  const editingRef = useRef(false)
   useEffect(() => {
+    editingRef.current = isEditing || isDirty
+  }, [isEditing, isDirty])
+
+  useEffect(() => {
+    // Paint the last known dashboard immediately; the fetch below replaces it
+    // silently. The skeleton then only appears on a true first visit.
+    let hasCachedPaint = false
+    const cached = readCachedDashboard()
+    if (cached) {
+      hasCachedPaint = true
+      const normalized = normalizeDashboard(cached as Partial<Dashboard>)
+      setDashboard(normalized)
+      setDraftDashboard(cloneDashboard(normalized))
+      setLoading(false)
+    }
+
     const fetchDashboard = async () => {
       try {
         const res = await fetch('/api/dashboard/get', {
@@ -46,6 +70,7 @@ export default function HomePage() {
         })
 
         if (res.status === 401) {
+          clearCachedDashboard()
           router.push('/login')
           return
         }
@@ -53,13 +78,17 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json()
           const normalized = normalizeDashboard(data.dashboard)
-          setDashboard(normalized)
-          setDraftDashboard(cloneDashboard(normalized))
-        } else {
+          saveCachedDashboard(normalized)
+          if (!editingRef.current) {
+            setDashboard(normalized)
+            setDraftDashboard(cloneDashboard(normalized))
+          }
+        } else if (!hasCachedPaint) {
           setError('Failed to load dashboard')
         }
       } catch (err) {
-        setError('Network error')
+        // With a cached paint on screen, a failed refresh stays silent.
+        if (!hasCachedPaint) setError('Network error')
       } finally {
         setLoading(false)
       }
@@ -177,6 +206,7 @@ export default function HomePage() {
       }
 
       const normalized = normalizeDashboard(result.dashboard)
+      saveCachedDashboard(normalized)
       setDashboard(normalized)
       setDraftDashboard(cloneDashboard(normalized))
       setIsEditing(false)
@@ -242,7 +272,7 @@ export default function HomePage() {
         <div className="relative flex-1 overflow-x-hidden bg-background">
           <div className="relative z-10 flex min-h-full items-center justify-center">
             <div className="space-y-6 text-center">
-              <div className="mx-auto h-0.5 w-12 bg-red-400"></div>
+              <div className="mx-auto h-0.5 w-12 bg-accent-red"></div>
               <div className="space-y-2">
                 <div className="text-sm font-medium text-text-primary">
                   Unable to connect

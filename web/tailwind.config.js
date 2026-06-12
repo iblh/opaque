@@ -16,6 +16,8 @@ module.exports = {
         'accent-red': '#A76767',
         'accent-red-dark': '#8E5555',
         'accent-red-subtle': 'rgba(167, 103, 103, 0.08)',
+        'accent-amber': '#B08D57',
+        'accent-amber-dark': '#97784A',
         'accent-blue': '#5E6AD2',
         'accent-blue-subtle': 'rgba(94, 106, 210, 0.08)',
         'accent-blue-hover': 'rgba(94, 106, 210, 0.15)',
@@ -57,6 +59,14 @@ module.exports = {
         'subtle': '0 1px 2px rgba(0, 0, 0, 0.04)',
         'elevated': '0 2px 8px rgba(0, 0, 0, 0.08)',
         'floating': '0 4px 16px rgba(0, 0, 0, 0.12)',
+      },
+      // The single motion budget (see web/DESIGN_SPEC.md): every `transition-*`
+      // without an explicit duration/easing uses these.
+      transitionDuration: {
+        DEFAULT: '180ms',
+      },
+      transitionTimingFunction: {
+        DEFAULT: 'cubic-bezier(0.2, 0.6, 0.2, 1)',
       },
     },
   },
