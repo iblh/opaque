@@ -49,7 +49,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   const draggedShelfPreview = useRef<DragPreviewState | null>(null);
   const draggedApplication = useRef<DraggedApplication | null>(null);
   const applicationInputClass =
-    'opaque-input w-full focus:border-accent-blue';
+    'opaque-input w-full focus:border-ink-700';
   const monoApplicationInputClass = `${applicationInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: ApplicationBranch[]) => {
@@ -219,14 +219,14 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             rel="noopener noreferrer"
             className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
           >
-            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors duration-200 hover:bg-white">
+            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors hover:bg-white">
               <SvgIcon
                 svg={leaf.icon}
                 fallback={DEFAULT_APPLICATION_ICON}
-                className="h-10 w-10 flex-shrink-0 text-accent-blue transition-colors duration-200 group-hover:text-ink-800"
+                className="h-10 w-10 flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium leading-tight text-text-primary transition-colors duration-200 group-hover:text-accent-blue">
+                <div className="inline-block max-w-full truncate border-b border-transparent text-sm font-medium leading-tight text-text-primary transition-colors group-hover:border-accent-green">
                   {leaf.name}
                 </div>
                 <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
@@ -256,7 +256,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
         <section
           key={branch.id}
           data-drag-preview
-          className={`opaque-card p-4 transition-all duration-200 ${
+          className={`opaque-card p-4 transition-all ${
             activeDrag?.type === 'shelf' && activeDrag.id === branch.id
               ? 'scale-[0.99] opacity-45'
               : ''
@@ -300,12 +300,12 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                 ...item,
                 name: event.target.value,
               }))}
-              className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-xs font-medium uppercase tracking-wider text-text-tertiary focus:border-accent-blue focus:ring-0"
+              className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-xs font-medium uppercase tracking-wider text-text-tertiary focus:border-ink-700 focus:ring-0"
             />
             <button
               type="button"
               onClick={() => removeShelf(branch.id)}
-              className="opaque-icon-button hover:text-red-500"
+              className="opaque-icon-button hover:text-accent-red-dark"
               aria-label={`Delete ${branch.name}`}
               title="Delete shelf"
             >
@@ -321,7 +321,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                 <div
                   key={leaf.id}
                   data-drag-preview
-                  className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all duration-200 ${
+                  className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all ${
                     isLeafEditing
                       ? 'border-border-strong bg-white'
                       : 'border-transparent bg-transparent hover:bg-white'
@@ -391,7 +391,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                         <button
                           type="button"
                           onClick={() => removeApplication(branch.id, leaf.id)}
-                          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
                           aria-label={`Delete ${leaf.name}`}
                           title="Delete application"
                         >
@@ -422,7 +422,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                       <SvgIcon
                         svg={leaf.icon}
                         fallback={DEFAULT_APPLICATION_ICON}
-                        className="h-9 w-9 flex-shrink-0 text-accent-blue"
+                        className="h-9 w-9 flex-shrink-0 text-text-secondary"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium leading-tight text-text-primary">
@@ -450,10 +450,10 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => addApplication(branch.id)}
-              className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-left transition-colors hover:border-accent-blue hover:bg-white"
+              className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-left transition-colors hover:border-accent-green hover:bg-white"
               aria-label={`Add application to ${branch.name}`}
             >
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center text-text-tertiary transition-colors group-hover:text-accent-blue">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center text-text-tertiary transition-colors group-hover:text-accent-green">
                 <IconPlus className="h-3.5 w-3.5" />
               </span>
               <span className="min-w-0 flex-1">

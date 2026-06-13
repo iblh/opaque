@@ -36,6 +36,13 @@ export default function HomePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // True only once /api/dashboard/get confirms the current session. Dashboard
+  // *content* is never painted before this — only the structure-matched
+  // skeleton (from a non-sensitive layout snapshot) shows while we wait — so a
+  // prior user's bookmarks/apps/servers can't leak on a shared browser, and
+  // there is no unverified copy that could be edited and saved over newer
+  // server state.
+  const [isVerified, setIsVerified] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -55,6 +62,7 @@ export default function HomePage() {
           const normalized = normalizeDashboard(data.dashboard)
           setDashboard(normalized)
           setDraftDashboard(cloneDashboard(normalized))
+          setIsVerified(true)
         } else {
           setError('Failed to load dashboard')
         }
@@ -138,7 +146,9 @@ export default function HomePage() {
   ), [visibleDashboard, isEditing])
 
   const startEditing = () => {
-    if (!dashboard) return
+    // Editing is only safe once the server copy is confirmed: editing an
+    // unverified cached paint risks saving stale data over newer server state.
+    if (!dashboard || !isVerified) return
     setDraftDashboard(cloneDashboard(dashboard))
     setIsEditing(true)
     setIsDirty(false)
@@ -155,7 +165,9 @@ export default function HomePage() {
   }
 
   const saveDashboard = async () => {
-    if (!draftDashboard || !isDirty) return
+    // `isVerified` is the invariant that makes saving safe — never write a
+    // draft derived from an unverified cached paint back to the server.
+    if (!draftDashboard || !isDirty || !isVerified) return
 
     setIsSaving(true)
     setSaveError('')
@@ -242,7 +254,7 @@ export default function HomePage() {
         <div className="relative flex-1 overflow-x-hidden bg-background">
           <div className="relative z-10 flex min-h-full items-center justify-center">
             <div className="space-y-6 text-center">
-              <div className="mx-auto h-0.5 w-12 bg-red-400"></div>
+              <div className="mx-auto h-0.5 w-12 bg-accent-red"></div>
               <div className="space-y-2">
                 <div className="text-sm font-medium text-text-primary">
                   Unable to connect
@@ -295,6 +307,7 @@ export default function HomePage() {
         isEditing={isEditing}
         isDirty={isDirty}
         isSaving={isSaving}
+        canEdit={isVerified}
         saveError={saveError}
         onEdit={startEditing}
         onReset={resetEditing}

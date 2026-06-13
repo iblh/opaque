@@ -572,7 +572,7 @@ function LayoutRow({
     >
       {newRowEdge && <NewRowIndicator edge={newRowEdge} />}
       <div
-        className="grid items-start transition-[grid-template-columns] duration-200 ease-out"
+        className="grid items-start transition-[grid-template-columns]"
         style={{ gridTemplateColumns, columnGap: 'var(--row-gap)', rowGap: 'var(--row-gap)' } as CSSProperties}
       >
         {row.cells.map((cell, colIndex) => {
@@ -635,12 +635,12 @@ interface SectionHeaderProps {
 function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: SectionHeaderProps) {
   const label = getRootLabel(tree.root);
   return (
-    <div className={`mb-3 flex items-center gap-3 transition-opacity duration-150 ${isPlaceholder ? 'opacity-30' : ''}`}>
+    <div className={`mb-3 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
       {isEditing && (
         <button
           type="button"
           onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
-          className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors duration-150 hover:text-text-primary active:cursor-grabbing"
+          className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors hover:text-text-primary active:cursor-grabbing"
           aria-label={`Drag ${label} section`}
           title="Drag to rearrange"
         >
@@ -750,7 +750,7 @@ function ResizeGutter({ column, isActive, hintText, onPointerDown }: ResizeGutte
       >
         {/* Persistent faint seam line (edit mode), stronger on hover / active. */}
         <div
-          className={`absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px transition-colors duration-150 ${
+          className={`absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px transition-colors ${
             isActive
               ? 'bg-text-primary'
               : 'bg-border-medium group-hover/gutter:bg-text-secondary'
@@ -758,7 +758,7 @@ function ResizeGutter({ column, isActive, hintText, onPointerDown }: ResizeGutte
         />
         {/* Grip pill. Faint at rest, solid on hover / active. */}
         <div
-          className={`absolute top-1/2 left-1/2 flex h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white transition-all duration-150 ${
+          className={`absolute top-1/2 left-1/2 flex h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white transition-all ${
             isActive
               ? 'border-text-primary opacity-100'
               : 'border-border-medium opacity-60 group-hover/gutter:border-text-secondary group-hover/gutter:opacity-100'
@@ -799,7 +799,7 @@ function UnassignedTray({
   return (
     <div
       data-unassigned-tray
-      className={`mt-2 border-t pt-4 transition-colors duration-150 ${isHover ? 'border-text-primary' : 'border-border-light'}`}
+      className={`mt-2 border-t pt-4 transition-colors ${isHover ? 'border-text-primary' : 'border-border-light'}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
@@ -820,7 +820,7 @@ function UnassignedTray({
                 data-col-index={0}
                 onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
                 onClick={() => onForestChange(assignTreeToNewRow(forest, tree.root))}
-                className={`inline-flex cursor-grab touch-none items-center gap-1.5 border border-border-light bg-white px-2 py-1 text-[11px] text-text-secondary transition-colors duration-150 hover:border-border-medium hover:text-text-primary active:cursor-grabbing ${draggingRoot === tree.root ? 'opacity-40' : ''}`}
+                className={`inline-flex cursor-grab touch-none items-center gap-1.5 border border-border-light bg-white px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-medium hover:text-text-primary active:cursor-grabbing ${draggingRoot === tree.root ? 'opacity-40' : ''}`}
                 title="Drag onto the dashboard, or click to add a new row"
               >
                 <IconGripVertical className="h-3 w-3 text-text-muted" />

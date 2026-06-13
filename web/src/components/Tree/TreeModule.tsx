@@ -20,17 +20,20 @@ import {
   IconRefresh,
   IconRss,
   IconTrash,
+  IconX,
 } from '@tabler/icons-react';
 import type {
   MarketsModuleData,
   MediaModuleData,
   MediaNowPlayingItem,
   MediaQueueItem,
+  MediaRecentItem,
   ModuleData,
   ModuleDataResponse,
   PostsModuleData,
   WeatherModuleData,
 } from '@/lib/moduleData';
+import { isPostRead, markPostRead, subscribeReadPosts } from '@/lib/readPosts';
 import { KnownModuleType, ModuleBranch } from '@/lib/types';
 import {
   createDefaultModuleBranch,
@@ -442,8 +445,8 @@ function ModuleEditCard({
 }: ModuleEditCardProps) {
   const mergeRing = isMergeTarget ? 'border-ink-700 bg-[#fcfcfc]' : '';
   const shellClassName = embedded
-    ? `relative transition-all duration-200 ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
-    : `group relative border bg-white p-3 transition-all duration-200 ${
+    ? `relative transition-all ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
+    : `group relative border bg-white p-3 transition-all ${
         mergeRing || 'border-border-light hover:border-border-medium'
       } ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`;
 
@@ -502,7 +505,7 @@ function ModuleEditCard({
         <button
           type="button"
           onClick={onRemove}
-          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
           aria-label={`Delete ${module.name}`}
           title="Delete module"
         >
@@ -779,14 +782,14 @@ function ModulePanel({
   children: React.ReactNode;
 }) {
   const statusClass = state?.error
-    ? 'bg-red-500'
+    ? 'bg-accent-red'
     : state?.isLoading
       ? 'bg-ink-300'
       : 'bg-accent-green';
   const title = titleOverride || module.name || getModuleLabel(module.moduleType);
 
   return (
-    <section className="border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium hover:bg-[#fcfcfc]">
+    <section className="relative border border-border-light bg-white p-3 transition-colors hover:border-border-medium hover:bg-[#fcfcfc]">
       <div className="mb-4 flex items-center justify-between gap-3">
         {header ? (
           <div className="min-w-0 flex-1">{header}</div>
@@ -963,6 +966,16 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   const streamCount = data
     ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
     : 0;
+  const [zoomedRecent, setZoomedRecent] = useState<MediaRecentItem | null>(null);
+
+  useEffect(() => {
+    if (!zoomedRecent) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setZoomedRecent(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [zoomedRecent]);
 
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
@@ -1070,51 +1083,133 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {data.recent.map((item) => (
-                  <div key={item.id} className="group/recent min-w-0">
-                    <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
-                      {item.imageUrl ? (
-                        <Image
-                          src={item.imageUrl}
-                          alt={`${item.title} cover`}
-                          width={72}
-                          height={108}
-                          loading="lazy"
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
-                          {item.title.slice(0, 1)}
-                        </div>
-                      )}
-                      {item.addedAt && (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
-                          {formatRelativeTime(item.addedAt)}
-                        </div>
-                      )}
-                    </div>
-                    <div
-                      className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
-                      title={item.title}
-                    >
-                      {item.title}
-                    </div>
-                    {item.subtitle && (
-                      <div
-                        className="mt-0.5 line-clamp-2 font-mono text-[9px] leading-tight text-text-tertiary"
-                        title={item.subtitle}
-                      >
-                        {item.subtitle}
-                      </div>
-                    )}
-                  </div>
+                  <MediaRecentCell key={item.id} item={item} onZoom={setZoomedRecent} />
                 ))}
               </div>
             </div>
           )}
+          {zoomedRecent && (
+            <MediaPosterZoom item={zoomedRecent} onClose={() => setZoomedRecent(null)} />
+          )}
         </>
       )}
     </ModulePanel>
+  );
+}
+
+function MediaRecentCell({
+  item,
+  onZoom,
+}: {
+  item: MediaRecentItem;
+  onZoom: (item: MediaRecentItem) => void;
+}) {
+  const body = (
+    <>
+      <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={`${item.title} cover`}
+            width={72}
+            height={108}
+            loading="lazy"
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
+            {item.title.slice(0, 1)}
+          </div>
+        )}
+        {item.addedAt && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
+            {formatRelativeTime(item.addedAt)}
+          </div>
+        )}
+      </div>
+      <div
+        className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
+        title={item.title}
+      >
+        {item.title}
+      </div>
+      {item.subtitle && (
+        <div
+          className="mt-0.5 line-clamp-2 font-mono text-[9px] leading-tight text-text-tertiary"
+          title={item.subtitle}
+        >
+          {item.subtitle}
+        </div>
+      )}
+    </>
+  );
+
+  // Only covers with real artwork zoom; letter placeholders stay inert.
+  if (!item.imageUrl) {
+    return <div className="group/recent min-w-0">{body}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onZoom(item)}
+      aria-haspopup="dialog"
+      aria-label={`Enlarge ${item.title} cover`}
+      className="group/recent block w-full min-w-0 cursor-zoom-in text-left"
+    >
+      {body}
+    </button>
+  );
+}
+
+// In-panel lightbox: the cover enlarges inside its own module instead of a
+// full-screen modal, keeping the rest of the page quiet.
+function MediaPosterZoom({
+  item,
+  onClose,
+}: {
+  item: MediaRecentItem;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.title}
+      onClick={onClose}
+      className="absolute inset-0 z-20 flex animate-poster-zoom cursor-zoom-out flex-col items-center justify-center gap-3 bg-white/95 p-5"
+    >
+      <button
+        type="button"
+        autoFocus
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-primary"
+      >
+        <IconX className="h-3.5 w-3.5" />
+      </button>
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <Image
+          src={item.imageUrl ?? ''}
+          alt={`${item.title} cover`}
+          width={300}
+          height={450}
+          unoptimized
+          className="h-full w-auto max-w-full border border-border-light object-contain shadow-elevated"
+        />
+      </div>
+      <div className="max-w-full text-center">
+        <div className="truncate font-serif text-sm text-text-primary">{item.title}</div>
+        {(item.subtitle || item.addedAt) && (
+          <div className="mt-0.5 truncate font-mono text-[10px] text-text-tertiary">
+            {item.subtitle}
+            {item.subtitle && item.addedAt && ' · '}
+            {item.addedAt && `added ${formatRelativeTime(item.addedAt)}`}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1224,7 +1319,7 @@ function PostsStackEditor({
 
   return (
     <div
-      className={`border bg-white p-3 transition-colors duration-200 ${
+      className={`border bg-white p-3 transition-colors ${
         isDropTarget ? 'border-ink-700 bg-[#fcfcfc]' : 'border-border-light hover:border-border-medium'
       }`}
       onDragOver={onDragOver}
@@ -1381,6 +1476,13 @@ function PostsWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
+// Re-renders when post read-state changes, here or in another tab.
+function useReadPosts() {
+  const [, setVersion] = useState(0);
+  useEffect(() => subscribeReadPosts(() => setVersion((value) => value + 1)), []);
+  return { isRead: isPostRead, markRead: markPostRead };
+}
+
 function PostsContent({
   data,
   state,
@@ -1388,34 +1490,53 @@ function PostsContent({
   data: PostsModuleData | null;
   state: ModuleDataState;
 }) {
+  const { isRead, markRead } = useReadPosts();
+
   if (!data) return <ModuleBodyState state={state} skeleton="posts" />;
-  if (data.posts.length === 0) return <EmptyModuleState>No posts found.</EmptyModuleState>;
+  if (data.posts.length === 0) return <EmptyModuleState>Nothing new today.</EmptyModuleState>;
 
   return (
     <div className="-mx-2 space-y-0.5">
-      {data.posts.map((post) => (
-        <a
-          key={post.id}
-          href={post.url}
-          target="_blank"
-          rel="noreferrer"
-          className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors duration-200 hover:bg-surface-sunken/70"
-        >
-          <span
-            aria-hidden
-            className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform duration-200 group-hover:scale-y-100"
-          />
-          <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors duration-200 group-hover:text-ink-900">
-            {post.title}
-          </div>
-          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary transition-colors duration-200 group-hover:text-text-secondary">
-            <span>{post.source}</span>
-            {(post.meta || post.publishedAt) && <span>·</span>}
-            {post.meta && <span className="truncate">{post.meta}</span>}
-            {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
-          </div>
-        </a>
-      ))}
+      {data.posts.map((post) => {
+        const read = isRead(post.url);
+        return (
+          <a
+            key={post.id}
+            href={post.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => markRead(post.url)}
+            onAuxClick={(event) => {
+              if (event.button === 1) markRead(post.url);
+            }}
+            className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors hover:bg-surface-sunken/70"
+          >
+            <span
+              aria-hidden
+              className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform group-hover:scale-y-100"
+            />
+            <div
+              className={`line-clamp-2 text-xs leading-relaxed transition-colors ${
+                read
+                  ? 'text-text-tertiary group-hover:text-text-secondary'
+                  : 'text-text-primary group-hover:text-ink-900'
+              }`}
+            >
+              {post.title}
+            </div>
+            <div
+              className={`mt-1 flex items-center gap-2 font-mono text-[10px] transition-colors ${
+                read ? 'text-text-muted' : 'text-text-tertiary group-hover:text-text-secondary'
+              }`}
+            >
+              <span>{post.source}</span>
+              {(post.meta || post.publishedAt) && <span>·</span>}
+              {post.meta && <span className="truncate">{post.meta}</span>}
+              {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+            </div>
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -1431,7 +1552,7 @@ function ModuleBodyState({
 }) {
   if (state.error) {
     return (
-      <div className="min-h-16 text-[11px] leading-relaxed text-red-500">
+      <div className="min-h-16 text-[11px] leading-relaxed text-accent-red-dark">
         {state.error}
       </div>
     );
@@ -1895,7 +2016,7 @@ function ConfigFieldLabel({
         <span className="group/help relative inline-flex">
           <button
             type="button"
-            className="flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-sunken hover:text-text-primary focus:outline-none focus:ring-1 focus:ring-ink-500"
+            className="flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-sunken hover:text-text-primary"
             aria-label={`${label} help`}
           >
             <IconHelpCircle className="h-3 w-3" />
