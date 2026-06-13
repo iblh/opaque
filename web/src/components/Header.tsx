@@ -34,6 +34,8 @@ interface HeaderProps {
     isEditing?: boolean;
     isDirty?: boolean;
     isSaving?: boolean;
+    /** False while the dashboard is still an unverified cached paint. */
+    canEdit?: boolean;
     saveError?: string;
     onEdit?: () => void;
     onSave?: () => void;
@@ -45,6 +47,7 @@ export default function Header({
     isEditing = false,
     isDirty = false,
     isSaving = false,
+    canEdit = true,
     saveError = '',
     onEdit,
     onSave,
@@ -142,11 +145,12 @@ export default function Header({
                         {!isEditing && (
                             <button
                                 onClick={onEdit}
+                                disabled={!canEdit}
                                 className="opaque-toolbar-icon"
                                 aria-label="Edit dashboard"
-                                title="Edit dashboard"
+                                title={canEdit ? 'Edit dashboard' : 'Loading…'}
                             >
-                                <IconEdit />
+                                {canEdit ? <IconEdit /> : <IconLoader2 className="animate-spin" />}
                             </button>
                         )}
 

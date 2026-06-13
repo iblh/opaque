@@ -41,6 +41,12 @@ export default function HomePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // True only once /api/dashboard/get confirms the current session. The
+  // optimistic cached paint is unverified: we render it, but gate editing
+  // and saving on this so a stale cached copy can never overwrite newer
+  // server data, and a prior user's data can never be edited on a shared
+  // browser.
+  const [isVerified, setIsVerified] = useState(false)
   const router = useRouter()
 
   // Mirrors edit state for the background fetch below, so a slow response
@@ -51,13 +57,15 @@ export default function HomePage() {
   }, [isEditing, isDirty])
 
   useEffect(() => {
-    // Paint the last known dashboard immediately; the fetch below replaces it
-    // silently. The skeleton then only appears on a true first visit.
-    let hasCachedPaint = false
+    // Paint the last known dashboard immediately (sanitized, no secrets); the
+    // verified fetch below replaces it. The skeleton only appears on a true
+    // first visit. `cachedId` lets us detect a cross-session paint and discard
+    // it unconditionally once the real owner is known.
+    let cachedId: string | null = null
     const cached = readCachedDashboard()
     if (cached) {
-      hasCachedPaint = true
-      const normalized = normalizeDashboard(cached as Partial<Dashboard>)
+      cachedId = cached.id
+      const normalized = normalizeDashboard(cached.dashboard)
       setDashboard(normalized)
       setDraftDashboard(cloneDashboard(normalized))
       setLoading(false)
@@ -78,17 +86,23 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json()
           const normalized = normalizeDashboard(data.dashboard)
+          const sameAsCached = cachedId !== null
+            && (normalized.id || normalized._id) === cachedId
           saveCachedDashboard(normalized)
-          if (!editingRef.current) {
+          // Adopt the verified copy unless the user is mid-edit on the SAME
+          // dashboard we just refreshed. A different id means the cached paint
+          // belonged to another session, so it's always replaced.
+          if (!sameAsCached || !editingRef.current) {
             setDashboard(normalized)
             setDraftDashboard(cloneDashboard(normalized))
           }
-        } else if (!hasCachedPaint) {
+          setIsVerified(true)
+        } else if (cachedId === null) {
           setError('Failed to load dashboard')
         }
       } catch (err) {
         // With a cached paint on screen, a failed refresh stays silent.
-        if (!hasCachedPaint) setError('Network error')
+        if (cachedId === null) setError('Network error')
       } finally {
         setLoading(false)
       }
@@ -167,7 +181,9 @@ export default function HomePage() {
   ), [visibleDashboard, isEditing])
 
   const startEditing = () => {
-    if (!dashboard) return
+    // Editing is only safe once the server copy is confirmed: editing an
+    // unverified cached paint risks saving stale data over newer server state.
+    if (!dashboard || !isVerified) return
     setDraftDashboard(cloneDashboard(dashboard))
     setIsEditing(true)
     setIsDirty(false)
@@ -184,7 +200,9 @@ export default function HomePage() {
   }
 
   const saveDashboard = async () => {
-    if (!draftDashboard || !isDirty) return
+    // `isVerified` is the invariant that makes saving safe — never write a
+    // draft derived from an unverified cached paint back to the server.
+    if (!draftDashboard || !isDirty || !isVerified) return
 
     setIsSaving(true)
     setSaveError('')
@@ -325,6 +343,7 @@ export default function HomePage() {
         isEditing={isEditing}
         isDirty={isDirty}
         isSaving={isSaving}
+        canEdit={isVerified}
         saveError={saveError}
         onEdit={startEditing}
         onReset={resetEditing}
