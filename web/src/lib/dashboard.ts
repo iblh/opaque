@@ -35,9 +35,13 @@ export function normalizeDashboard(
     ? [{ root: 'bookmarks', branches: (source as any).branches }]
     : [];
   const sourceForest = Array.isArray(source.forest) ? source.forest : fallbackBranches;
+  // The legacy "today" root has been dissolved: weather/calendar/markets are
+  // now standalone single-module roots. Hoist any modules from a persisted
+  // "today" tree into those roots (so saved config survives) and drop "today".
+  const forestWithoutToday = hoistLegacyTodayRoots(sourceForest);
   const byRoot = new Map<string, Tree>();
 
-  sourceForest.forEach((tree) => {
+  forestWithoutToday.forEach((tree) => {
     if (!tree?.root) return;
     byRoot.set(tree.root, normalizeTree(tree));
   });
@@ -51,6 +55,54 @@ export function normalizeDashboard(
     id: stringifyObjectId((source as any)._id) || source.id,
     forest: [...defaultTrees, ...customTrees],
   };
+}
+
+// Map a legacy "today" module branch onto its new standalone root by type.
+const LEGACY_TODAY_ROOT_BY_TYPE: Record<string, DashboardRoot> = {
+  weather: 'weather',
+  calendar: 'calendar',
+  markets: 'markets',
+};
+
+// Dissolve a persisted "today" tree: each of its modules moves into the
+// matching standalone root (weather/calendar/markets), preserving config and
+// appending after anything already there. Returns the forest with "today"
+// removed. A forest without a "today" root passes through unchanged.
+function hoistLegacyTodayRoots(forest: unknown[]): Tree[] {
+  const trees = forest.filter((tree): tree is Tree => (
+    Boolean(tree) && typeof tree === 'object' && typeof (tree as Tree).root === 'string'
+  ));
+  const today = trees.find((tree) => tree.root === 'today');
+  if (!today) return trees;
+
+  const extraBranches = new Map<DashboardRoot, Branch[]>();
+  (Array.isArray(today.branches) ? today.branches : []).forEach((branch) => {
+    const moduleType = (branch as { moduleType?: string }).moduleType;
+    const targetRoot = moduleType ? LEGACY_TODAY_ROOT_BY_TYPE[moduleType] : undefined;
+    if (!targetRoot) return; // Unknown legacy module → dropped.
+    const list = extraBranches.get(targetRoot) || [];
+    list.push(branch);
+    extraBranches.set(targetRoot, list);
+  });
+
+  const withoutToday = trees.filter((tree) => tree.root !== 'today');
+
+  // Merge hoisted branches into existing roots, tracking which we've handled.
+  const handled = new Set<DashboardRoot>();
+  const merged = withoutToday.map((tree) => {
+    const extras = extraBranches.get(tree.root as DashboardRoot);
+    if (!extras) return tree;
+    handled.add(tree.root as DashboardRoot);
+    return { ...tree, branches: [...(tree.branches || []), ...extras] };
+  });
+
+  // Roots that didn't already exist in the forest get appended.
+  extraBranches.forEach((branches, root) => {
+    if (handled.has(root)) return;
+    merged.push({ root, branches });
+  });
+
+  return merged;
 }
 
 export function serializeDashboard(dashboard: Dashboard): Dashboard {
