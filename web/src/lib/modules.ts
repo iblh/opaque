@@ -1,26 +1,37 @@
 import { DashboardRoot, KnownModuleType, ModuleBranch } from '@/lib/types';
 
 export const CORE_ROOTS = ['bookmarks', 'applications', 'servers'] as const;
-export const MODULE_ROOTS = ['today', 'media', 'posts'] as const;
+// weather / calendar / markets are single-module roots: each is its own
+// top-level section holding exactly one module of the same name, so they can
+// be placed and resized independently on the layout grid. media / posts remain
+// multi-module roots (media: several servers; posts: tab groups).
+export const SINGLE_MODULE_ROOTS = ['weather', 'calendar', 'markets'] as const;
+export const MODULE_ROOTS = [...SINGLE_MODULE_ROOTS, 'media', 'posts'] as const;
 export const DASHBOARD_ROOTS = [...CORE_ROOTS, ...MODULE_ROOTS] as const;
 
 export const ROOT_LABELS: Record<string, string> = {
   bookmarks: 'Bookmarks',
   applications: 'Applications',
   servers: 'Servers',
-  today: 'Today',
+  weather: 'Weather',
+  calendar: 'Calendar',
+  markets: 'Markets',
   media: 'Media',
   posts: 'Posts',
 };
 
 export const MODULES_BY_ROOT: Record<string, KnownModuleType[]> = {
-  today: ['weather', 'calendar', 'markets'],
+  weather: ['weather'],
+  calendar: ['calendar'],
+  markets: ['markets'],
   media: ['plex', 'jellyfin', 'emby', 'radarr', 'sonarr'],
   posts: ['rss', 'hacker-news', 'reddit'],
 };
 
 export const DEFAULT_MODULES_BY_ROOT: Record<string, KnownModuleType[]> = {
-  today: ['weather', 'calendar', 'markets'],
+  weather: ['weather'],
+  calendar: ['calendar'],
+  markets: ['markets'],
   media: ['plex', 'jellyfin', 'radarr', 'sonarr'],
   posts: ['rss', 'hacker-news', 'reddit'],
 };
@@ -41,6 +52,13 @@ export const MODULE_LABELS: Record<KnownModuleType, string> = {
 
 export function isModuleRoot(root: string): root is typeof MODULE_ROOTS[number] {
   return MODULE_ROOTS.includes(root as typeof MODULE_ROOTS[number]);
+}
+
+// A root that holds exactly one fixed module (weather/calendar/markets). These
+// can't gain or reorder modules — their position is controlled by the layout
+// grid, not by intra-root drag — so the add-module / drag affordances are off.
+export function isSingleModuleRoot(root: string): root is typeof SINGLE_MODULE_ROOTS[number] {
+  return SINGLE_MODULE_ROOTS.includes(root as typeof SINGLE_MODULE_ROOTS[number]);
 }
 
 export function getRootLabel(root: DashboardRoot) {

@@ -387,7 +387,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                         <SvgIcon
                           svg={leaf.icon}
                           fallback={DEFAULT_BOOKMARK_ICON}
-                          className="h-4 w-4 flex-shrink-0 text-text-secondary"
+                          className="h-[18px] w-[18px] flex-shrink-0 text-text-secondary"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-xs font-normal leading-4 text-text-primary">
@@ -421,16 +421,16 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   className="group block text-inherit no-underline"
                 >
                   <div className="relative rounded-sm px-1 py-1.5 transition-colors hover:bg-white">
-                    <div className="flex items-center gap-1.5 text-left">
+                    <div className="flex items-center gap-2 text-left">
                       <SvgIcon
                         svg={leaf.icon}
                         fallback={DEFAULT_BOOKMARK_ICON}
-                        className="h-4 w-4 flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
+                        className="h-[18px] w-[18px] flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-4 text-text-primary transition-colors group-hover:border-accent-green">
+                        <span className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-[18px] text-text-primary transition-colors group-hover:border-accent-green">
                           {leaf.name}
-                        </div>
+                        </span>
                       </div>
                     </div>
                   </div>

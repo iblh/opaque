@@ -650,7 +650,6 @@ function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: Se
       <div className="font-serif text-base leading-none text-text-secondary">
         {label}
       </div>
-      <div className="h-px flex-1 bg-border-light" />
     </div>
   );
 }

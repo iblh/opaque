@@ -6,6 +6,9 @@ import {
   IconBrandReddit,
   IconCalendarEvent,
   IconChartLine,
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
   IconCloud,
   IconDeviceTv,
   IconDownload,
@@ -24,6 +27,7 @@ import {
 } from '@tabler/icons-react';
 import type {
   MarketsModuleData,
+  MediaLibraryStat,
   MediaModuleData,
   MediaNowPlayingItem,
   MediaQueueItem,
@@ -34,10 +38,12 @@ import type {
   WeatherModuleData,
 } from '@/lib/moduleData';
 import { isPostRead, markPostRead, subscribeReadPosts } from '@/lib/readPosts';
+import { usePersistedBoolean } from '@/lib/persistedState';
 import { KnownModuleType, ModuleBranch } from '@/lib/types';
 import {
   createDefaultModuleBranch,
   getAllowedModuleTypes,
+  isSingleModuleRoot,
   MODULE_LABELS,
 } from '@/lib/modules';
 import {
@@ -82,8 +88,9 @@ function moduleGridClassName(root: string) {
     return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
   }
 
-  // Today widgets are glanceable summaries; a narrower column keeps them tidy.
-  if (root === 'today') {
+  // Weather/calendar/markets are glanceable summaries; a narrower column keeps
+  // them tidy. Each is its own single-module root now, so the grid holds one.
+  if (isSingleModuleRoot(root)) {
     return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
   }
 
@@ -315,7 +322,9 @@ const TreeModule: React.FC<TreeModuleProps> = ({
 
   if (!isEditing && visibleModules.length === 0) return null;
 
-  const addControl = isEditing && allowedTypes.length > 0 ? (
+  // Single-module roots (weather/calendar/markets) hold one fixed module and
+  // gain position via the layout grid, not by adding modules — no add control.
+  const addControl = isEditing && allowedTypes.length > 0 && !isSingleModuleRoot(tree.root) ? (
     <div className="pointer-events-none absolute -top-8 right-0 z-10">
       <div className="pointer-events-auto">
         <SectionAddControl
@@ -443,12 +452,16 @@ function ModuleEditCard({
   onDragOver,
   onDrop,
 }: ModuleEditCardProps) {
-  const mergeRing = isMergeTarget ? 'border-ink-700 bg-[#fcfcfc]' : '';
+  // Borderless at rest (matching view mode); a faint sunken tint on hover and a
+  // dashed ring as merge target keep edit-mode cards readable as drag units.
+  const mergeRing = isMergeTarget
+    ? 'rounded-sm outline-dashed outline-1 outline-ink-700 bg-[#fcfcfc]'
+    : 'hover:bg-surface-sunken/50 rounded-sm';
   const shellClassName = embedded
     ? `relative transition-all ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
-    : `group relative border bg-white p-3 transition-all ${
-        mergeRing || 'border-border-light hover:border-border-medium'
-      } ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`;
+    : `group relative p-3 transition-all ${mergeRing} ${
+        activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''
+      }`;
 
   return (
     <div
@@ -787,49 +800,62 @@ function ModulePanel({
       ? 'bg-ink-300'
       : 'bg-accent-green';
   const title = titleOverride || module.name || getModuleLabel(module.moduleType);
+  // Single-module roots (weather/calendar/markets) already carry their name in
+  // the section header, so the panel's own icon+title row would be redundant.
+  // Suppress it and float just the status/refresh control top-right.
+  const titleInSectionHeader = isSingleModuleRoot(module.moduleType) && !header && !titleOverride;
 
+  const statusControl = state ? (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={state.refresh}
+        className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+        aria-label={`Refresh ${title}`}
+        title="Refresh"
+      >
+        <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
+      </button>
+      <div
+        className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
+        title={state.error || (state.isLoading ? 'Loading' : 'Online')}
+      />
+    </div>
+  ) : null;
+
+  // Borderless: structure comes from spacing, not a card outline (DESIGN_SPEC).
   return (
-    <section className="relative border border-border-light bg-white p-3 transition-colors hover:border-border-medium hover:bg-[#fcfcfc]">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        {header ? (
-          <div className="min-w-0 flex-1">{header}</div>
-        ) : (
-          <div className="flex min-w-0 items-center gap-2">
-            <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-            {href ? (
-              <a
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
-              >
-                {title}
-              </a>
-            ) : (
-              <div className="truncate font-serif text-sm text-text-primary">
-                {title}
-              </div>
-            )}
-          </div>
-        )}
-        {state && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={state.refresh}
-              className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
-              aria-label={`Refresh ${title}`}
-              title="Refresh"
-            >
-              <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
-            </button>
-            <div
-              className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
-              title={state.error || (state.isLoading ? 'Loading' : 'Online')}
-            />
-          </div>
-        )}
-      </div>
+    <section className="relative">
+      {titleInSectionHeader ? (
+        statusControl && (
+          <div className="absolute right-0 top-0 z-10">{statusControl}</div>
+        )
+      ) : (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          {header ? (
+            <div className="min-w-0 flex-1">{header}</div>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2">
+              <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
+                >
+                  {title}
+                </a>
+              ) : (
+                <div className="truncate font-serif text-sm text-text-primary">
+                  {title}
+                </div>
+              )}
+            </div>
+          )}
+          {statusControl}
+        </div>
+      )}
       {children}
     </section>
   );
@@ -1016,53 +1042,15 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
 
           {data.libraries && data.libraries.length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                    Libraries
-                  </div>
-                  <div className="mt-1 font-mono text-[11px] text-text-secondary">
-                    {data.libraries.length} total
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                    Streaming
-                  </div>
-                  <div className="mt-1 font-mono text-[11px] font-medium text-text-primary">
-                    {formatCompactStatValue(mediaStatValue(data, 'Streams') ?? 0)}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                {data.libraries.map((library) => (
-                  <div key={library.id} className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-xs text-text-primary">
-                        {library.name}
-                      </div>
-                      {library.type && (
-                        <div className="mt-0.5 font-mono text-[9px] uppercase tracking-wider text-text-muted">
-                          {library.type}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0 font-mono text-[11px] text-text-secondary">
-                      {formatCompactNumber(library.count)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MediaLibraries libraries={data.libraries} />
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               {data.stats.map((stat) => (
-                <div key={stat.label}>
-                  <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                <div key={stat.label} className="flex items-baseline justify-between gap-2">
+                  <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
                     {stat.label}
                   </div>
-                  <div className="mt-1 truncate text-sm font-medium text-text-primary">
+                  <div className="flex-shrink-0 font-mono text-xs font-medium text-text-primary">
                     {formatCompactStatValue(stat.value)}
                   </div>
                 </div>
@@ -1070,23 +1058,12 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
             </div>
           )}
           {data.recent && data.recent.length > 0 && (
-            <div className="mt-4 border-t border-border-light pt-3">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                  Recently added
-                </div>
-                {data.lastAddedAt && (
-                  <div className="font-mono text-[9px] text-text-muted" title={`Last added ${formatRelativeTime(data.lastAddedAt)}`}>
-                    {formatRelativeTime(data.lastAddedAt)}
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {data.recent.map((item) => (
-                  <MediaRecentCell key={item.id} item={item} onZoom={setZoomedRecent} />
-                ))}
-              </div>
-            </div>
+            <MediaRecentlyAdded
+              moduleId={module.id}
+              items={data.recent}
+              lastAddedAt={data.lastAddedAt}
+              onZoom={setZoomedRecent}
+            />
           )}
           {zoomedRecent && (
             <MediaPosterZoom item={zoomedRecent} onClose={() => setZoomedRecent(null)} />
@@ -1094,6 +1071,133 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         </>
       )}
     </ModulePanel>
+  );
+}
+
+// Compact library list: single-line rows (type as a trailing tag), capped with
+// a quiet "+N more" expander so a server with many libraries stays short.
+const LIBRARY_PREVIEW_COUNT = 6;
+
+function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? libraries : libraries.slice(0, LIBRARY_PREVIEW_COUNT);
+  const hidden = libraries.length - visible.length;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-2 text-[10px] uppercase tracking-wider text-text-tertiary">
+        <span>Libraries</span>
+        <span className="font-mono">{libraries.length}</span>
+      </div>
+      <div className="space-y-1">
+        {visible.map((library) => (
+          <div key={library.id} className="flex items-baseline justify-between gap-2">
+            <div className="flex min-w-0 items-baseline gap-1.5">
+              <span className="truncate text-xs text-text-primary">{library.name}</span>
+              {library.type && (
+                <span className="flex-shrink-0 font-mono text-[9px] uppercase tracking-wider text-text-muted">
+                  {library.type}
+                </span>
+              )}
+            </div>
+            <span className="flex-shrink-0 font-mono text-[11px] text-text-secondary">
+              {formatCompactNumber(library.count)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {(hidden > 0 || expanded) && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1.5 font-mono text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+        >
+          {expanded ? 'Show less' : `+${hidden} more`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Recently added: a collapsible block (state persisted per module) showing a
+// 4-up window of covers with ‹ › paging when there are more than fit.
+const RECENT_WINDOW = 4;
+
+function MediaRecentlyAdded({
+  moduleId,
+  items,
+  lastAddedAt,
+  onZoom,
+}: {
+  moduleId: string;
+  items: MediaRecentItem[];
+  lastAddedAt?: string;
+  onZoom: (item: MediaRecentItem) => void;
+}) {
+  const [collapsed, setCollapsed] = usePersistedBoolean(`opaque:media-recent-collapsed:${moduleId}`, false);
+  const [start, setStart] = useState(0);
+  const maxStart = Math.max(0, items.length - RECENT_WINDOW);
+  // Clamp the window if the item count shrinks between refreshes.
+  const clampedStart = Math.min(start, maxStart);
+  const canPage = items.length > RECENT_WINDOW;
+  const window = items.slice(clampedStart, clampedStart + RECENT_WINDOW);
+
+  const page = (delta: number) => {
+    setStart((value) => Math.min(Math.max(0, value + delta), maxStart));
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-expanded={!collapsed}
+          className="group/recenthead flex items-center gap-1 text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:text-text-secondary"
+        >
+          <IconChevronDown
+            className={`h-3 w-3 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+          />
+          Recently added
+        </button>
+        <div className="flex items-center gap-2">
+          {lastAddedAt && (
+            <span className="font-mono text-[9px] text-text-muted" title={`Last added ${formatRelativeTime(lastAddedAt)}`}>
+              {formatRelativeTime(lastAddedAt)}
+            </span>
+          )}
+          {!collapsed && canPage && (
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => page(-RECENT_WINDOW)}
+                disabled={clampedStart === 0}
+                aria-label="Newer"
+                className="flex h-4 w-4 items-center justify-center text-text-muted transition-colors hover:text-text-primary disabled:opacity-30"
+              >
+                <IconChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => page(RECENT_WINDOW)}
+                disabled={clampedStart >= maxStart}
+                aria-label="Older"
+                className="flex h-4 w-4 items-center justify-center text-text-muted transition-colors hover:text-text-primary disabled:opacity-30"
+              >
+                <IconChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {!collapsed && (
+        <div className="grid grid-cols-4 gap-2">
+          {window.map((item) => (
+            <MediaRecentCell key={item.id} item={item} onZoom={onZoom} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1319,8 +1423,10 @@ function PostsStackEditor({
 
   return (
     <div
-      className={`border bg-white p-3 transition-colors ${
-        isDropTarget ? 'border-ink-700 bg-[#fcfcfc]' : 'border-border-light hover:border-border-medium'
+      className={`rounded-sm p-3 transition-colors ${
+        isDropTarget
+          ? 'outline-dashed outline-1 outline-ink-700 bg-[#fcfcfc]'
+          : 'hover:bg-surface-sunken/50'
       }`}
       onDragOver={onDragOver}
       onDrop={onDrop}

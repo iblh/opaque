@@ -39,9 +39,12 @@ function readLayoutSnapshot(): LayoutSnapshotRow[] | null {
 }
 
 const DEFAULT_ROWS: LayoutSnapshotRow[] = [
-  { roots: ['bookmarks', 'today'], widths: [50, 50] },
-  { roots: ['media', 'applications', 'posts'], widths: [33, 34, 33] },
+  { roots: ['bookmarks', 'weather'], widths: [50, 50] },
+  { roots: ['markets', 'calendar', 'applications'], widths: [33, 34, 33] },
+  { roots: ['media', 'posts'], widths: [50, 50] },
 ];
+
+const SINGLE_MODULE_ROOTS = new Set(['weather', 'calendar', 'markets']);
 
 const bar = 'rounded-sm bg-surface-sunken';
 const barSoft = 'rounded-sm bg-[#f1f1f1]';
@@ -59,8 +62,7 @@ export default function DashboardSkeleton() {
   return (
     <div className="animate-fade-in py-16">
       <div className="mx-4 md:mx-8">
-        <div className="h-0.5 w-6 bg-ink-300" />
-        <div className={`mt-3 h-3 w-44 animate-pulse ${barSoft}`} />
+        <div className={`h-3 w-44 animate-pulse ${barSoft}`} />
       </div>
 
       <div className="mx-4 mt-8 flex flex-col gap-5 md:mx-8">
@@ -87,35 +89,50 @@ export default function DashboardSkeleton() {
 function SectionSkeleton({ root }: { root: string }) {
   return (
     <section className="min-w-0">
-      <div className="mb-3 flex items-center gap-3">
+      <div className="mb-3">
         <div className={`h-3.5 w-20 animate-pulse ${bar}`} />
-        <div className="h-px flex-1 bg-border-light" />
       </div>
       <SectionBodySkeleton root={root} />
     </section>
   );
 }
 
+// Borderless bodies (matching the live, border-free cards): structure comes
+// from spacing alone.
 function SectionBodySkeleton({ root }: { root: string }) {
-  if (root === 'today' || root === 'media') {
+  if (SINGLE_MODULE_ROOTS.has(root)) {
     return (
-      <div className="flex animate-pulse flex-wrap gap-3">
-        {[0, 1].map((index) => (
-          <div key={index} className="w-72 max-w-full border border-border-light bg-white p-3">
-            <div className={`h-3 w-20 ${bar}`} />
-            <div className={`mt-4 h-2.5 w-3/4 ${barSoft}`} />
-            <div className={`mt-2 h-2.5 w-1/2 ${barSoft}`} />
-            <div className={`mt-2 h-2.5 w-2/3 ${barSoft}`} />
-            <div className={`mt-4 h-16 w-full ${barSoft}`} />
-          </div>
-        ))}
+      <div className="w-72 max-w-full animate-pulse">
+        <div className={`h-7 w-24 ${bar}`} />
+        <div className={`mt-3 h-2.5 w-1/2 ${barSoft}`} />
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[0, 1, 2].map((index) => (
+            <div key={index}>
+              <div className={`h-2 w-10 ${barSoft}`} />
+              <div className={`mt-1.5 h-2.5 w-12 ${bar}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (root === 'media') {
+    return (
+      <div className="w-full max-w-[360px] animate-pulse">
+        <div className={`h-2.5 w-1/3 ${bar}`} />
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {[0, 1, 2, 3].map((index) => (
+            <div key={index} className={`aspect-[2/3] ${barSoft}`} />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (root === 'posts') {
     return (
-      <div className="max-w-[732px] animate-pulse border border-border-light bg-white p-3">
+      <div className="max-w-[732px] animate-pulse">
         <div className={`h-3 w-32 ${bar}`} />
         <div className="mt-4 space-y-3.5">
           {[0, 1, 2, 3].map((index) => (
@@ -131,7 +148,7 @@ function SectionBodySkeleton({ root }: { root: string }) {
 
   if (root === 'servers') {
     return (
-      <div className="w-[360px] max-w-full animate-pulse border border-border-light bg-white p-4">
+      <div className="w-[360px] max-w-full animate-pulse">
         <div className={`h-3 w-28 ${bar}`} />
         <div className="mt-4 grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((index) => (

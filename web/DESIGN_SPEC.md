@@ -55,8 +55,10 @@ Hover exists **only on interactive elements**, and means exactly one of four thi
 1. **Row / list item** (links in lists: posts, bookmark leaves, app leaves) — soft surface lift
    `hover:bg-surface-sunken/70` on a padded `-mx-2 px-2 rounded-sm` row; title darkens; the
    accent-green hairline may appear (left rule or underline).
-2. **Card / panel** — border lift only: `border-border-light → border-border-medium`, optional
-   `bg-[#fcfcfc]`. No shadows (shadows are reserved for *lifted* drag clones and popovers).
+2. **Module / card** — modules are **borderless** (see Structure). View mode never lifts a border;
+   if a draggable unit needs to read as a unit in *edit* mode, use a faint `hover:bg-surface-sunken/50`
+   surface and a dashed `outline` as a drop/merge target — never a permanent border, never a shadow
+   (shadows are reserved for *lifted* drag clones and popovers).
 3. **Icon / utility button** — `text-text-muted → text-text-primary` plus `hover:bg-surface-sunken`
    (`.opaque-icon-button` pattern). Destructive variants darken to `accent-red-dark`.
 4. **Text link / tab** — color darkens toward ink; hairline underline appears or strengthens.
@@ -76,9 +78,21 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
 
 ### Structure
 
-- Section title sits flush-left with its content (no indents between title and body).
-- Hairline (`border-light`, 1px) is the only divider. Depth comes from spacing, not elevation.
-- Radius is `rounded-sm` (2px) for almost everything; `rounded-full` only for status dots and pills.
+- **Modules are borderless.** Bookmarks, applications, servers, weather, calendar, markets, media,
+  and posts all render as content on the page with no card outline and no `bg-white` fill —
+  separation comes from whitespace and the section title alone. This keeps the page integral rather
+  than fragmented into boxes. (Edit mode may add a faint surface tint to mark a draggable unit; see
+  hover grammar #2.) Poster/thumbnail *images* keep a hairline frame — that's content, not a card.
+- **Each glanceable widget is its own top-level section.** weather / calendar / markets are
+  independent single-module roots (not bundled under a "Today" section), each freely placeable and
+  resizable on the layout grid. media and posts remain multi-module roots.
+- Section title sits flush-left above its content with **no trailing rule**; the title alone opens
+  the section. The page has no decorative hairlines between a title and its body, and no rule above
+  the welcome line.
+- Depth comes from spacing, not elevation or outlines. Radius is `rounded-sm` (2px) where anything
+  is rounded; `rounded-full` only for status dots and pills.
+- A single module root carries its name once — in the section header. The module panel inside it
+  omits its own redundant title row (it keeps only the status/refresh control).
 - WYSIWYG: edit mode must not reshape view mode. Nothing appears in edit mode that occupies layout
   space the view mode doesn't have (edit affordances live in headers, overlays, or handles).
 

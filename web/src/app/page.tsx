@@ -317,8 +317,7 @@ export default function HomePage() {
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
             <div className="mx-4 animate-fade-in md:mx-8">
-              <div className="h-0.5 w-6 bg-ink-300"></div>
-              <p className="mt-2.5 font-serif text-sm leading-none text-text-secondary">
+              <p className="font-serif text-sm leading-none text-text-secondary">
                 {timeGreeting()}{displayName ? `, ${displayName}` : ''}
                 <span className="text-text-muted"> — {todayLabel()}</span>
               </p>

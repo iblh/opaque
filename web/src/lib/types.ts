@@ -9,7 +9,9 @@ export type DashboardRoot =
   | 'bookmarks'
   | 'applications'
   | 'servers'
-  | 'today'
+  | 'weather'
+  | 'calendar'
+  | 'markets'
   | 'media'
   | 'posts'
   | (string & {});
