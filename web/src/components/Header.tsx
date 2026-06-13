@@ -20,7 +20,6 @@ import {
     IconUser,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
-import { clearCachedDashboard } from '@/lib/dashboardCache';
 import {
     buildSearchUrl,
     DEFAULT_SEARCH_PROVIDER_ID,
@@ -85,7 +84,6 @@ export default function Header({
     }, []);
 
     const handleLogout = async () => {
-        clearCachedDashboard();
         await fetch('/api/user/logout', { method: 'POST' });
         router.push('/login');
     };
