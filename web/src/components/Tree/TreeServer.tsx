@@ -269,7 +269,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
           <div
             key={server.id}
             data-drag-preview
-            className={`relative w-[360px] max-w-full flex-none rounded-sm border bg-white p-4 transition-all duration-200 ${
+            className={`relative w-[360px] max-w-full flex-none rounded-sm border bg-white p-4 transition-all ${
               isServerEditing
                 ? 'border-border-strong'
                 : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
@@ -331,7 +331,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     <button
                       type="button"
                       onClick={() => copyAgentId(server.id)}
-                      className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-white hover:text-text-primary"
+                      className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                       aria-label="Copy agent id"
                       title="Copy agent id"
                     >
@@ -346,7 +346,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                       type="button"
                       onClick={() => rotateAgentToken(server.id)}
                       disabled={rotatingTokenId === server.id}
-                      className="flex h-6 items-center gap-1 rounded-sm px-2 text-[11px] text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-50"
+                      className="flex h-6 items-center gap-1 rounded-sm px-2 text-[11px] text-text-secondary hover:bg-surface-sunken hover:text-text-primary disabled:opacity-50"
                     >
                       {rotatingTokenId === server.id ? (
                         <IconRefresh className="h-3.5 w-3.5 animate-spin" />
@@ -364,7 +364,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                       <button
                         type="button"
                         onClick={() => copyAgentToken(server.id)}
-                        className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-white hover:text-text-primary"
+                        className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
                         aria-label="Copy agent token"
                         title="Copy agent token"
                       >
@@ -373,7 +373,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </div>
                   )}
                   {agentTokenErrors[server.id] && (
-                    <div className="mt-1 text-[11px] leading-relaxed text-red-500">
+                    <div className="mt-1 text-[11px] leading-relaxed text-accent-red-dark">
                       {agentTokenErrors[server.id]}
                     </div>
                   )}
@@ -390,7 +390,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   <button
                     type="button"
                     onClick={() => removeServer(server.id)}
-                    className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                    className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
                     aria-label={`Delete ${server.name}`}
                     title="Delete server"
                   >
@@ -496,7 +496,7 @@ function MetricBar({
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${normalized < 70 ? 'bg-accent-green' : normalized < 90 ? 'bg-amber-500' : 'bg-red-500'}`}
+          className={`h-full rounded-full transition-all ${normalized < 70 ? 'bg-accent-green' : normalized < 90 ? 'bg-accent-amber' : 'bg-accent-red'}`}
           style={{ width: `${normalized}%` }}
         />
       </div>

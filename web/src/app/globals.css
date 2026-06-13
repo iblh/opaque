@@ -13,11 +13,15 @@
 
     body {
         @apply min-h-screen bg-[#fafafa] font-body text-text-primary;
+        /* Numerals never jitter (see DESIGN_SPEC.md — Type). */
+        font-variant-numeric: tabular-nums;
     }
-    
-    /* Linear-inspired focus styles */
+
+    /* Quiet focus: a thin ink outline, visible everywhere, never a glow. */
     *:focus-visible {
-        @apply outline-none ring-2 ring-accent-blue ring-opacity-50;
+        outline: 1px solid theme('colors.ink.700');
+        outline-offset: 2px;
+        @apply ring-0;
     }
 }
 
@@ -142,6 +146,22 @@ input:-webkit-autofill:active {
     animation: dragClonePickUp 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: transform, left, top;
     filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.16));
+}
+
+@keyframes posterZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* In-module poster lightbox enter; matches the 180ms motion budget. */
+.animate-poster-zoom {
+    animation: posterZoomIn 180ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
 }
 
 .login-shell {
@@ -542,7 +562,8 @@ input:-webkit-autofill:active {
     .login-bookmark-text,
     .login-bookmark-caret,
     .login-caret,
-    .login-pulse {
+    .login-pulse,
+    .animate-poster-zoom {
         animation: none !important;
     }
 }
@@ -598,7 +619,7 @@ input:-webkit-autofill:active {
    =============================================== */
 @layer components {
     .linear-card {
-        @apply bg-surface-elevated border border-border-light rounded shadow-subtle transition-all duration-200;
+        @apply bg-surface-elevated border border-border-light rounded shadow-subtle transition-all;
     }
     
     .linear-divider {
@@ -606,7 +627,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-card {
-        @apply rounded-sm border border-border-light bg-white shadow-none transition-colors duration-200;
+        @apply rounded-sm border border-border-light bg-white shadow-none transition-colors;
     }
 
     .opaque-card:hover {
@@ -615,12 +636,12 @@ input:-webkit-autofill:active {
 
     .opaque-button {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-white px-2 text-[11px] font-medium text-text-secondary transition-colors duration-200 hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-white px-2 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
     }
 
     .opaque-button-primary {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-white transition-colors duration-200 hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-white transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
     }
 
     .opaque-button svg,
@@ -630,17 +651,17 @@ input:-webkit-autofill:active {
     }
 
     .opaque-icon-button {
-        @apply inline-flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-text-muted transition-colors duration-200 hover:border-border-light hover:bg-surface-sunken hover:text-text-primary;
+        @apply inline-flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-text-muted transition-colors hover:border-border-light hover:bg-surface-sunken hover:text-text-primary;
     }
 
     .opaque-input {
-        @apply h-8 rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors duration-200 placeholder:text-text-muted focus:border-border-strong focus:ring-0;
+        @apply h-8 rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
     }
 
     .opaque-toolbar-icon {
         width: var(--opaque-header-control-size);
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center rounded-sm border border-border-light bg-white text-text-muted transition-colors duration-200 hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary;
+        @apply inline-flex items-center justify-center rounded-sm border border-border-light bg-white text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary;
     }
 
     .opaque-toolbar-icon svg {
@@ -662,7 +683,7 @@ input:-webkit-autofill:active {
     .opaque-toolbar-avatar {
         width: var(--opaque-header-control-size);
         height: var(--opaque-header-control-size);
-        @apply flex items-center justify-center rounded-full border border-transparent bg-surface-sunken text-[11px] font-medium text-text-primary transition-colors duration-200 hover:bg-[#ededed];
+        @apply flex items-center justify-center rounded-full border border-transparent bg-surface-sunken text-[11px] font-medium text-text-primary transition-colors hover:bg-[#ededed];
     }
 
     .opaque-menu-popover {

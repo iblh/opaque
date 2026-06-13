@@ -49,7 +49,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   const draggedBranchPreview = useRef<DragPreviewState | null>(null);
   const draggedLeaf = useRef<DraggedLeaf | null>(null);
   const bookmarkInputClass =
-    'opaque-input w-full focus:border-accent-green';
+    'opaque-input w-full focus:border-ink-700';
   const monoBookmarkInputClass = `${bookmarkInputClass} font-mono text-[11px]`;
 
   const updateBranches = (branches: BookmarkBranch[]) => {
@@ -202,7 +202,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
         <div
           key={branch.id}
           data-drag-preview
-          className={`relative flex w-full animate-fade-in flex-col p-4 transition-all duration-200 ease-in-out ${
+          className={`relative flex w-full animate-fade-in flex-col p-4 transition-all ${
             isEditing ? 'opaque-card' : ''
           } ${
             activeDrag?.type === 'branch' && activeDrag.id === branch.id
@@ -255,7 +255,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   ...item,
                   name: event.target.value,
                 }))}
-                className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-sm font-medium tracking-tight text-text-primary focus:border-accent-green focus:ring-0"
+                className="min-w-0 flex-1 border-0 border-b border-border-light bg-transparent px-0 py-1 text-sm font-medium tracking-tight text-text-primary focus:border-ink-700 focus:ring-0"
               />
             ) : (
               <div className="relative text-sm font-medium tracking-tight text-text-primary">
@@ -268,7 +268,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
               <button
                 type="button"
                 onClick={() => removeBranch(branch.id)}
-                className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
                 aria-label={`Delete ${branch.name}`}
                 title="Delete group"
               >
@@ -286,7 +286,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   <div
                     key={leaf.id}
                     data-drag-preview
-                    className={`group rounded-sm border p-2 transition-all duration-200 ${
+                    className={`group rounded-sm border p-2 transition-all ${
                       isLeafEditing
                         ? 'border-border-strong bg-white'
                         : 'border-border-light bg-white/70 hover:bg-white'
@@ -356,7 +356,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                           <button
                             type="button"
                             onClick={() => removeLeaf(branch.id, leaf.id)}
-                            className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+                            className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
                             aria-label={`Delete ${leaf.name}`}
                             title="Delete bookmark"
                           >
@@ -418,17 +418,17 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   href={leaf.url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block text-inherit no-underline transition-all duration-200 ease-in-out"
+                  className="group block text-inherit no-underline"
                 >
-                  <div className="relative px-1 py-1.5 transition-colors duration-200 hover:bg-white">
+                  <div className="relative rounded-sm px-1 py-1.5 transition-colors hover:bg-white">
                     <div className="flex items-center gap-1.5 text-left">
                       <SvgIcon
                         svg={leaf.icon}
                         fallback={DEFAULT_BOOKMARK_ICON}
-                        className="h-4 w-4 flex-shrink-0 text-text-secondary transition-colors duration-200 group-hover:text-accent-green"
+                        className="h-4 w-4 flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-4 text-text-primary transition-colors duration-200 group-hover:border-accent-green">
+                        <div className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-4 text-text-primary transition-colors group-hover:border-accent-green">
                           {leaf.name}
                         </div>
                       </div>

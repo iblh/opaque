@@ -20,17 +20,20 @@ import {
   IconRefresh,
   IconRss,
   IconTrash,
+  IconX,
 } from '@tabler/icons-react';
 import type {
   MarketsModuleData,
   MediaModuleData,
   MediaNowPlayingItem,
   MediaQueueItem,
+  MediaRecentItem,
   ModuleData,
   ModuleDataResponse,
   PostsModuleData,
   WeatherModuleData,
 } from '@/lib/moduleData';
+import { isPostRead, markPostRead, subscribeReadPosts } from '@/lib/readPosts';
 import { KnownModuleType, ModuleBranch } from '@/lib/types';
 import {
   createDefaultModuleBranch,
@@ -77,6 +80,11 @@ function moduleGridClassName(root: string) {
   // edit modes so entering edit mode doesn't reshape the section (WYSIWYG).
   if (root === 'posts') {
     return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
+  }
+
+  // Today widgets are glanceable summaries; a narrower column keeps them tidy.
+  if (root === 'today') {
+    return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
   }
 
   return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
@@ -376,7 +384,6 @@ const TreeModule: React.FC<TreeModuleProps> = ({
               <PostsStackWidget
                 key={`post-stack-${item.stackId}`}
                 modules={item.modules}
-                title="Posts"
               />
             );
           }
@@ -438,8 +445,8 @@ function ModuleEditCard({
 }: ModuleEditCardProps) {
   const mergeRing = isMergeTarget ? 'border-ink-700 bg-[#fcfcfc]' : '';
   const shellClassName = embedded
-    ? `relative transition-all duration-200 ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
-    : `group relative border bg-white p-3 transition-all duration-200 ${
+    ? `relative transition-all ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
+    : `group relative border bg-white p-3 transition-all ${
         mergeRing || 'border-border-light hover:border-border-medium'
       } ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`;
 
@@ -498,7 +505,7 @@ function ModuleEditCard({
         <button
           type="button"
           onClick={onRemove}
-          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-red-500"
+          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
           aria-label={`Delete ${module.name}`}
           title="Delete module"
         >
@@ -679,13 +686,29 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
   );
 }
 
+// Session-scoped cache of module data so remounts and tab switches show the
+// last known content instantly while a silent refresh runs in the background.
+const moduleDataCache = new Map<string, ModuleData>();
+
 function useModuleData(module: ModuleBranch): ModuleDataState {
-  const [data, setData] = useState<ModuleData | null>(null);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [requestVersion, setRequestVersion] = useState(0);
   const configKey = JSON.stringify(module.config || {});
+  const cacheKey = `${module.id}:${configKey}`;
+  const [data, setData] = useState<ModuleData | null>(() => moduleDataCache.get(cacheKey) ?? null);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(() => !moduleDataCache.has(cacheKey));
+  const [requestVersion, setRequestVersion] = useState(0);
   const refresh = useCallback(() => setRequestVersion((version) => version + 1), []);
+
+  // When this hook instance is reused for a different module (switching tabs
+  // in a posts group), swap to that module's cached data during render so the
+  // previous tab's content never lingers under the new tab's header.
+  const lastCacheKeyRef = useRef(cacheKey);
+  if (lastCacheKeyRef.current !== cacheKey) {
+    lastCacheKeyRef.current = cacheKey;
+    setData(moduleDataCache.get(cacheKey) ?? null);
+    setError('');
+    setIsLoading(!moduleDataCache.has(cacheKey));
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -708,7 +731,9 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
         }
 
         if (!cancelled) {
-          setData((payload as ModuleDataResponse).data);
+          const nextData = (payload as ModuleDataResponse).data;
+          moduleDataCache.set(cacheKey, nextData);
+          setData(nextData);
         }
       } catch (loadError) {
         if (!cancelled && !controller.signal.aborted) {
@@ -719,7 +744,8 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
       }
     };
 
-    load();
+    // With cached data on screen, refresh silently (stale-while-revalidate).
+    load(moduleDataCache.has(cacheKey));
     const intervalId = window.setInterval(() => load(true), moduleRefreshInterval(module.moduleType));
 
     return () => {
@@ -727,9 +753,16 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
       controller.abort();
       window.clearInterval(intervalId);
     };
-  }, [configKey, module.id, module.moduleType, requestVersion]);
+  }, [cacheKey, module.id, module.moduleType, requestVersion]);
 
   return { data, error, isLoading, refresh };
+}
+
+// Mounts the data hook for a module without rendering anything — used to warm
+// the cache for a posts group's hidden tabs so switching is instant.
+function ModulePrefetch({ module }: { module: ModuleBranch }) {
+  useModuleData(module);
+  return null;
 }
 
 function ModulePanel({
@@ -737,41 +770,48 @@ function ModulePanel({
   state,
   href,
   titleOverride,
+  header,
   children,
 }: {
   module: ModuleBranch;
   state?: ModuleDataState;
   href?: string;
   titleOverride?: string;
+  /** Replaces the icon + title cluster, e.g. a tab bar acting as the header. */
+  header?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const statusClass = state?.error
-    ? 'bg-red-500'
+    ? 'bg-accent-red'
     : state?.isLoading
       ? 'bg-ink-300'
       : 'bg-accent-green';
   const title = titleOverride || module.name || getModuleLabel(module.moduleType);
 
   return (
-    <section className="border border-border-light bg-white p-3 transition-colors duration-200 hover:border-border-medium hover:bg-[#fcfcfc]">
+    <section className="relative border border-border-light bg-white p-3 transition-colors hover:border-border-medium hover:bg-[#fcfcfc]">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
-            >
-              {title}
-            </a>
-          ) : (
-            <div className="truncate font-serif text-sm text-text-primary">
-              {title}
-            </div>
-          )}
-        </div>
+        {header ? (
+          <div className="min-w-0 flex-1">{header}</div>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
+            {href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
+              >
+                {title}
+              </a>
+            ) : (
+              <div className="truncate font-serif text-sm text-text-primary">
+                {title}
+              </div>
+            )}
+          </div>
+        )}
         {state && (
           <div className="flex items-center gap-2">
             <button
@@ -801,7 +841,7 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   return (
     <ModulePanel module={module} state={state}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
           <div>
@@ -846,7 +886,7 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   return (
     <ModulePanel module={module} state={state}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="markets" />
       ) : (
         <div className="-my-1 divide-y divide-border-light">
           {data.quotes.map((quote) => {
@@ -889,16 +929,16 @@ function MarketSparkline({
 }: {
   values: number[];
 }) {
-  const points = sparklinePoints(values, 96, 34);
+  const points = sparklinePoints(values, 80, 26);
 
   if (!points) {
-    return <div className="h-9" />;
+    return <div className="h-[26px]" />;
   }
 
   return (
-    <div className="h-9 min-w-0 overflow-hidden">
+    <div className="h-[26px] min-w-0 overflow-hidden">
       <svg
-        viewBox="0 0 96 34"
+        viewBox="0 0 80 26"
         preserveAspectRatio="none"
         className="h-full w-full text-ink-400"
         aria-label="Recent price trend"
@@ -926,11 +966,21 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   const streamCount = data
     ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
     : 0;
+  const [zoomedRecent, setZoomedRecent] = useState<MediaRecentItem | null>(null);
+
+  useEffect(() => {
+    if (!zoomedRecent) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setZoomedRecent(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [zoomedRecent]);
 
   return (
     <ModulePanel module={module} state={state} href={data?.url}>
       {!data ? (
-        <ModuleBodyState state={state} />
+        <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
           <div className="mb-4 flex items-baseline justify-between">
@@ -1033,51 +1083,133 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {data.recent.map((item) => (
-                  <div key={item.id} className="group/recent min-w-0">
-                    <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken">
-                      {item.imageUrl ? (
-                        <Image
-                          src={item.imageUrl}
-                          alt={`${item.title} cover`}
-                          width={72}
-                          height={108}
-                          loading="lazy"
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
-                          {item.title.slice(0, 1)}
-                        </div>
-                      )}
-                      {item.addedAt && (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
-                          {formatRelativeTime(item.addedAt)}
-                        </div>
-                      )}
-                    </div>
-                    <div
-                      className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
-                      title={item.title}
-                    >
-                      {item.title}
-                    </div>
-                    {item.subtitle && (
-                      <div
-                        className="mt-0.5 line-clamp-2 font-mono text-[9px] leading-tight text-text-tertiary"
-                        title={item.subtitle}
-                      >
-                        {item.subtitle}
-                      </div>
-                    )}
-                  </div>
+                  <MediaRecentCell key={item.id} item={item} onZoom={setZoomedRecent} />
                 ))}
               </div>
             </div>
           )}
+          {zoomedRecent && (
+            <MediaPosterZoom item={zoomedRecent} onClose={() => setZoomedRecent(null)} />
+          )}
         </>
       )}
     </ModulePanel>
+  );
+}
+
+function MediaRecentCell({
+  item,
+  onZoom,
+}: {
+  item: MediaRecentItem;
+  onZoom: (item: MediaRecentItem) => void;
+}) {
+  const body = (
+    <>
+      <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={`${item.title} cover`}
+            width={72}
+            height={108}
+            loading="lazy"
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
+            {item.title.slice(0, 1)}
+          </div>
+        )}
+        {item.addedAt && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-0.5 pt-3 text-center font-mono text-[8px] text-white/90 opacity-0 transition-opacity group-hover/recent:opacity-100">
+            {formatRelativeTime(item.addedAt)}
+          </div>
+        )}
+      </div>
+      <div
+        className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
+        title={item.title}
+      >
+        {item.title}
+      </div>
+      {item.subtitle && (
+        <div
+          className="mt-0.5 line-clamp-2 font-mono text-[9px] leading-tight text-text-tertiary"
+          title={item.subtitle}
+        >
+          {item.subtitle}
+        </div>
+      )}
+    </>
+  );
+
+  // Only covers with real artwork zoom; letter placeholders stay inert.
+  if (!item.imageUrl) {
+    return <div className="group/recent min-w-0">{body}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onZoom(item)}
+      aria-haspopup="dialog"
+      aria-label={`Enlarge ${item.title} cover`}
+      className="group/recent block w-full min-w-0 cursor-zoom-in text-left"
+    >
+      {body}
+    </button>
+  );
+}
+
+// In-panel lightbox: the cover enlarges inside its own module instead of a
+// full-screen modal, keeping the rest of the page quiet.
+function MediaPosterZoom({
+  item,
+  onClose,
+}: {
+  item: MediaRecentItem;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.title}
+      onClick={onClose}
+      className="absolute inset-0 z-20 flex animate-poster-zoom cursor-zoom-out flex-col items-center justify-center gap-3 bg-white/95 p-5"
+    >
+      <button
+        type="button"
+        autoFocus
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-primary"
+      >
+        <IconX className="h-3.5 w-3.5" />
+      </button>
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <Image
+          src={item.imageUrl ?? ''}
+          alt={`${item.title} cover`}
+          width={300}
+          height={450}
+          unoptimized
+          className="h-full w-auto max-w-full border border-border-light object-contain shadow-elevated"
+        />
+      </div>
+      <div className="max-w-full text-center">
+        <div className="truncate font-serif text-sm text-text-primary">{item.title}</div>
+        {(item.subtitle || item.addedAt) && (
+          <div className="mt-0.5 truncate font-mono text-[10px] text-text-tertiary">
+            {item.subtitle}
+            {item.subtitle && item.addedAt && ' · '}
+            {item.addedAt && `added ${formatRelativeTime(item.addedAt)}`}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1187,25 +1319,26 @@ function PostsStackEditor({
 
   return (
     <div
-      className={`border bg-white p-3 transition-colors duration-200 ${
+      className={`border bg-white p-3 transition-colors ${
         isDropTarget ? 'border-ink-700 bg-[#fcfcfc]' : 'border-border-light hover:border-border-medium'
       }`}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="font-serif text-sm text-text-primary">Posts group</div>
-        <div className="font-mono text-[10px] text-text-muted">
+        <div className="min-w-0 flex-1">
+          <PostStackTabs
+            modules={modules}
+            selectedId={selectedModule.id}
+            onSelect={setSelectedId}
+            getTabDragProps={getTabDragProps}
+            framed={false}
+          />
+        </div>
+        <div className="flex-shrink-0 font-mono text-[10px] text-text-muted">
           {modules.length} sources · tabs
         </div>
       </div>
-
-      <PostStackTabs
-        modules={modules}
-        selectedId={selectedModule.id}
-        onSelect={setSelectedId}
-        getTabDragProps={getTabDragProps}
-      />
 
       <div className="mt-2">
         {renderModule(selectedModule)}
@@ -1216,10 +1349,8 @@ function PostsStackEditor({
 
 function PostsStackWidget({
   modules,
-  title = 'Posts',
 }: {
   modules: ModuleBranch[];
-  title?: string;
 }) {
   const sources = useMemo(() => (
     modules.filter((module) => isPostModuleType(module.moduleType))
@@ -1239,7 +1370,6 @@ function PostsStackWidget({
       modules={sources}
       selectedModule={selectedModule}
       onSelect={setSelectedId}
-      title={title}
     />
   );
 }
@@ -1248,24 +1378,33 @@ function PostsStackLive({
   modules,
   selectedModule,
   onSelect,
-  title,
 }: {
   modules: ModuleBranch[];
   selectedModule: ModuleBranch;
   onSelect: (moduleId: string) => void;
-  title: string;
 }) {
   const state = useModuleData(selectedModule);
   const data = state.data?.kind === 'posts' ? state.data as PostsModuleData : null;
 
   return (
-    <ModulePanel module={selectedModule} state={state} titleOverride={title}>
-      <PostStackTabs
-        modules={modules}
-        selectedId={selectedModule.id}
-        onSelect={onSelect}
-      />
+    <ModulePanel
+      module={selectedModule}
+      state={state}
+      header={(
+        <PostStackTabs
+          modules={modules}
+          selectedId={selectedModule.id}
+          onSelect={onSelect}
+          framed={false}
+        />
+      )}
+    >
       <PostsContent data={data} state={state} />
+      {modules
+        .filter((source) => source.id !== selectedModule.id)
+        .map((source) => (
+          <ModulePrefetch key={source.id} module={source} />
+        ))}
     </ModulePanel>
   );
 }
@@ -1275,15 +1414,22 @@ function PostStackTabs({
   selectedId,
   onSelect,
   getTabDragProps,
+  framed = true,
 }: {
   modules: ModuleBranch[];
   selectedId: string;
   onSelect: (moduleId: string) => void;
   getTabDragProps?: (moduleId: string) => TabDragProps;
+  /** false renders a bare tab row (no baseline rule) for use as a panel header. */
+  framed?: boolean;
 }) {
   const draggable = Boolean(getTabDragProps);
   return (
-    <div className="mb-3 flex min-w-0 flex-wrap items-end gap-4 border-b border-border-light">
+    <div
+      className={`flex min-w-0 flex-wrap items-end gap-4 ${
+        framed ? 'mb-3 border-b border-border-light' : ''
+      }`}
+    >
       {modules.map((source) => {
         const isSelected = source.id === selectedId;
         const dragProps = getTabDragProps?.(source.id);
@@ -1293,7 +1439,9 @@ function PostStackTabs({
             type="button"
             onClick={() => onSelect(source.id)}
             {...dragProps}
-            className={`group relative -mb-px pb-2 text-[10px] uppercase tracking-wider transition-colors ${
+            className={`group relative text-[10px] uppercase tracking-wider transition-colors ${
+              framed ? '-mb-px pb-2' : 'pb-1'
+            } ${
               draggable ? 'cursor-grab active:cursor-grabbing' : ''
             } ${
               isSelected
@@ -1328,6 +1476,13 @@ function PostsWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
+// Re-renders when post read-state changes, here or in another tab.
+function useReadPosts() {
+  const [, setVersion] = useState(0);
+  useEffect(() => subscribeReadPosts(() => setVersion((value) => value + 1)), []);
+  return { isRead: isPostRead, markRead: markPostRead };
+}
+
 function PostsContent({
   data,
   state,
@@ -1335,42 +1490,169 @@ function PostsContent({
   data: PostsModuleData | null;
   state: ModuleDataState;
 }) {
-  if (!data) return <ModuleBodyState state={state} />;
-  if (data.posts.length === 0) return <EmptyModuleState>No posts found.</EmptyModuleState>;
+  const { isRead, markRead } = useReadPosts();
+
+  if (!data) return <ModuleBodyState state={state} skeleton="posts" />;
+  if (data.posts.length === 0) return <EmptyModuleState>Nothing new today.</EmptyModuleState>;
 
   return (
     <div className="-mx-2 space-y-0.5">
-      {data.posts.map((post) => (
-        <a
-          key={post.id}
-          href={post.url}
-          target="_blank"
-          rel="noreferrer"
-          className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors duration-200 hover:bg-surface-sunken/70"
-        >
-          <span
-            aria-hidden
-            className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform duration-200 group-hover:scale-y-100"
-          />
-          <div className="line-clamp-2 text-xs leading-relaxed text-text-primary transition-colors duration-200 group-hover:text-ink-900">
-            {post.title}
-          </div>
-          <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-text-tertiary transition-colors duration-200 group-hover:text-text-secondary">
-            <span>{post.source}</span>
-            {(post.meta || post.publishedAt) && <span>·</span>}
-            {post.meta && <span className="truncate">{post.meta}</span>}
-            {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
-          </div>
-        </a>
-      ))}
+      {data.posts.map((post) => {
+        const read = isRead(post.url);
+        return (
+          <a
+            key={post.id}
+            href={post.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => markRead(post.url)}
+            onAuxClick={(event) => {
+              if (event.button === 1) markRead(post.url);
+            }}
+            className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors hover:bg-surface-sunken/70"
+          >
+            <span
+              aria-hidden
+              className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform group-hover:scale-y-100"
+            />
+            <div
+              className={`line-clamp-2 text-xs leading-relaxed transition-colors ${
+                read
+                  ? 'text-text-tertiary group-hover:text-text-secondary'
+                  : 'text-text-primary group-hover:text-ink-900'
+              }`}
+            >
+              {post.title}
+            </div>
+            <div
+              className={`mt-1 flex items-center gap-2 font-mono text-[10px] transition-colors ${
+                read ? 'text-text-muted' : 'text-text-tertiary group-hover:text-text-secondary'
+              }`}
+            >
+              <span>{post.source}</span>
+              {(post.meta || post.publishedAt) && <span>·</span>}
+              {post.meta && <span className="truncate">{post.meta}</span>}
+              {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+            </div>
+          </a>
+        );
+      })}
     </div>
   );
 }
 
-function ModuleBodyState({ state }: { state: ModuleDataState }) {
+type ModuleSkeletonKind = 'weather' | 'markets' | 'media' | 'posts' | 'generic';
+
+function ModuleBodyState({
+  state,
+  skeleton = 'generic',
+}: {
+  state: ModuleDataState;
+  skeleton?: ModuleSkeletonKind;
+}) {
+  if (state.error) {
+    return (
+      <div className="min-h-16 text-[11px] leading-relaxed text-accent-red-dark">
+        {state.error}
+      </div>
+    );
+  }
+
+  return <ModuleSkeleton kind={skeleton} />;
+}
+
+const skeletonBar = 'rounded-sm bg-surface-sunken';
+const skeletonBarSoft = 'rounded-sm bg-[#f1f1f1]';
+
+// Loading placeholders that echo each module's real content structure, so the
+// panel doesn't reshape when live data arrives.
+function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
+  if (kind === 'weather') {
+    return (
+      <div className="animate-pulse" aria-hidden>
+        <div className={`h-8 w-20 ${skeletonBar}`} />
+        <div className={`mt-2 h-2.5 w-24 ${skeletonBarSoft}`} />
+        <div className={`mt-4 h-2 w-36 ${skeletonBarSoft}`} />
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index}>
+              <div className={`h-2 w-8 ${skeletonBarSoft}`} />
+              <div className={`mt-1.5 h-2.5 w-12 ${skeletonBar}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'markets') {
+    return (
+      <div className="-my-1 animate-pulse divide-y divide-border-light" aria-hidden>
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5">
+            <div>
+              <div className={`h-2.5 w-12 ${skeletonBar}`} />
+              <div className={`mt-1.5 h-2 w-16 ${skeletonBarSoft}`} />
+            </div>
+            <div className={`h-[26px] w-full ${skeletonBarSoft}`} />
+            <div className="justify-self-end">
+              <div className={`h-2.5 w-12 ${skeletonBar}`} />
+              <div className={`mt-1.5 h-2 w-14 ${skeletonBarSoft}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === 'media') {
+    return (
+      <div className="animate-pulse" aria-hidden>
+        <div className="mb-4 flex items-baseline justify-between">
+          <div className={`h-2 w-12 ${skeletonBar}`} />
+          <div className={`h-2 w-16 ${skeletonBarSoft}`} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1].map((index) => (
+            <div key={index}>
+              <div className={`h-2 w-14 ${skeletonBarSoft}`} />
+              <div className={`mt-1.5 h-3.5 w-10 ${skeletonBar}`} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 border-t border-border-light pt-3">
+          <div className={`h-2 w-24 ${skeletonBarSoft}`} />
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index}>
+                <div className={`aspect-[2/3] ${skeletonBar}`} />
+                <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === 'posts') {
+    return (
+      <div className="animate-pulse space-y-3.5" aria-hidden>
+        {[0, 1, 2, 3, 4].map((index) => (
+          <div key={index}>
+            <div className={`h-2.5 ${skeletonBar}`} style={{ width: `${82 - (index % 3) * 14}%` }} />
+            <div className={`mt-1.5 h-2 w-2/5 ${skeletonBarSoft}`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-16 text-[11px] leading-relaxed ${state.error ? 'text-red-500' : 'text-text-tertiary'}`}>
-      {state.error || 'Loading live data...'}
+    <div className="min-h-16 animate-pulse space-y-2.5" aria-hidden>
+      <div className={`h-2.5 w-3/4 ${skeletonBar}`} />
+      <div className={`h-2.5 w-1/2 ${skeletonBarSoft}`} />
+      <div className={`h-2.5 w-2/3 ${skeletonBarSoft}`} />
     </div>
   );
 }
@@ -1734,7 +2016,7 @@ function ConfigFieldLabel({
         <span className="group/help relative inline-flex">
           <button
             type="button"
-            className="flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-sunken hover:text-text-primary focus:outline-none focus:ring-1 focus:ring-ink-500"
+            className="flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-surface-sunken hover:text-text-primary"
             aria-label={`${label} help`}
           >
             <IconHelpCircle className="h-3 w-3" />
