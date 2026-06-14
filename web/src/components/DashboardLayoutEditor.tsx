@@ -477,7 +477,7 @@ export default function DashboardLayoutEditor({
     <div
       ref={containerRef}
       data-layout-editor
-      className="mx-4 flex flex-col gap-5 md:mx-8"
+      className="mx-4 flex flex-col gap-8 md:mx-8 md:gap-10"
     >
       {rows.map((row) => (
         <LayoutRow

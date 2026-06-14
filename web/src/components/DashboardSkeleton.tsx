@@ -44,8 +44,6 @@ const DEFAULT_ROWS: LayoutSnapshotRow[] = [
   { roots: ['media', 'posts'], widths: [50, 50] },
 ];
 
-const SINGLE_MODULE_ROOTS = new Set(['weather', 'calendar', 'markets']);
-
 const bar = 'rounded-sm bg-surface-sunken';
 const barSoft = 'rounded-sm bg-[#f1f1f1]';
 
@@ -65,7 +63,7 @@ export default function DashboardSkeleton() {
         <div className={`h-3 w-44 animate-pulse ${barSoft}`} />
       </div>
 
-      <div className="mx-4 mt-8 flex flex-col gap-5 md:mx-8">
+      <div className="mx-4 mt-8 flex flex-col gap-8 md:mx-8 md:gap-10">
         {rows.map((row, rowIndex) => (
           <div
             key={rowIndex}
@@ -98,18 +96,62 @@ function SectionSkeleton({ root }: { root: string }) {
 }
 
 // Borderless bodies (matching the live, border-free cards): structure comes
-// from spacing alone.
+// from spacing alone. Each shape mirrors its real widget so the panel doesn't
+// reshape when live data arrives.
 function SectionBodySkeleton({ root }: { root: string }) {
-  if (SINGLE_MODULE_ROOTS.has(root)) {
+  if (root === 'weather') {
     return (
-      <div className="w-72 max-w-full animate-pulse">
-        <div className={`h-7 w-24 ${bar}`} />
-        <div className={`mt-3 h-2.5 w-1/2 ${barSoft}`} />
-        <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="w-full max-w-[320px] animate-pulse">
+        <div className={`h-8 w-20 ${bar}`} />
+        <div className={`mt-2 h-2.5 w-24 ${barSoft}`} />
+        <div className={`mt-4 h-2 w-40 ${barSoft}`} />
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
           {[0, 1, 2].map((index) => (
             <div key={index}>
-              <div className={`h-2 w-10 ${barSoft}`} />
+              <div className={`h-2 w-8 ${barSoft}`} />
               <div className={`mt-1.5 h-2.5 w-12 ${bar}`} />
+              <div className={`mt-1 h-2 w-10 ${barSoft}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (root === 'markets') {
+    return (
+      <div className="w-full max-w-[320px] animate-pulse divide-y divide-border-light">
+        {[0, 1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className="grid grid-cols-[minmax(0,1fr)_56px_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
+          >
+            <div>
+              <div className={`h-2.5 w-12 ${bar}`} />
+              <div className={`mt-1.5 h-2 w-16 ${barSoft}`} />
+            </div>
+            <div className={`h-[24px] w-full ${barSoft}`} />
+            <div className="justify-self-end">
+              <div className={`h-2.5 w-12 ${bar}`} />
+              <div className={`mt-1.5 h-2 w-14 ${barSoft}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (root === 'calendar') {
+    return (
+      <div className="w-full max-w-[320px] animate-pulse">
+        <div className="mb-3 flex items-center justify-between">
+          <div className={`h-3 w-16 ${bar}`} />
+          <div className={`h-3 w-10 ${barSoft}`} />
+        </div>
+        <div className="grid grid-cols-7 gap-y-1">
+          {Array.from({ length: 42 }).map((_, index) => (
+            <div key={index} className="flex justify-center">
+              <div className={`h-7 w-7 rounded-sm ${index % 8 === 0 ? bar : barSoft}`} />
             </div>
           ))}
         </div>
@@ -120,11 +162,25 @@ function SectionBodySkeleton({ root }: { root: string }) {
   if (root === 'media') {
     return (
       <div className="w-full max-w-[360px] animate-pulse">
-        <div className={`h-2.5 w-1/3 ${bar}`} />
-        <div className="mt-4 grid grid-cols-4 gap-2">
+        <div className="mb-4 flex items-baseline justify-between">
+          <div className={`h-2 w-12 ${bar}`} />
+          <div className={`h-2 w-16 ${barSoft}`} />
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className={`aspect-[2/3] ${barSoft}`} />
+            <div key={index} className="flex items-baseline justify-between gap-2">
+              <div className={`h-2.5 w-16 ${barSoft}`} />
+              <div className={`h-2.5 w-8 ${bar}`} />
+            </div>
           ))}
+        </div>
+        <div className="mt-4 border-t border-border-light pt-3">
+          <div className={`h-2 w-24 ${barSoft}`} />
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className={`aspect-[2/3] ${bar}`} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -132,16 +188,13 @@ function SectionBodySkeleton({ root }: { root: string }) {
 
   if (root === 'posts') {
     return (
-      <div className="max-w-[732px] animate-pulse">
-        <div className={`h-3 w-32 ${bar}`} />
-        <div className="mt-4 space-y-3.5">
-          {[0, 1, 2, 3].map((index) => (
-            <div key={index}>
-              <div className={`h-2.5 ${bar}`} style={{ width: `${80 - (index % 3) * 12}%` }} />
-              <div className={`mt-1.5 h-2 w-2/5 ${barSoft}`} />
-            </div>
-          ))}
-        </div>
+      <div className="max-w-[732px] animate-pulse space-y-3.5">
+        {[0, 1, 2, 3, 4].map((index) => (
+          <div key={index}>
+            <div className={`h-2.5 ${bar}`} style={{ width: `${82 - (index % 3) * 14}%` }} />
+            <div className={`mt-1.5 h-2 w-2/5 ${barSoft}`} />
+          </div>
+        ))}
       </div>
     );
   }
@@ -149,8 +202,7 @@ function SectionBodySkeleton({ root }: { root: string }) {
   if (root === 'servers') {
     return (
       <div className="w-[360px] max-w-full animate-pulse">
-        <div className={`h-3 w-28 ${bar}`} />
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((index) => (
             <div key={index}>
               <div className={`h-2 w-12 ${barSoft}`} />
@@ -162,12 +214,15 @@ function SectionBodySkeleton({ root }: { root: string }) {
     );
   }
 
-  // bookmarks / applications / fallback: light text rows.
+  // bookmarks / applications / fallback: a couple of icon + label rows.
   return (
-    <div className="max-w-md animate-pulse space-y-2.5 pt-1">
-      <div className={`h-3 w-28 ${bar}`} />
-      <div className={`h-2.5 w-3/5 ${barSoft}`} />
-      <div className={`h-2.5 w-2/5 ${barSoft}`} />
+    <div className="max-w-md animate-pulse space-y-3 pt-1">
+      {[0, 1].map((index) => (
+        <div key={index} className="flex items-center gap-2">
+          <div className={`h-[18px] w-[18px] flex-shrink-0 rounded-sm ${barSoft}`} />
+          <div className={`h-2.5 ${bar}`} style={{ width: `${50 - index * 12}%` }} />
+        </div>
+      ))}
     </div>
   );
 }

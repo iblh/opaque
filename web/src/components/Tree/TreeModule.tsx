@@ -802,7 +802,8 @@ function ModulePanel({
   const title = titleOverride || module.name || getModuleLabel(module.moduleType);
   // Single-module roots (weather/calendar/markets) already carry their name in
   // the section header, so the panel's own icon+title row would be redundant.
-  // Suppress it and float just the status/refresh control top-right.
+  // Show just the status/refresh control on its own right-aligned line so it
+  // never overlaps the body's first row (markets rows start flush at the top).
   const titleInSectionHeader = isSingleModuleRoot(module.moduleType) && !header && !titleOverride;
 
   const statusControl = state ? (
@@ -828,7 +829,7 @@ function ModulePanel({
     <section className="relative">
       {titleInSectionHeader ? (
         statusControl && (
-          <div className="absolute right-0 top-0 z-10">{statusControl}</div>
+          <div className="mb-2 flex h-5 items-center justify-end">{statusControl}</div>
         )
       ) : (
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -922,7 +923,7 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
             return (
               <div
                 key={quote.symbol}
-                className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
+                className="grid grid-cols-[minmax(0,1fr)_56px_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
               >
                 <div className="min-w-0">
                   <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-tight text-text-primary">
@@ -955,16 +956,16 @@ function MarketSparkline({
 }: {
   values: number[];
 }) {
-  const points = sparklinePoints(values, 80, 26);
+  const points = sparklinePoints(values, 56, 24);
 
   if (!points) {
-    return <div className="h-[26px]" />;
+    return <div className="h-[24px]" />;
   }
 
   return (
-    <div className="h-[26px] min-w-0 overflow-hidden">
+    <div className="h-[24px] w-full overflow-hidden">
       <svg
-        viewBox="0 0 80 26"
+        viewBox="0 0 56 24"
         preserveAspectRatio="none"
         className="h-full w-full text-ink-400"
         aria-label="Recent price trend"
