@@ -1197,7 +1197,7 @@ function MediaRecentlyAdded({
         </div>
       </div>
       {!collapsed && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 items-start gap-2">
           {window.map((item) => (
             <MediaRecentCell key={item.id} item={item} onZoom={onZoom} />
           ))}
