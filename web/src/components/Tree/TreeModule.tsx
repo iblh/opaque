@@ -1148,8 +1148,11 @@ function MediaRecentlyAdded({
   const canPage = items.length > RECENT_WINDOW;
   const window = items.slice(clampedStart, clampedStart + RECENT_WINDOW);
 
+  // Page from the *displayed* (clamped) index, not the stored one: after a
+  // refresh shrinks the list, `start` may sit above maxStart while clampedStart
+  // shows the last page, so stepping from `start` would waste a click.
   const page = (delta: number) => {
-    setStart((value) => Math.min(Math.max(0, value + delta), maxStart));
+    setStart(Math.min(Math.max(0, clampedStart + delta), maxStart));
   };
 
   return (

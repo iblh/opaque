@@ -1,6 +1,13 @@
 import type { Tree } from '@/lib/types';
+import { DASHBOARD_ROOTS } from '@/lib/modules';
 
 const SNAPSHOT_KEY = 'opaque:layout-snapshot';
+
+// Only the app's built-in roots have fixed, non-user-derived labels. Custom
+// root names are arbitrary user text, so they must not be replayed from the
+// snapshot into pre-verification skeleton headers (a shared browser could
+// otherwise flash a prior user's section name).
+const KNOWN_ROOTS = new Set<string>(DASHBOARD_ROOTS);
 
 export interface LayoutSnapshotRow {
   roots: string[];
@@ -53,20 +60,28 @@ const DEFAULT_ROWS: LayoutSnapshotRow[] = [
 // readSnapshotRows() — to mirror the user's actual layout.
 export function buildSkeletonForest(rows: LayoutSnapshotRow[] = DEFAULT_ROWS): Tree[] {
   const forest: Tree[] = [];
-  rows.forEach((row, rowIndex) => {
+  let rowIndex = 0;
+  rows.forEach((row) => {
+    // Drop custom roots before they reach a header; keep each kept root's width.
+    const kept = row.roots
+      .map((root, index) => ({ root, widthPct: row.widths[index] }))
+      .filter((cell) => KNOWN_ROOTS.has(cell.root));
+    if (kept.length === 0) return;
+
     const rowId = `skeleton-${rowIndex}`;
-    row.roots.forEach((root, colIndex) => {
+    kept.forEach((cell, colIndex) => {
       forest.push({
-        root,
+        root: cell.root,
         branches: [],
         layout: {
           rowId,
           rowIndex,
           colIndex,
-          widthPct: row.widths[colIndex] ?? 100 / row.roots.length,
+          widthPct: cell.widthPct ?? 100 / kept.length,
         },
       });
     });
+    rowIndex += 1;
   });
   return forest;
 }
