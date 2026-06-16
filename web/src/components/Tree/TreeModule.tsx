@@ -323,8 +323,13 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   if (!isEditing && visibleModules.length === 0) return null;
 
   // Single-module roots (weather/calendar/markets) hold one fixed module and
-  // gain position via the layout grid, not by adding modules — no add control.
-  const addControl = isEditing && allowedTypes.length > 0 && !isSingleModuleRoot(tree.root) ? (
+  // gain position via the layout grid, not by adding modules — so the add
+  // control is hidden once that module exists. It stays available while the
+  // root is empty, so a deleted Weather/Calendar/Markets can be restored.
+  const showAddControl = isEditing
+    && allowedTypes.length > 0
+    && (!isSingleModuleRoot(tree.root) || tree.branches.length === 0);
+  const addControl = showAddControl ? (
     <div className="pointer-events-none absolute -top-8 right-0 z-10">
       <div className="pointer-events-auto">
         <SectionAddControl

@@ -29,8 +29,8 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   const dashboardBody = await dashboardGet.json();
   const roots = dashboardBody.dashboard.forest.map((tree) => tree.root);
   assert.deepEqual(
-    roots.slice(0, 6),
-    ['bookmarks', 'applications', 'servers', 'today', 'media', 'posts'],
+    roots.slice(0, 8),
+    ['bookmarks', 'applications', 'servers', 'weather', 'calendar', 'markets', 'media', 'posts'],
   );
 
   const serverId = `server-${suffix}`;
@@ -62,7 +62,7 @@ test('dashboard, modules, and metrics API contract', async (t) => {
               },
             ],
           }
-        : tree.root === 'today'
+        : tree.root === 'weather'
           ? {
               ...tree,
               branches: [
@@ -73,6 +73,12 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                   enabled: true,
                   config: { location: 'San Francisco', units: 'imperial' },
                 },
+              ],
+            }
+        : tree.root === 'calendar'
+          ? {
+              ...tree,
+              branches: [
                 {
                   id: moduleIds.calendar,
                   name: 'Contract Calendar',
@@ -80,6 +86,12 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                   enabled: true,
                   config: {},
                 },
+              ],
+            }
+        : tree.root === 'markets'
+          ? {
+              ...tree,
+              branches: [
                 {
                   id: moduleIds.markets,
                   name: 'Contract Markets',
