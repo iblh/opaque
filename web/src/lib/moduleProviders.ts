@@ -186,7 +186,7 @@ export async function fetchModuleImage(
       if (!apiKey) throw new ModuleDataError(`Add a ${service} API key in edit mode.`, 400);
 
       return fetchImage(
-        serviceEndpoint(baseUrl, endpoint),
+        serviceEndpoint(baseUrl, arrImageEndpoint(endpoint)),
         { headers: { Accept: 'image/*', 'X-Api-Key': apiKey } },
         `${service} image`,
       );
@@ -1399,6 +1399,17 @@ function mediaImageEndpoint(value: string) {
   }
 
   return endpoint.replace(/^\/+/, '');
+}
+
+// Radarr/Sonarr report poster paths like "MediaCover/1/poster.jpg", but the
+// static /MediaCover route ignores the X-Api-Key header and 302s to /login.
+// The same asset is served with key auth under /api/v3, so route MediaCover
+// requests there. Paths already under api/ (or anything else) pass through.
+function arrImageEndpoint(endpoint: string) {
+  if (/^mediacover\//i.test(endpoint)) {
+    return `api/v3/${endpoint}`;
+  }
+  return endpoint;
 }
 
 function resolveFeedLink(value: unknown, baseUrl: URL) {
