@@ -12,6 +12,7 @@ import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import {
   buildSkeletonForest,
+  readSnapshotRows,
   saveLayoutSnapshot,
   SectionBodySkeleton,
 } from '@/components/DashboardSkeleton'
@@ -145,14 +146,16 @@ export default function HomePage() {
     })))
   }, [dashboard])
 
-  // Structural-only forest from the saved layout snapshot, used to paint the
-  // real layout while the verified dashboard is still loading. Built once so it
-  // stays stable through the loading window. Empty (`[]`) on the server and on a
-  // true first visit with no snapshot → buildSkeletonForest falls back to a
-  // default frame.
-  const [skeletonForest] = useState<Tree[]>(() => (
-    typeof window === 'undefined' ? [] : buildSkeletonForest()
-  ))
+  // Structural-only forest used to paint the real layout while the verified
+  // dashboard is still loading. Initialized to a fixed default frame so server
+  // and client first-render match (no hydration mismatch); the saved layout
+  // snapshot is read after mount to mirror the user's actual structure.
+  const [skeletonForest, setSkeletonForest] = useState<Tree[]>(() => buildSkeletonForest())
+
+  useEffect(() => {
+    const rows = readSnapshotRows()
+    if (rows) setSkeletonForest(buildSkeletonForest(rows))
+  }, [])
 
   // Until the real dashboard arrives, lay out the skeleton forest in the very
   // same DashboardLayoutEditor so there is no component swap (hence no jitter)

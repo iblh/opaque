@@ -42,14 +42,16 @@ const DEFAULT_ROWS: LayoutSnapshotRow[] = [
   { roots: ['media', 'posts'], widths: [50, 50] },
 ];
 
-// A structural-only forest derived from the saved layout snapshot (root names +
-// column widths — no content, no secrets). Fed to the real DashboardLayoutEditor
-// during the pre-verification window so first paint uses the actual layout DOM;
-// section bodies render as skeletons and fill in once verified data arrives,
-// so there is no skeleton→layout swap to jitter. Falls back to a sensible
-// default frame on a true first visit.
-export function buildSkeletonForest(): Tree[] {
-  const rows = readLayoutSnapshot() ?? DEFAULT_ROWS;
+// A structural-only forest (root names + column widths — no content, no
+// secrets) fed to the real DashboardLayoutEditor during the pre-verification
+// window, so first paint uses the actual layout DOM; section bodies render as
+// skeletons and fill in once verified data arrives, so there is no
+// skeleton→layout swap to jitter.
+//
+// Defaults to a fixed frame so server and client render identically (no
+// hydration mismatch). Pass the saved snapshot rows — read after mount via
+// readSnapshotRows() — to mirror the user's actual layout.
+export function buildSkeletonForest(rows: LayoutSnapshotRow[] = DEFAULT_ROWS): Tree[] {
   const forest: Tree[] = [];
   rows.forEach((row, rowIndex) => {
     const rowId = `skeleton-${rowIndex}`;
@@ -67,6 +69,12 @@ export function buildSkeletonForest(): Tree[] {
     });
   });
   return forest;
+}
+
+// The saved layout snapshot rows, or null if none/unavailable. Read after mount
+// (it touches localStorage) so the initial render stays deterministic.
+export function readSnapshotRows(): LayoutSnapshotRow[] | null {
+  return readLayoutSnapshot();
 }
 
 const bar = 'rounded-sm bg-surface-sunken';
