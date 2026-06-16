@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useState, type CSSProperties } from 'react';
+import type { Tree } from '@/lib/types';
 
 const SNAPSHOT_KEY = 'opaque:layout-snapshot';
 
@@ -44,61 +42,40 @@ const DEFAULT_ROWS: LayoutSnapshotRow[] = [
   { roots: ['media', 'posts'], widths: [50, 50] },
 ];
 
+// A structural-only forest derived from the saved layout snapshot (root names +
+// column widths — no content, no secrets). Fed to the real DashboardLayoutEditor
+// during the pre-verification window so first paint uses the actual layout DOM;
+// section bodies render as skeletons and fill in once verified data arrives,
+// so there is no skeleton→layout swap to jitter. Falls back to a sensible
+// default frame on a true first visit.
+export function buildSkeletonForest(): Tree[] {
+  const rows = readLayoutSnapshot() ?? DEFAULT_ROWS;
+  const forest: Tree[] = [];
+  rows.forEach((row, rowIndex) => {
+    const rowId = `skeleton-${rowIndex}`;
+    row.roots.forEach((root, colIndex) => {
+      forest.push({
+        root,
+        branches: [],
+        layout: {
+          rowId,
+          rowIndex,
+          colIndex,
+          widthPct: row.widths[colIndex] ?? 100 / row.roots.length,
+        },
+      });
+    });
+  });
+  return forest;
+}
+
 const bar = 'rounded-sm bg-surface-sunken';
 const barSoft = 'rounded-sm bg-[#f1f1f1]';
-
-export default function DashboardSkeleton() {
-  // Start from the generic frame (matches SSR), then swap to the remembered
-  // layout right after mount so the skeleton mirrors the real structure.
-  const [rows, setRows] = useState<LayoutSnapshotRow[]>(DEFAULT_ROWS);
-
-  useEffect(() => {
-    const snapshot = readLayoutSnapshot();
-    if (snapshot) setRows(snapshot);
-  }, []);
-
-  return (
-    <div className="animate-fade-in py-16">
-      <div className="mx-4 md:mx-8">
-        <div className={`h-3 w-44 animate-pulse ${barSoft}`} />
-      </div>
-
-      <div className="mx-4 mt-8 flex flex-col gap-8 md:mx-8 md:gap-10">
-        {rows.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className="grid items-start gap-4 md:gap-5"
-            style={{
-              gridTemplateColumns: row.widths
-                .map((width) => `minmax(0, ${Math.max(width, 10)}fr)`)
-                .join(' '),
-            } as CSSProperties}
-          >
-            {row.roots.map((root, cellIndex) => (
-              <SectionSkeleton key={`${root}-${cellIndex}`} root={root} />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SectionSkeleton({ root }: { root: string }) {
-  return (
-    <section className="min-w-0">
-      <div className="mb-3">
-        <div className={`h-3.5 w-20 animate-pulse ${bar}`} />
-      </div>
-      <SectionBodySkeleton root={root} />
-    </section>
-  );
-}
 
 // Borderless bodies (matching the live, border-free cards): structure comes
 // from spacing alone. Each shape mirrors its real widget so the panel doesn't
 // reshape when live data arrives.
-function SectionBodySkeleton({ root }: { root: string }) {
+export function SectionBodySkeleton({ root }: { root: string }) {
   if (root === 'weather') {
     return (
       <div className="w-full max-w-[320px] animate-pulse">

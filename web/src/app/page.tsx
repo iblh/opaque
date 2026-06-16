@@ -10,7 +10,11 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
-import DashboardSkeleton, { saveLayoutSnapshot } from '@/components/DashboardSkeleton'
+import {
+  buildSkeletonForest,
+  saveLayoutSnapshot,
+  SectionBodySkeleton,
+} from '@/components/DashboardSkeleton'
 import { getLayoutRows } from '@/lib/dashboardLayout'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
 import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
@@ -141,9 +145,24 @@ export default function HomePage() {
     })))
   }, [dashboard])
 
+  // Structural-only forest from the saved layout snapshot, used to paint the
+  // real layout while the verified dashboard is still loading. Built once so it
+  // stays stable through the loading window. Empty (`[]`) on the server and on a
+  // true first visit with no snapshot → buildSkeletonForest falls back to a
+  // default frame.
+  const [skeletonForest] = useState<Tree[]>(() => (
+    typeof window === 'undefined' ? [] : buildSkeletonForest()
+  ))
+
+  // Until the real dashboard arrives, lay out the skeleton forest in the very
+  // same DashboardLayoutEditor so there is no component swap (hence no jitter)
+  // when content fills in.
+  const showSkeleton = !visibleDashboard
   const layoutForest = useMemo(() => (
-    visibleDashboard ? materializeImplicitLayout(visibleDashboard.forest, isEditing) : []
-  ), [visibleDashboard, isEditing])
+    visibleDashboard
+      ? materializeImplicitLayout(visibleDashboard.forest, isEditing)
+      : skeletonForest
+  ), [visibleDashboard, isEditing, skeletonForest])
 
   const startEditing = () => {
     // Editing is only safe once the server copy is confirmed: editing an
@@ -234,19 +253,6 @@ export default function HomePage() {
     setSaveError('')
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="relative flex-1 overflow-x-hidden bg-background">
-          <div className="relative z-10">
-            <DashboardSkeleton />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -276,7 +282,9 @@ export default function HomePage() {
     )
   }
 
-  if (!visibleDashboard) {
+  // Only a finished load with no dashboard is a genuine error; while loading,
+  // fall through to the skeleton layout below.
+  if (!visibleDashboard && !loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
@@ -336,11 +344,15 @@ export default function HomePage() {
                   isEditing={isEditing}
                   onForestChange={updateForest}
                   renderSection={(tree) => (
-                    <RootContent
-                      tree={tree}
-                      isEditing={isEditing}
-                      onTreeChange={updateTree}
-                    />
+                    showSkeleton
+                      ? <SectionBodySkeleton root={tree.root} />
+                      : (
+                        <RootContent
+                          tree={tree}
+                          isEditing={isEditing}
+                          onTreeChange={updateTree}
+                        />
+                      )
                   )}
                 />
               </div>
