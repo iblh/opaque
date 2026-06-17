@@ -99,6 +99,29 @@ export async function ensureDashboardForUser(userId: string) {
   return created;
 }
 
+export const MAX_DISPLAY_NAME_LENGTH = 60;
+
+// Update the authenticated user's display name only. Email/username are not
+// editable here. Returns the updated user, or an error for invalid input.
+export async function updateUserName(userId: string, name: string) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) {
+    return { error: 'display name is required' as const };
+  }
+  if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
+    return { error: `display name must be at most ${MAX_DISPLAY_NAME_LENGTH} characters` as const };
+  }
+
+  const [user] = await db
+    .update(users)
+    .set({ name: trimmed, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+
+  if (!user) return { error: 'user not found' as const };
+  return { user };
+}
+
 export function normalizeLogin(login: string) {
   return String(login || '').trim().toLowerCase();
 }

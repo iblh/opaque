@@ -9,10 +9,88 @@
         --opaque-menu-width: 272px;
         --opaque-menu-icon-size: 14px;
         --opaque-menu-avatar-size: 28px;
+
+        /* --- Light palette (the paper default). Tailwind tokens read these. --- */
+        --accent-green: #7E846B;
+        --accent-green-light: #9DA085;
+        --accent-green-dark: #6B7159;
+        --accent-green-subtle: rgba(126, 132, 107, 0.08);
+        --accent-green-hover: rgba(126, 132, 107, 0.15);
+        --accent-red: #A76767;
+        --accent-red-dark: #8E5555;
+        --accent-red-subtle: rgba(167, 103, 103, 0.08);
+        --accent-amber: #B08D57;
+        --accent-amber-dark: #97784A;
+        --accent-blue: #5E6AD2;
+        --accent-blue-subtle: rgba(94, 106, 210, 0.08);
+        --accent-blue-hover: rgba(94, 106, 210, 0.15);
+        --text-primary: #1A1D1F;
+        --text-secondary: rgba(26, 29, 31, 0.75);
+        --text-tertiary: rgba(26, 29, 31, 0.55);
+        --text-muted: rgba(26, 29, 31, 0.4);
+        --background: #FFFFFF;
+        --surface: rgba(250, 250, 250, 0.8);
+        --surface-elevated: #FFFFFF;
+        --surface-sunken: #F7F7F7;
+        --border-light: #EDEDED;
+        --border-medium: #DEDEDE;
+        --border-strong: #D0D0D0;
+        --ink-100: #F7F7F7;
+        --ink-200: #E8E8E8;
+        --ink-300: #DADADA;
+        --ink-400: #B8B8B8;
+        --ink-500: #999999;
+        --ink-600: #777777;
+        --ink-700: #555555;
+        --ink-800: #333333;
+        --ink-900: #111111;
+        /* The page canvas (one notch off pure white, like aged paper). */
+        --page-bg: #FAFAFA;
+    }
+
+    /* --- Dark palette: ink canvas, paper-light text. Quiet Instrumentality
+       preserved — same hierarchy, warmer-neutral charcoals, accents lifted just
+       enough to read on dark without turning loud. The ink-* ramp inverts so
+       existing `ink-700` (a mid-tone) still reads as a mid-tone. --- */
+    .dark {
+        --accent-green: #9AA083;
+        --accent-green-light: #B0B498;
+        --accent-green-dark: #828870;
+        --accent-green-subtle: rgba(154, 160, 131, 0.12);
+        --accent-green-hover: rgba(154, 160, 131, 0.20);
+        --accent-red: #C08A8A;
+        --accent-red-dark: #D29E9E;
+        --accent-red-subtle: rgba(192, 138, 138, 0.14);
+        --accent-amber: #C9A26C;
+        --accent-amber-dark: #D7B589;
+        --accent-blue: #8B95E6;
+        --accent-blue-subtle: rgba(139, 149, 230, 0.14);
+        --accent-blue-hover: rgba(139, 149, 230, 0.22);
+        --text-primary: #E8E6E2;
+        --text-secondary: rgba(232, 230, 226, 0.74);
+        --text-tertiary: rgba(232, 230, 226, 0.52);
+        --text-muted: rgba(232, 230, 226, 0.38);
+        --background: #1B1C1E;
+        --surface: rgba(34, 35, 38, 0.8);
+        --surface-elevated: #242528;
+        --surface-sunken: #232427;
+        --border-light: #2C2D30;
+        --border-medium: #3A3B3F;
+        --border-strong: #4A4B50;
+        --ink-100: #232427;
+        --ink-200: #2E2F33;
+        --ink-300: #3C3D42;
+        --ink-400: #565760;
+        --ink-500: #80828C;
+        --ink-600: #9EA0AA;
+        --ink-700: #BCBEC6;
+        --ink-800: #D6D7DC;
+        --ink-900: #ECEDF0;
+        --page-bg: #161719;
     }
 
     body {
-        @apply min-h-screen bg-[#fafafa] font-body text-text-primary;
+        @apply min-h-screen bg-[var(--page-bg)] font-body text-text-primary;
         /* Numerals never jitter (see DESIGN_SPEC.md — Type). */
         font-variant-numeric: tabular-nums;
     }

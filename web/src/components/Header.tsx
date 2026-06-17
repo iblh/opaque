@@ -12,17 +12,18 @@ import {
     IconRefresh,
     IconSearch,
     IconServer,
+    IconSettings,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
 import {
     buildSearchUrl,
     DEFAULT_SEARCH_PROVIDER_ID,
     getSearchProvider,
-    SEARCH_PROVIDERS,
     type SearchProviderId,
 } from '@/lib/searchProviders';
 import NotificationsMenu from '@/components/NotificationsMenu';
 import type { AppNotification } from '@/lib/useNotifications';
+import SettingsDialog from '@/components/SettingsDialog';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -57,10 +58,14 @@ export default function Header({
     const pathname = usePathname();
     const router = useRouter();
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchProviderId, setSearchProviderId] = useState<SearchProviderId>(DEFAULT_SEARCH_PROVIDER_ID);
+    // Locally reflect a display-name edit from Settings without waiting for a
+    // dashboard refetch.
+    const [nameOverride, setNameOverride] = useState<string | null>(null);
     const avatarRef = useRef<HTMLDivElement>(null);
-    const displayName = dashboard?.name || dashboard?.username || dashboard?.email || 'User';
+    const displayName = nameOverride || dashboard?.name || dashboard?.username || dashboard?.email || 'User';
     const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
     const avatarInitial = displayName.charAt(0).toUpperCase();
     const serverSummary = getServerSummary(dashboard);
@@ -251,29 +256,15 @@ export default function Header({
                                             </span>
                                         </div>
 
-                                        <div className="opaque-menu-section px-3.5 py-2.5">
-                                            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                                                Search provider
-                                            </div>
-                                            <div className="mt-2 grid grid-cols-2 gap-1">
-                                                {SEARCH_PROVIDERS.map((provider) => (
-                                                    <button
-                                                        key={provider.id}
-                                                        type="button"
-                                                        onClick={() => updateSearchProvider(provider.id)}
-                                                        className={`h-6 rounded-sm px-2 text-left text-[11px] transition-colors ${
-                                                            searchProviderId === provider.id
-                                                                ? 'bg-ink-900 text-white'
-                                                                : 'bg-surface-sunken text-text-secondary hover:bg-border-light hover:text-text-primary'
-                                                        }`}
-                                                    >
-                                                        {provider.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
                                         <div className="opaque-menu-section">
+                                            <MenuItem
+                                                icon={<IconSettings />}
+                                                label="Settings"
+                                                onClick={() => {
+                                                    setShowAvatarDropdown(false);
+                                                    setShowSettings(true);
+                                                }}
+                                            />
                                             <MenuItem
                                                 icon={<IconMessageCircle />}
                                                 label="Send feedback"
@@ -299,6 +290,17 @@ export default function Header({
                         </div>
                     </div>
                 </nav>
+            )}
+
+            {showSettings && (
+                <SettingsDialog
+                    displayName={displayName}
+                    accountLabel={accountLabel}
+                    searchProviderId={searchProviderId}
+                    onSearchProviderChange={updateSearchProvider}
+                    onNameUpdated={(name) => setNameOverride(name)}
+                    onClose={() => setShowSettings(false)}
+                />
             )}
         </header>
     );
