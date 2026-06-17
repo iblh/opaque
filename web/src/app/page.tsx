@@ -197,7 +197,10 @@ export default function HomePage() {
   const saveDashboard = useCallback(async () => {
     // `isVerified` is the invariant that makes saving safe — never write a
     // draft derived from an unverified cached paint back to the server.
-    if (!draftDashboard || !isDirty || !isVerified) return
+    // `isSaving` gate matches the Save button: the Cmd/Ctrl+S shortcut must not
+    // fire a second PUT while one is in flight (a stale response could land last
+    // and reset the dashboard).
+    if (!draftDashboard || !isDirty || !isVerified || isSaving) return
 
     setIsSaving(true)
     setSaveError('')
@@ -228,7 +231,7 @@ export default function HomePage() {
     } finally {
       setIsSaving(false)
     }
-  }, [draftDashboard, isDirty, isVerified])
+  }, [draftDashboard, isDirty, isVerified, isSaving])
 
   const updateTree = (tree: Tree) => {
     setDraftDashboard((current) => {

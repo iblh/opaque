@@ -58,8 +58,15 @@ export function useNotifications(dashboard: Dashboard | null) {
   useEffect(() => {
     if (!dashboard) return;
     const servers = serverBranches(dashboard);
+    // Only servers that have reported metrics are tracked. /api/dashboard/get
+    // returns the forest without live `stats`; the metrics poll merges them in
+    // shortly after. Including a stat-less server here would baseline it as
+    // "offline", then the first poll would flip an actually-online server
+    // offline→online and fire a spurious "is back online" on every load.
     const nextStates = new Map<string, ServerState>();
-    servers.forEach((server) => nextStates.set(server.id, serverState(server)));
+    servers.forEach((server) => {
+      if (server.stats) nextStates.set(server.id, serverState(server));
+    });
 
     const prev = prevStatesRef.current;
     prevStatesRef.current = nextStates;
