@@ -13,6 +13,7 @@ import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnbo
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
 import { useNotifications } from '@/lib/useNotifications'
+import { isOverlayOpen } from '@/lib/overlay'
 import {
   buildSkeletonForest,
   readSnapshotRows,
@@ -197,7 +198,10 @@ export default function HomePage() {
   const saveDashboard = useCallback(async () => {
     // `isVerified` is the invariant that makes saving safe — never write a
     // draft derived from an unverified cached paint back to the server.
-    if (!draftDashboard || !isDirty || !isVerified) return
+    // `isSaving` gate matches the Save button: the Cmd/Ctrl+S shortcut must not
+    // fire a second PUT while one is in flight (a stale response could land last
+    // and reset the dashboard).
+    if (!draftDashboard || !isDirty || !isVerified || isSaving) return
 
     setIsSaving(true)
     setSaveError('')
@@ -228,7 +232,7 @@ export default function HomePage() {
     } finally {
       setIsSaving(false)
     }
-  }, [draftDashboard, isDirty, isVerified])
+  }, [draftDashboard, isDirty, isVerified, isSaving])
 
   const updateTree = (tree: Tree) => {
     setDraftDashboard((current) => {
@@ -279,8 +283,15 @@ export default function HomePage() {
     {
       key: 'Escape',
       handler: () => {
-        if (showShortcuts) setShowShortcuts(false)
-        else if (isEditing) resetEditing()
+        if (showShortcuts) {
+          setShowShortcuts(false)
+          return
+        }
+        // An open menu/dialog (Settings, notifications, avatar) owns Escape and
+        // closes itself; don't also discard an in-progress edit. Overlays mark
+        // themselves with data-overlay.
+        if (isOverlayOpen()) return
+        if (isEditing) resetEditing()
       },
     },
     { key: '?', handler: () => setShowShortcuts((value) => !value) },

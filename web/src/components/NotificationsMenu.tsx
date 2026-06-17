@@ -80,7 +80,7 @@ export default function NotificationsMenu({
       </button>
 
       {open && (
-        <div className="opaque-menu-popover">
+        <div className="opaque-menu-popover" data-overlay>
           <div className="opaque-menu-panel">
             <div className="flex items-center justify-between border-b border-border-light px-3.5 py-2.5">
               <span className="font-serif text-sm text-text-primary">Notifications</span>

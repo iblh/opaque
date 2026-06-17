@@ -68,6 +68,7 @@ export default function SettingsDialog({
       role="dialog"
       aria-modal="true"
       aria-label="Settings"
+      data-overlay
       onClick={onClose}
       className="fixed inset-0 z-[80] flex animate-fade-in items-center justify-center bg-ink-900/20 p-4"
     >
