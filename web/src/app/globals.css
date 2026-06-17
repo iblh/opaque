@@ -98,9 +98,13 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* Quiet focus: a thin ink outline, visible everywhere, never a glow. */
+    /* Quiet focus: a thin ink outline, visible everywhere, never a glow.
+       Reference the channel var directly — theme('colors.ink.700') would expand
+       to rgb(var(--ink-700) / <alpha-value>), and <alpha-value> is only resolved
+       inside generated color utilities, not a raw theme() consumer, so the
+       browser would discard the outline. */
     *:focus-visible {
-        outline: 1px solid theme('colors.ink.700');
+        outline: 1px solid rgb(var(--ink-700));
         outline-offset: 2px;
         @apply ring-0;
     }
