@@ -20,6 +20,7 @@ import {
   IconPhotoVideo,
   IconPlayerPause,
   IconPlayerPlay,
+  IconPlus,
   IconRefresh,
   IconRss,
   IconTrash,
@@ -343,6 +344,30 @@ const TreeModule: React.FC<TreeModuleProps> = ({
       </div>
     </div>
   ) : null;
+
+  // An empty module root in edit mode shows an inline "add" affordance in the
+  // body — without it the section is just a title with nothing beneath it and
+  // only a floating control, which reads as broken. Single-module roots offer
+  // their one fixed module directly; multi-module roots open the picker.
+  if (isEditing && visibleModules.length === 0 && allowedTypes.length > 0) {
+    const singleType = isSingleModuleRoot(tree.root) ? allowedTypes[0] : null;
+    return (
+      <div className="relative">
+        {!singleType && addControl}
+        <button
+          type="button"
+          onClick={() => singleType && addModule(singleType)}
+          disabled={!singleType}
+          className="group flex min-h-[72px] w-full max-w-[320px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-xs text-text-tertiary transition-colors enabled:hover:border-accent-green enabled:hover:text-text-primary disabled:opacity-60"
+        >
+          <IconPlus className="h-3.5 w-3.5" />
+          {singleType
+            ? `Add ${MODULE_LABELS[singleType]}`
+            : 'Use the + above to add a module'}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

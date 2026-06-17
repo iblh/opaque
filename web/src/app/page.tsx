@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TreeBookmark from '@/components/Tree/TreeBookmark'
 import TreeApplication from '@/components/Tree/TreeApplication'
@@ -10,6 +10,9 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
+import ShortcutsOverlay from '@/components/ShortcutsOverlay'
+import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
+import { useNotifications } from '@/lib/useNotifications'
 import {
   buildSkeletonForest,
   readSnapshotRows,
@@ -48,7 +51,12 @@ export default function HomePage() {
   // there is no unverified copy that could be edited and saved over newer
   // server state.
   const [isVerified, setIsVerified] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const router = useRouter()
+
+  // System notifications derived from live server status (online↔offline). Fed
+  // the verified, stats-merged dashboard so events reflect real transitions.
+  const { notifications, unreadCount, markAllRead } = useNotifications(dashboard)
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -167,7 +175,7 @@ export default function HomePage() {
       : skeletonForest
   ), [visibleDashboard, isEditing, skeletonForest])
 
-  const startEditing = () => {
+  const startEditing = useCallback(() => {
     // Editing is only safe once the server copy is confirmed: editing an
     // unverified cached paint risks saving stale data over newer server state.
     if (!dashboard || !isVerified) return
@@ -175,18 +183,18 @@ export default function HomePage() {
     setIsEditing(true)
     setIsDirty(false)
     setSaveError('')
-  }
+  }, [dashboard, isVerified])
 
-  const resetEditing = () => {
+  const resetEditing = useCallback(() => {
     if (dashboard) {
       setDraftDashboard(cloneDashboard(dashboard))
     }
     setIsEditing(false)
     setIsDirty(false)
     setSaveError('')
-  }
+  }, [dashboard])
 
-  const saveDashboard = async () => {
+  const saveDashboard = useCallback(async () => {
     // `isVerified` is the invariant that makes saving safe — never write a
     // draft derived from an unverified cached paint back to the server.
     if (!draftDashboard || !isDirty || !isVerified) return
@@ -220,7 +228,7 @@ export default function HomePage() {
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [draftDashboard, isDirty, isVerified])
 
   const updateTree = (tree: Tree) => {
     setDraftDashboard((current) => {
@@ -255,6 +263,30 @@ export default function HomePage() {
     setIsDirty(true)
     setSaveError('')
   }
+
+  const focusSearch = useCallback(() => {
+    const input = document.getElementById('search') as HTMLInputElement | null
+    input?.focus()
+    input?.select()
+  }, [])
+
+  // Core keyboard layer. Handlers stay silent while typing in a field (the hook
+  // gates that), so '/', 'e', '?' don't disrupt text entry.
+  const shortcuts = useMemo<KeyboardShortcut[]>(() => [
+    { key: '/', handler: focusSearch },
+    { key: 'e', handler: () => { if (!isEditing) startEditing() } },
+    { key: 's', meta: true, allowInInput: true, handler: () => { if (isEditing) void saveDashboard() } },
+    {
+      key: 'Escape',
+      handler: () => {
+        if (showShortcuts) setShowShortcuts(false)
+        else if (isEditing) resetEditing()
+      },
+    },
+    { key: '?', handler: () => setShowShortcuts((value) => !value) },
+  ], [focusSearch, isEditing, showShortcuts, startEditing, saveDashboard, resetEditing])
+
+  useKeyboardShortcuts(shortcuts, !loading && !error)
 
   if (error) {
     return (
@@ -320,6 +352,9 @@ export default function HomePage() {
         isSaving={isSaving}
         canEdit={isVerified}
         saveError={saveError}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onNotificationsOpen={markAllRead}
         onEdit={startEditing}
         onReset={resetEditing}
         onSave={saveDashboard}
@@ -364,6 +399,7 @@ export default function HomePage() {
         </div>
       </div>
       <Footer />
+      {showShortcuts && <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
     </div>
   )
 }
