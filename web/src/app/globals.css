@@ -722,7 +722,7 @@ input:-webkit-autofill:active {
 
     .opaque-button-primary {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-white transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-background transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
     }
 
     .opaque-button svg,
@@ -777,7 +777,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-summary {
-        @apply bg-ink-900 p-3.5 text-white;
+        @apply bg-ink-900 p-3.5 text-background;
     }
 
     .opaque-menu-profile {
@@ -815,7 +815,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-badge {
-        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white;
+        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-background;
     }
 
     .opaque-menu-account {

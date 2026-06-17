@@ -229,7 +229,7 @@ export default function Header({
                                             <div className="text-xs font-medium leading-relaxed">
                                                 Server dashboard
                                             </div>
-                                            <div className="mt-2.5 h-0.5 rounded-full bg-white/80">
+                                            <div className="mt-2.5 h-0.5 rounded-full bg-background/30">
                                                 <div
                                                     className="h-full rounded-full bg-accent-green"
                                                     style={{

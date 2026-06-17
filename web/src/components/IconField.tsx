@@ -256,7 +256,7 @@ export default function IconField({
                   onClick={() => setActiveCategory(category)}
                   className={`h-6 flex-shrink-0 rounded-sm px-2 text-[11px] transition-colors ${
                     activeCategory === category
-                      ? 'bg-ink-900 text-white'
+                      ? 'bg-ink-900 text-background'
                       : 'bg-surface-sunken text-text-secondary hover:bg-border-light hover:text-text-primary'
                   }`}
                 >
