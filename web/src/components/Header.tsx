@@ -4,20 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     IconCheck,
-    IconChevronRight,
     IconDeviceFloppy,
     IconEdit,
-    IconInfoCircle,
-    IconLayoutDashboard,
     IconLoader2,
     IconLogout,
     IconMessageCircle,
-    IconPalette,
     IconRefresh,
     IconSearch,
     IconServer,
-    IconSettings,
-    IconUser,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
 import {
@@ -27,6 +21,8 @@ import {
     SEARCH_PROVIDERS,
     type SearchProviderId,
 } from '@/lib/searchProviders';
+import NotificationsMenu from '@/components/NotificationsMenu';
+import type { AppNotification } from '@/lib/useNotifications';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -36,6 +32,9 @@ interface HeaderProps {
     /** False while the dashboard is still an unverified cached paint. */
     canEdit?: boolean;
     saveError?: string;
+    notifications?: AppNotification[];
+    unreadCount?: number;
+    onNotificationsOpen?: () => void;
     onEdit?: () => void;
     onSave?: () => void;
     onReset?: () => void;
@@ -48,6 +47,9 @@ export default function Header({
     isSaving = false,
     canEdit = true,
     saveError = '',
+    notifications = [],
+    unreadCount = 0,
+    onNotificationsOpen,
     onEdit,
     onSave,
     onReset,
@@ -123,7 +125,11 @@ export default function Header({
                                 autoComplete="off"
                                 className="peer opaque-input w-[min(22rem,34vw)] pr-8"
                             />
-                            <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
+                            <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary peer-focus:opacity-0" />
+                            {/* '/' focuses search (see useKeyboardShortcuts); hint hides once focused. */}
+                            <kbd className="pointer-events-none absolute right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 items-center justify-center rounded-sm border border-border-medium bg-surface-sunken font-mono text-[10px] text-text-tertiary peer-placeholder-shown:flex peer-focus:hidden">
+                                /
+                            </kbd>
                         </form>
                     </div>
 
@@ -196,6 +202,12 @@ export default function Header({
                             {serverSummary.online}/{serverSummary.total}
                         </div>
 
+                        <NotificationsMenu
+                            notifications={notifications}
+                            unreadCount={unreadCount}
+                            onOpen={() => onNotificationsOpen?.()}
+                        />
+
                         <div className="relative" ref={avatarRef}>
                             <button
                                 onClick={() => setShowAvatarDropdown((value) => !value)}
@@ -206,7 +218,7 @@ export default function Header({
                                 {avatarInitial}
                             </button>
                             {showAvatarDropdown && (
-                                <div className="opaque-menu-popover">
+                                <div className="opaque-menu-popover" data-overlay>
                                     <div className="opaque-menu-panel">
                                         <div className="opaque-menu-summary">
                                             <div className="text-xs font-medium leading-relaxed">
@@ -225,10 +237,7 @@ export default function Header({
                                             </div>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            className="opaque-menu-profile"
-                                        >
+                                        <div className="opaque-menu-profile cursor-default">
                                             <span className="opaque-menu-avatar">
                                                 {avatarInitial}
                                             </span>
@@ -236,28 +245,10 @@ export default function Header({
                                                 <span className="block truncate text-xs font-semibold text-text-primary">
                                                     {displayName}
                                                 </span>
-                                                <span className="mt-0.5 block truncate text-[11px] text-text-tertiary">
-                                                    View profile
+                                                <span className="mt-0.5 block truncate font-mono text-[11px] text-text-tertiary">
+                                                    {accountLabel}
                                                 </span>
                                             </span>
-                                        </button>
-
-                                        <div className="opaque-menu-section">
-                                            <MenuItem
-                                                icon={<IconLayoutDashboard />}
-                                                label="Dashboard"
-                                                onClick={() => setShowAvatarDropdown(false)}
-                                            />
-                                            <MenuItem
-                                                icon={<IconUser />}
-                                                label="Personal settings"
-                                                badge="Soon"
-                                            />
-                                            <MenuItem
-                                                icon={<IconPalette />}
-                                                label="Theme"
-                                                trailing={<IconChevronRight />}
-                                            />
                                         </div>
 
                                         <div className="opaque-menu-section px-3.5 py-2.5">
@@ -284,38 +275,18 @@ export default function Header({
 
                                         <div className="opaque-menu-section">
                                             <MenuItem
-                                                icon={<IconServer />}
-                                                label="Server monitor"
-                                                detail={`${serverSummary.online}/${serverSummary.total}`}
-                                            />
-                                            <MenuItem
-                                                icon={<IconSettings />}
-                                                label="Workspace settings"
-                                                badge="Soon"
-                                            />
-                                            <MenuItem
                                                 icon={<IconMessageCircle />}
                                                 label="Send feedback"
                                                 onClick={() => {
                                                     window.location.href = 'mailto:feedback@opaque.local?subject=OPAQUE feedback';
                                                 }}
                                             />
-                                            <MenuItem
-                                                icon={<IconInfoCircle />}
-                                                label="About"
-                                            />
-                                        </div>
-
-                                        <div className="opaque-menu-account">
-                                            <div className="truncate">
-                                                {accountLabel}
-                                            </div>
                                         </div>
 
                                         <button
                                             type="button"
                                             onClick={handleLogout}
-                                            className="opaque-menu-item border-t border-border-light"
+                                            className="opaque-menu-item"
                                         >
                                             <span className="opaque-menu-item-icon">
                                                 <IconLogout />
@@ -336,16 +307,10 @@ export default function Header({
 function MenuItem({
     icon,
     label,
-    detail,
-    badge,
-    trailing,
     onClick,
 }: {
     icon: React.ReactNode;
     label: string;
-    detail?: string;
-    badge?: string;
-    trailing?: React.ReactNode;
     onClick?: () => void;
 }) {
     return (
@@ -358,17 +323,6 @@ function MenuItem({
                 {icon}
             </span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
-            {detail && (
-                <span className="opaque-menu-detail">{detail}</span>
-            )}
-            {badge && (
-                <span className="opaque-menu-badge">
-                    {badge}
-                </span>
-            )}
-            {trailing && (
-                <span className="opaque-menu-item-trailing text-text-tertiary">{trailing}</span>
-            )}
         </button>
     );
 }
