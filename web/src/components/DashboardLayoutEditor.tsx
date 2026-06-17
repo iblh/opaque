@@ -477,7 +477,7 @@ export default function DashboardLayoutEditor({
     <div
       ref={containerRef}
       data-layout-editor
-      className="mx-4 flex flex-col gap-5 md:mx-8"
+      className="mx-4 flex flex-col gap-8 md:mx-8 md:gap-10"
     >
       {rows.map((row) => (
         <LayoutRow
@@ -650,7 +650,6 @@ function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: Se
       <div className="font-serif text-base leading-none text-text-secondary">
         {label}
       </div>
-      <div className="h-px flex-1 bg-border-light" />
     </div>
   );
 }

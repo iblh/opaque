@@ -14,7 +14,7 @@ import {
   DEFAULT_SERVER_ICON,
   sanitizeSvg,
 } from '@/lib/svg';
-import { DASHBOARD_ROOTS, isModuleRoot } from '@/lib/modules';
+import { DASHBOARD_ROOTS, isModuleRoot, SINGLE_MODULE_ROOTS } from '@/lib/modules';
 
 export const DEFAULT_ROOTS: DashboardRoot[] = [...DASHBOARD_ROOTS];
 export const LAYOUT_PRESETS: LayoutPreset[] = ['100', '50/50', '33/33/33', '20/60/20'];
@@ -35,9 +35,13 @@ export function normalizeDashboard(
     ? [{ root: 'bookmarks', branches: (source as any).branches }]
     : [];
   const sourceForest = Array.isArray(source.forest) ? source.forest : fallbackBranches;
+  // The legacy "today" root has been dissolved: weather/calendar/markets are
+  // now standalone single-module roots. Hoist any modules from a persisted
+  // "today" tree into those roots (so saved config survives) and drop "today".
+  const forestWithoutToday = hoistLegacyTodayRoots(sourceForest);
   const byRoot = new Map<string, Tree>();
 
-  sourceForest.forEach((tree) => {
+  forestWithoutToday.forEach((tree) => {
     if (!tree?.root) return;
     byRoot.set(tree.root, normalizeTree(tree));
   });
@@ -51,6 +55,100 @@ export function normalizeDashboard(
     id: stringifyObjectId((source as any)._id) || source.id,
     forest: [...defaultTrees, ...customTrees],
   };
+}
+
+// Map a legacy "today" module branch onto its new standalone root by type.
+const LEGACY_TODAY_ROOT_BY_TYPE: Record<string, DashboardRoot> = {
+  weather: 'weather',
+  calendar: 'calendar',
+  markets: 'markets',
+};
+
+// Dissolve a persisted "today" tree: each of its modules moves into the
+// matching standalone root (weather/calendar/markets), preserving config and
+// appending after anything already there. Returns the forest with "today"
+// removed. A forest without a "today" root passes through unchanged.
+//
+// Layout is preserved: if the old "today" cell had a layout, the newly-created
+// roots take over its slot — same row, consecutive columns starting at its
+// colIndex, splitting its width evenly — and siblings further right in that row
+// shift over so nothing collides. Without this, the hoisted roots would land as
+// new full-width rows at the end and the user's saved placement would be lost.
+function hoistLegacyTodayRoots(forest: unknown[]): Tree[] {
+  const trees = forest.filter((tree): tree is Tree => (
+    Boolean(tree) && typeof tree === 'object' && typeof (tree as Tree).root === 'string'
+  ));
+  const today = trees.find((tree) => tree.root === 'today');
+  if (!today) return trees;
+
+  const extraBranches = new Map<DashboardRoot, Branch[]>();
+  (Array.isArray(today.branches) ? today.branches : []).forEach((branch) => {
+    const moduleType = (branch as { moduleType?: string }).moduleType;
+    const targetRoot = moduleType ? LEGACY_TODAY_ROOT_BY_TYPE[moduleType] : undefined;
+    if (!targetRoot) return; // Unknown legacy module → dropped.
+    const list = extraBranches.get(targetRoot) || [];
+    list.push(branch);
+    extraBranches.set(targetRoot, list);
+  });
+
+  const withoutToday = trees.filter((tree) => tree.root !== 'today');
+
+  // Merge hoisted branches into existing roots, tracking which we've handled.
+  // An existing root keeps its own layout; only brand-new roots inherit the
+  // legacy "today" slot below.
+  const handled = new Set<DashboardRoot>();
+  const merged = withoutToday.map((tree) => {
+    const extras = extraBranches.get(tree.root as DashboardRoot);
+    if (!extras) return tree;
+    handled.add(tree.root as DashboardRoot);
+    return { ...tree, branches: [...(tree.branches || []), ...extras] };
+  });
+
+  // Roots that didn't already exist in the forest get created. Order them by
+  // SINGLE_MODULE_ROOTS for deterministic placement.
+  const newRoots = SINGLE_MODULE_ROOTS
+    .filter((root) => extraBranches.has(root) && !handled.has(root))
+    .map((root) => ({ root, branches: extraBranches.get(root) as Branch[] } as Tree));
+
+  if (newRoots.length === 0) return merged;
+
+  const todayLayout = normalizeLayout((today as { layout?: unknown }).layout);
+  if (!todayLayout) {
+    // No saved placement to preserve; append as implicit rows (prior behavior).
+    return [...merged, ...newRoots];
+  }
+
+  // Make room in the legacy row: shift cells right of "today" by (N-1) so the
+  // expanded set of N roots fits where the single "today" cell used to be.
+  const shift = newRoots.length - 1;
+  const shifted = shift > 0
+    ? merged.map((tree) => {
+        const layout = (tree as { layout?: TreeLayout }).layout;
+        if (
+          layout
+          && layout.rowId === todayLayout.rowId
+          && layout.colIndex > todayLayout.colIndex
+        ) {
+          return { ...tree, layout: { ...layout, colIndex: layout.colIndex + shift } };
+        }
+        return tree;
+      })
+    : merged;
+
+  // Split "today"'s width evenly across the new roots, placed at consecutive
+  // columns from its original colIndex. Per-row widths are renormalized on read.
+  const splitWidth = todayLayout.widthPct / newRoots.length;
+  const placed = newRoots.map((tree, index) => ({
+    ...tree,
+    layout: {
+      rowId: todayLayout.rowId,
+      rowIndex: todayLayout.rowIndex,
+      colIndex: todayLayout.colIndex + index,
+      widthPct: splitWidth,
+    },
+  }));
+
+  return [...shifted, ...placed];
 }
 
 export function serializeDashboard(dashboard: Dashboard): Dashboard {

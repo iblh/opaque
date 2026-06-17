@@ -12,6 +12,9 @@ import type {
 import type { ModuleBranch } from '@/lib/types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
+// How many recently-added items to fetch per media provider. The widget shows
+// a 4-up window and pages through the rest, so this is ~4 pages.
+const RECENT_ITEM_LIMIT = 16;
 const MAX_TEXT_RESPONSE_LENGTH = 2_000_000;
 const MAX_IMAGE_RESPONSE_LENGTH = 5_000_000;
 const USER_AGENT = 'OPAQUE/0.1 personal dashboard';
@@ -183,7 +186,7 @@ export async function fetchModuleImage(
       if (!apiKey) throw new ModuleDataError(`Add a ${service} API key in edit mode.`, 400);
 
       return fetchImage(
-        serviceEndpoint(baseUrl, endpoint),
+        serviceEndpoint(baseUrl, arrImageEndpoint(endpoint)),
         { headers: { Accept: 'image/*', 'X-Api-Key': apiKey } },
         `${service} image`,
       );
@@ -342,7 +345,7 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
     fetchJson(serviceEndpoint(target.baseUrl, 'library/sections'), { headers }, 'Plex'),
     fetchJson(serviceEndpoint(target.baseUrl, 'status/sessions'), { headers }, 'Plex'),
     fetchJson(
-      serviceEndpoint(target.baseUrl, 'library/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=4'),
+      serviceEndpoint(target.baseUrl, `library/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=${RECENT_ITEM_LIMIT}`),
       { headers },
       'Plex',
     ),
@@ -355,7 +358,7 @@ async function fetchPlex(module: ModuleBranch): Promise<MediaModuleData> {
   const libraries = await fetchPlexLibraries(target.baseUrl, headers, sectionsList);
   const recentItems = arrayValue(valueOf(recentContainer, 'Metadata'))
     .map(asObject)
-    .slice(0, 4)
+    .slice(0, RECENT_ITEM_LIMIT)
     .flatMap((item) => plexRecentItem(module.id, item));
   const nowPlaying = plexNowPlaying(module.id, sessionContainer);
 
@@ -392,7 +395,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
     fetchJson(
       serviceEndpoint(
         baseUrl,
-        'Items?sortBy=DateCreated&sortOrder=Descending&limit=4&recursive=true&includeItemTypes=Movie,Series,Episode',
+        `Items?sortBy=DateCreated&sortOrder=Descending&limit=${RECENT_ITEM_LIMIT}&recursive=true&includeItemTypes=Movie,Series,Episode`,
       ),
       { headers },
       service,
@@ -404,7 +407,7 @@ async function fetchJellyfinLike(module: ModuleBranch): Promise<MediaModuleData>
   const sessionItems = arrayValue(sessions);
   const recentItems = arrayValue(valueOf(asObject(recent), 'Items', 'items'))
     .map(asObject)
-    .slice(0, 4)
+    .slice(0, RECENT_ITEM_LIMIT)
     .flatMap((item) => jellyfinLikeRecentItem(module.id, item));
   const nowPlaying = jellyfinLikeNowPlaying(module.id, sessionItems);
   // Count every active session for the stat; nowPlaying is capped for display.
@@ -461,7 +464,7 @@ async function fetchArr(module: ModuleBranch): Promise<MediaModuleData> {
   const items = arrayValue(collection).map(asObject);
   const recentItems = [...items].sort((a, b) => (
     Date.parse(stringValue(valueOf(b, 'added')) || '') - Date.parse(stringValue(valueOf(a, 'added')) || '')
-  )).slice(0, 4).flatMap((item) => arrRecentItem(module.id, item));
+  )).slice(0, RECENT_ITEM_LIMIT).flatMap((item) => arrRecentItem(module.id, item));
   const statusObject = asObject(status);
   const queueObject = asObject(queue);
   const queueItems = arrQueueItems(arrayValue(valueOf(queueObject, 'records', 'Records')), isSonarr);
@@ -1396,6 +1399,17 @@ function mediaImageEndpoint(value: string) {
   }
 
   return endpoint.replace(/^\/+/, '');
+}
+
+// Radarr/Sonarr report poster paths like "MediaCover/1/poster.jpg", but the
+// static /MediaCover route ignores the X-Api-Key header and 302s to /login.
+// The same asset is served with key auth under /api/v3, so route MediaCover
+// requests there. Paths already under api/ (or anything else) pass through.
+function arrImageEndpoint(endpoint: string) {
+  if (/^mediacover\//i.test(endpoint)) {
+    return `api/v3/${endpoint}`;
+  }
+  return endpoint;
 }
 
 function resolveFeedLink(value: unknown, baseUrl: URL) {

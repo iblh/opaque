@@ -16,7 +16,7 @@ export type OnboardingKind =
   | 'bookmarks'
   | 'applications'
   | 'servers'
-  | 'today'
+  | 'weather'
   | 'media'
   | 'posts'
 
@@ -56,10 +56,10 @@ const choices = [
     icon: IconServer,
   },
   {
-    kind: 'today' as const,
-    label: 'Today',
+    kind: 'weather' as const,
+    label: 'Weather',
     title: 'Add daily context',
-    detail: 'Weather, calendar, and markets.',
+    detail: 'Weather now; add calendar & markets in the editor.',
     icon: IconCalendarEvent,
   },
   {
@@ -94,9 +94,9 @@ const defaults: Record<OnboardingKind, Omit<OnboardingDraft, 'kind'>> = {
     itemName: 'First server',
     url: 'https://',
   },
-  today: {
-    sectionName: 'Today',
-    itemName: 'Daily modules',
+  weather: {
+    sectionName: 'Weather',
+    itemName: 'Weather module',
     url: '',
   },
   media: {
@@ -124,7 +124,7 @@ export default function DashboardOnboarding({
   const activeChoice = choices.find((choice) => choice.kind === kind) || choices[0]
   const ActiveIcon = activeChoice.icon
   const isServer = kind === 'servers'
-  const isModuleRoot = kind === 'today' || kind === 'media' || kind === 'posts'
+  const isModuleRoot = kind === 'weather' || kind === 'media' || kind === 'posts'
   const canCreate = isModuleRoot
     || (itemName.trim().length > 0 && (isServer || sectionName.trim().length > 0))
 
@@ -414,12 +414,10 @@ function PreviewServer({
   )
 }
 
-function PreviewModules({ kind }: { kind: 'today' | 'media' | 'posts' }) {
+function PreviewModules({ kind }: { kind: 'weather' | 'media' | 'posts' }) {
   const modules = {
-    today: [
+    weather: [
       ['Weather', '67 deg, partly cloudy'],
-      ['Calendar', '3 upcoming events'],
-      ['Markets', 'SPY, BTC-USD, NVDA, AAPL, MSFT'],
     ],
     media: [
       ['Plex', 'online, 9 libraries'],

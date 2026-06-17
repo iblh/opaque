@@ -269,10 +269,10 @@ const TreeServer: React.FC<TreeServerProps> = ({
           <div
             key={server.id}
             data-drag-preview
-            className={`relative w-[360px] max-w-full flex-none rounded-sm border bg-white p-4 transition-all ${
+            className={`relative w-[360px] max-w-full flex-none rounded-sm p-4 transition-all ${
               isServerEditing
-                ? 'border-border-strong'
-                : 'border-border-light hover:border-border-medium hover:bg-[#fcfcfc]'
+                ? 'bg-surface-sunken/60'
+                : 'hover:bg-surface-sunken/50'
             } ${
               activeDragId === server.id ? 'scale-[0.98] opacity-45' : ''
             }`}

@@ -29,8 +29,8 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   const dashboardBody = await dashboardGet.json();
   const roots = dashboardBody.dashboard.forest.map((tree) => tree.root);
   assert.deepEqual(
-    roots.slice(0, 6),
-    ['bookmarks', 'applications', 'servers', 'today', 'media', 'posts'],
+    roots.slice(0, 8),
+    ['bookmarks', 'applications', 'servers', 'weather', 'calendar', 'markets', 'media', 'posts'],
   );
 
   const serverId = `server-${suffix}`;
@@ -62,7 +62,7 @@ test('dashboard, modules, and metrics API contract', async (t) => {
               },
             ],
           }
-        : tree.root === 'today'
+        : tree.root === 'weather'
           ? {
               ...tree,
               branches: [
@@ -73,6 +73,12 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                   enabled: true,
                   config: { location: 'San Francisco', units: 'imperial' },
                 },
+              ],
+            }
+        : tree.root === 'calendar'
+          ? {
+              ...tree,
+              branches: [
                 {
                   id: moduleIds.calendar,
                   name: 'Contract Calendar',
@@ -80,6 +86,12 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                   enabled: true,
                   config: {},
                 },
+              ],
+            }
+        : tree.root === 'markets'
+          ? {
+              ...tree,
+              branches: [
                 {
                   id: moduleIds.markets,
                   name: 'Contract Markets',
@@ -548,8 +560,16 @@ async function startModuleMockServer() {
       if (path === '/radarr/api/v3/wanted/missing') {
         return sendJson(response, 200, { totalRecords: 4 });
       }
-      if (path === '/radarr/MediaCover/1/poster.jpg') {
+      // The key-authed MediaCover route lives under /api/v3 (Servarr behavior).
+      if (path === '/radarr/api/v3/MediaCover/1/poster.jpg') {
         return sendPng(response);
+      }
+      // The bare static route ignores the key and redirects to login, like a
+      // real Radarr — so the proxy must use the /api/v3 path above.
+      if (path === '/radarr/MediaCover/1/poster.jpg') {
+        response.writeHead(302, { Location: '/login' });
+        response.end();
+        return;
       }
     }
 
@@ -573,8 +593,13 @@ async function startModuleMockServer() {
       if (path === '/sonarr/api/v3/wanted/missing') {
         return sendJson(response, 200, { totalRecords: 3 });
       }
-      if (path === '/sonarr/MediaCover/1/poster.jpg') {
+      if (path === '/sonarr/api/v3/MediaCover/1/poster.jpg') {
         return sendPng(response);
+      }
+      if (path === '/sonarr/MediaCover/1/poster.jpg') {
+        response.writeHead(302, { Location: '/login' });
+        response.end();
+        return;
       }
     }
 

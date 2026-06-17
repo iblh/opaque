@@ -10,7 +10,12 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
-import DashboardSkeleton, { saveLayoutSnapshot } from '@/components/DashboardSkeleton'
+import {
+  buildSkeletonForest,
+  readSnapshotRows,
+  saveLayoutSnapshot,
+  SectionBodySkeleton,
+} from '@/components/DashboardSkeleton'
 import { getLayoutRows } from '@/lib/dashboardLayout'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
 import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
@@ -141,9 +146,26 @@ export default function HomePage() {
     })))
   }, [dashboard])
 
+  // Structural-only forest used to paint the real layout while the verified
+  // dashboard is still loading. Initialized to a fixed default frame so server
+  // and client first-render match (no hydration mismatch); the saved layout
+  // snapshot is read after mount to mirror the user's actual structure.
+  const [skeletonForest, setSkeletonForest] = useState<Tree[]>(() => buildSkeletonForest())
+
+  useEffect(() => {
+    const rows = readSnapshotRows()
+    if (rows) setSkeletonForest(buildSkeletonForest(rows))
+  }, [])
+
+  // Until the real dashboard arrives, lay out the skeleton forest in the very
+  // same DashboardLayoutEditor so there is no component swap (hence no jitter)
+  // when content fills in.
+  const showSkeleton = !visibleDashboard
   const layoutForest = useMemo(() => (
-    visibleDashboard ? materializeImplicitLayout(visibleDashboard.forest, isEditing) : []
-  ), [visibleDashboard, isEditing])
+    visibleDashboard
+      ? materializeImplicitLayout(visibleDashboard.forest, isEditing)
+      : skeletonForest
+  ), [visibleDashboard, isEditing, skeletonForest])
 
   const startEditing = () => {
     // Editing is only safe once the server copy is confirmed: editing an
@@ -234,19 +256,6 @@ export default function HomePage() {
     setSaveError('')
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="relative flex-1 overflow-x-hidden bg-background">
-          <div className="relative z-10">
-            <DashboardSkeleton />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -276,7 +285,9 @@ export default function HomePage() {
     )
   }
 
-  if (!visibleDashboard) {
+  // Only a finished load with no dashboard is a genuine error; while loading,
+  // fall through to the skeleton layout below.
+  if (!visibleDashboard && !loading) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
@@ -317,8 +328,7 @@ export default function HomePage() {
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
             <div className="mx-4 animate-fade-in md:mx-8">
-              <div className="h-0.5 w-6 bg-ink-300"></div>
-              <p className="mt-2.5 font-serif text-sm leading-none text-text-secondary">
+              <p className="font-serif text-sm leading-none text-text-secondary">
                 {timeGreeting()}{displayName ? `, ${displayName}` : ''}
                 <span className="text-text-muted"> — {todayLabel()}</span>
               </p>
@@ -337,11 +347,15 @@ export default function HomePage() {
                   isEditing={isEditing}
                   onForestChange={updateForest}
                   renderSection={(tree) => (
-                    <RootContent
-                      tree={tree}
-                      isEditing={isEditing}
-                      onTreeChange={updateTree}
-                    />
+                    showSkeleton
+                      ? <SectionBodySkeleton root={tree.root} />
+                      : (
+                        <RootContent
+                          tree={tree}
+                          isEditing={isEditing}
+                          onTreeChange={updateTree}
+                        />
+                      )
                   )}
                 />
               </div>
