@@ -218,7 +218,7 @@ export default function Header({
                                 {avatarInitial}
                             </button>
                             {showAvatarDropdown && (
-                                <div className="opaque-menu-popover">
+                                <div className="opaque-menu-popover" data-overlay>
                                     <div className="opaque-menu-panel">
                                         <div className="opaque-menu-summary">
                                             <div className="text-xs font-medium leading-relaxed">

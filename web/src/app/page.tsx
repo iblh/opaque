@@ -13,6 +13,7 @@ import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnbo
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
 import { useNotifications } from '@/lib/useNotifications'
+import { isOverlayOpen } from '@/lib/overlay'
 import {
   buildSkeletonForest,
   readSnapshotRows,
@@ -282,8 +283,14 @@ export default function HomePage() {
     {
       key: 'Escape',
       handler: () => {
-        if (showShortcuts) setShowShortcuts(false)
-        else if (isEditing) resetEditing()
+        if (showShortcuts) {
+          setShowShortcuts(false)
+          return
+        }
+        // An open menu/dialog owns Escape (closes itself); don't also discard
+        // an in-progress edit. Overlays mark themselves with data-overlay.
+        if (isOverlayOpen()) return
+        if (isEditing) resetEditing()
       },
     },
     { key: '?', handler: () => setShowShortcuts((value) => !value) },
