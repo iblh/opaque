@@ -145,14 +145,8 @@ function AppearanceSection() {
     setPreference(readThemePreference());
   }, []);
 
-  // Keep 'system' choices in step with OS changes while the dialog is open.
-  useEffect(() => {
-    if (preference !== 'system') return;
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => applyTheme('system');
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [preference]);
+  // Live OS-change following for 'system' is handled globally by ThemeWatcher
+  // (mounted in the layout), so it works whether or not Settings is open.
 
   const choose = (value: ThemePreference) => {
     setPreference(value);

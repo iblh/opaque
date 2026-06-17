@@ -109,7 +109,7 @@ export default function Header({
     };
 
     return (
-        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-white/95 px-6 py-3">
+        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/95 px-6 py-3">
             {pathname === '/login' && (
                 <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}

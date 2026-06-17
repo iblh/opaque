@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sorts_Mill_Goudy } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
+import ThemeWatcher from "@/components/ThemeWatcher";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen text-text-primary antialiased">
+        <ThemeWatcher />
         <div className="flex min-h-screen flex-col">
           <main className="relative flex-1">
             {children}
