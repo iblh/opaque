@@ -36,6 +36,8 @@ interface HeaderProps {
     notifications?: AppNotification[];
     unreadCount?: number;
     onNotificationsOpen?: () => void;
+    /** Lift a saved display-name change to the page (greeting/onboarding read it). */
+    onProfileNameChange?: (name: string) => void;
     onEdit?: () => void;
     onSave?: () => void;
     onReset?: () => void;
@@ -51,6 +53,7 @@ export default function Header({
     notifications = [],
     unreadCount = 0,
     onNotificationsOpen,
+    onProfileNameChange,
     onEdit,
     onSave,
     onReset,
@@ -298,7 +301,10 @@ export default function Header({
                     accountLabel={accountLabel}
                     searchProviderId={searchProviderId}
                     onSearchProviderChange={updateSearchProvider}
-                    onNameUpdated={(name) => setNameOverride(name)}
+                    onNameUpdated={(name) => {
+                        setNameOverride(name);
+                        onProfileNameChange?.(name);
+                    }}
                     onClose={() => setShowSettings(false)}
                 />
             )}

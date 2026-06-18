@@ -234,6 +234,13 @@ export default function HomePage() {
     }
   }, [draftDashboard, isDirty, isVerified, isSaving])
 
+  // A display-name change saved from Settings must reach the page's own state,
+  // not just the header — the greeting and onboarding read dashboard.name.
+  const handleProfileNameChange = useCallback((name: string) => {
+    setDashboard((current) => (current ? { ...current, name } : current))
+    setDraftDashboard((current) => (current ? { ...current, name } : current))
+  }, [])
+
   const updateTree = (tree: Tree) => {
     setDraftDashboard((current) => {
       if (!current) return current
@@ -366,6 +373,7 @@ export default function HomePage() {
         notifications={notifications}
         unreadCount={unreadCount}
         onNotificationsOpen={markAllRead}
+        onProfileNameChange={handleProfileNameChange}
         onEdit={startEditing}
         onReset={resetEditing}
         onSave={saveDashboard}

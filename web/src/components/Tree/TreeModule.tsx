@@ -715,7 +715,7 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
               key={cell.key}
               type="button"
               className={`mx-auto flex h-7 w-7 items-center justify-center text-xs transition-colors hover:bg-surface-sunken ${
-                cell.inMonth ? 'text-text-primary' : 'text-text-muted/45'
+                cell.inMonth ? 'text-text-primary' : 'text-text-muted'
               } ${cell.isToday ? 'border border-ink-500 bg-surface-sunken text-text-primary' : ''}`}
               title={calendarCellTitle(cell.date)}
               aria-label={calendarCellTitle(cell.date)}
