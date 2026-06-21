@@ -240,7 +240,10 @@ function AccountSection({
 
   const save = async () => {
     const trimmed = name.trim();
-    if (!trimmed || !dirty) return;
+    // Guard on `saving` too: the button is disabled while in flight, but the
+    // input's Enter handler calls save() directly, so a second Enter could race
+    // two PUTs and let a stale response overwrite the newer name.
+    if (!trimmed || !dirty || status === 'saving') return;
     setStatus('saving');
     setError('');
     try {
