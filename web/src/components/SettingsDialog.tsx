@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -235,6 +235,15 @@ function AccountSection({
   const [name, setName] = useState(displayName);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [error, setError] = useState('');
+  // Holds the "Saved → idle" timer so a stale one from a previous save can't
+  // flip status back to idle mid-flight (which would re-enable the save path and
+  // reopen the very PUT race the `saving` guard prevents). Cleared before each
+  // save and on unmount.
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+  }, []);
 
   const dirty = name.trim() !== displayName.trim();
 
@@ -244,6 +253,7 @@ function AccountSection({
     // input's Enter handler calls save() directly, so a second Enter could race
     // two PUTs and let a stale response overwrite the newer name.
     if (!trimmed || !dirty || status === 'saving') return;
+    if (savedTimer.current) clearTimeout(savedTimer.current);
     setStatus('saving');
     setError('');
     try {
@@ -260,7 +270,7 @@ function AccountSection({
       }
       onNameUpdated(result.name);
       setStatus('saved');
-      window.setTimeout(() => setStatus('idle'), 1500);
+      savedTimer.current = setTimeout(() => setStatus('idle'), 1500);
     } catch {
       setError('Network error');
       setStatus('idle');
