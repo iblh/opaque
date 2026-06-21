@@ -1244,16 +1244,19 @@ function optionalConfigString(module: ModuleBranch, key: string) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-// Resolve an optional `config.baseUrl` override (used by feed providers like
-// reddit/hacker-news so tests can target a mock host) to a base ending in '/'
-// for new URL(relative, base). Falls back to the given default; ignores values
-// that aren't http(s).
+// Optional advanced `config.baseUrl` override for feed providers (reddit /
+// hacker-news): point the upstream at a self-hosted relay/proxy instead of the
+// public host (useful on locked-down networks, and how the contract test serves
+// a mock). Returns a base ending in '/' for `new URL(relative, base)`. Only
+// http(s) is accepted; anything missing or invalid falls back to `fallback`.
 function optionalHttpBase(module: ModuleBranch, fallback: string): string {
   const raw = optionalConfigString(module, 'baseUrl');
-  const candidate = raw || fallback;
+  if (!raw) return ensureTrailingSlash(fallback);
   try {
-    const url = new URL(candidate);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return ensureTrailingSlash(fallback);
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return ensureTrailingSlash(fallback);
+    }
     return ensureTrailingSlash(url.toString());
   } catch {
     return ensureTrailingSlash(fallback);

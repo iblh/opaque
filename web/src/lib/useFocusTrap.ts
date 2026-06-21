@@ -1,4 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
+
+interface FocusTrapOptions {
+  // Element to restore focus to on close. Use this when the trigger that opened
+  // the dialog is unmounted before close (e.g. a menu item that closed its menu)
+  // — the captured document.activeElement would be gone, so an explicit ref is
+  // needed. When omitted, focus returns to whatever was focused at open time.
+  returnFocusRef?: RefObject<HTMLElement | null>;
+}
 
 const FOCUSABLE = [
   'a[href]',
@@ -18,15 +26,22 @@ function focusable(container: HTMLElement): HTMLElement[] {
 // control (or the container) inside `ref`, keeps Tab/Shift+Tab cycling within
 // it, and restores focus to whatever was focused before — typically the trigger
 // — on deactivation. Escape is intentionally left to the dialog's own handler.
-export function useFocusTrap<T extends HTMLElement>(active: boolean) {
+export function useFocusTrap<T extends HTMLElement>(
+  active: boolean,
+  options: FocusTrapOptions = {},
+) {
   const ref = useRef<T>(null);
+  const { returnFocusRef } = options;
 
   useEffect(() => {
     if (!active) return;
     const container = ref.current;
     if (!container) return;
 
-    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Snapshot the element to return focus to at open time: the explicit trigger
+    // ref if given (it outlives an unmounted opener), else whatever was focused.
+    const returnTarget = returnFocusRef?.current
+      ?? (document.activeElement as HTMLElement | null);
 
     // Focus the first control, or the container itself as a fallback.
     const initial = focusable(container)[0] ?? container;
@@ -62,12 +77,12 @@ export function useFocusTrap<T extends HTMLElement>(active: boolean) {
     container.addEventListener('keydown', onKeyDown);
     return () => {
       container.removeEventListener('keydown', onKeyDown);
-      // Restore focus to the trigger if it is still in the document.
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        previouslyFocused.focus();
+      // Restore focus to the snapshotted trigger if it is still in the document.
+      if (returnTarget && document.contains(returnTarget)) {
+        returnTarget.focus();
       }
     };
-  }, [active]);
+  }, [active, returnFocusRef]);
 
   return ref;
 }

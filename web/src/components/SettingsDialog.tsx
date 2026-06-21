@@ -34,6 +34,8 @@ interface SettingsDialogProps {
   onSearchProviderChange: (id: SearchProviderId) => void;
   onNameUpdated: (name: string) => void;
   onClose: () => void;
+  /** Focus returns here on close — the opener (a menu item) is unmounted. */
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
 const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -50,9 +52,10 @@ export default function SettingsDialog({
   onSearchProviderChange,
   onNameUpdated,
   onClose,
+  returnFocusRef,
 }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>('appearance');
-  const panelRef = useFocusTrap<HTMLDivElement>(true);
+  const panelRef = useFocusTrap<HTMLDivElement>(true, { returnFocusRef });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

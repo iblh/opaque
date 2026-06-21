@@ -321,6 +321,7 @@ export default function Header({
                         onProfileNameChange?.(name);
                     }}
                     onClose={() => setShowSettings(false)}
+                    returnFocusRef={avatarButtonRef}
                 />
             )}
         </header>

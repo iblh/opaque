@@ -109,6 +109,9 @@ function createDefaultModuleConfig(moduleType: KnownModuleType) {
       return { url: '', apiKey: '' };
     case 'rss':
       return { feeds: [], limit: 5 };
+    // reddit/hacker-news also accept an optional advanced `baseUrl` (http/https):
+    // point the upstream at a self-hosted relay/proxy instead of the public host.
+    // Omitted by default; see optionalHttpBase in moduleProviders.ts.
     case 'reddit':
       return { subreddit: 'selfhosted', sort: 'hot', limit: 5 };
     case 'hacker-news':

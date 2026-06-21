@@ -378,6 +378,30 @@ test('dashboard, modules, and metrics API contract', async (t) => {
   assert.ok(historyBody.samples.some((sample) => sample.cpu === 100));
   assert.ok(historyBody.samples.some((sample) => sample.cpu === 45.8));
   assert.ok(historyBody.samples.every((sample) => typeof sample.recordedAt === 'string'));
+
+  // --- PUT /api/user/profile (display-name update) ---
+  const updateName = async (body, headers = { cookie }) => fetch(`${baseUrl}/api/user/profile`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+
+  // Authorized success updates the name and persists to the dashboard.
+  const profileOk = await updateName({ name: 'Contract Renamed' });
+  await assertStatus(profileOk, 200);
+  assert.equal((await profileOk.json()).name, 'Contract Renamed');
+  const afterRename = await fetch(`${baseUrl}/api/dashboard/get`, { headers: { cookie } });
+  await assertStatus(afterRename, 200);
+  assert.equal((await afterRename.json()).dashboard.name, 'Contract Renamed');
+
+  // Empty (whitespace-only) name is rejected.
+  await assertStatus(await updateName({ name: '   ' }), 400);
+
+  // Over-60-character name is rejected.
+  await assertStatus(await updateName({ name: 'x'.repeat(61) }), 400);
+
+  // Unauthorized request (no cookie) is rejected.
+  await assertStatus(await updateName({ name: 'Nope' }, {}), 401);
 });
 
 async function assertStatus(response, expected) {
