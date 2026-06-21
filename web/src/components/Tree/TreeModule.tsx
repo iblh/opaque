@@ -80,7 +80,7 @@ interface TabDragProps {
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
-const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-3';
+const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-x-5 gap-y-6 md:gap-x-8';
 
 function moduleGridClassName(root: string) {
   // Posts use a wider reading column; the width must match between view and

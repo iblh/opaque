@@ -635,7 +635,7 @@ interface SectionHeaderProps {
 function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: SectionHeaderProps) {
   const label = getRootLabel(tree.root);
   return (
-    <div className={`mb-3 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
+    <div className={`mb-5 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
       {isEditing && (
         <button
           type="button"

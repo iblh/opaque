@@ -14,6 +14,7 @@ import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
 import { useNotifications } from '@/lib/useNotifications'
 import { isOverlayOpen } from '@/lib/overlay'
+import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect'
 import {
   buildSkeletonForest,
   readSnapshotRows,
@@ -157,11 +158,13 @@ export default function HomePage() {
 
   // Structural-only forest used to paint the real layout while the verified
   // dashboard is still loading. Initialized to a fixed default frame so server
-  // and client first-render match (no hydration mismatch); the saved layout
-  // snapshot is read after mount to mirror the user's actual structure.
+  // and client first render match (no hydration mismatch); the saved layout
+  // snapshot is then reconciled in a *layout* effect — it runs after commit but
+  // before the browser paints, so the corrected layout is what the user first
+  // sees (no visible default→snapshot reflow).
   const [skeletonForest, setSkeletonForest] = useState<Tree[]>(() => buildSkeletonForest())
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const rows = readSnapshotRows()
     if (rows) setSkeletonForest(buildSkeletonForest(rows))
   }, [])
