@@ -282,29 +282,19 @@ export default function HomePage() {
   }, [])
 
   // Core keyboard layer. Handlers stay silent while typing in a field (the hook
-  // gates that), so '/', 'e', '?' don't disrupt text entry.
+  // gates that), so '/', 'e', '?' don't disrupt text entry. The whole layer also
+  // stands down while an overlay (Settings, notifications, the shortcuts sheet,
+  // a menu, a drag) is open — those own the keyboard and close themselves, so
+  // e.g. ⌘S in the Settings name field won't save the dashboard behind it.
   const shortcuts = useMemo<KeyboardShortcut[]>(() => [
     { key: '/', handler: focusSearch },
     { key: 'e', handler: () => { if (!isEditing) startEditing() } },
     { key: 's', meta: true, allowInInput: true, handler: () => { if (isEditing) void saveDashboard() } },
-    {
-      key: 'Escape',
-      handler: () => {
-        if (showShortcuts) {
-          setShowShortcuts(false)
-          return
-        }
-        // An open menu/dialog (Settings, notifications, avatar) owns Escape and
-        // closes itself; don't also discard an in-progress edit. Overlays mark
-        // themselves with data-overlay.
-        if (isOverlayOpen()) return
-        if (isEditing) resetEditing()
-      },
-    },
-    { key: '?', handler: () => setShowShortcuts((value) => !value) },
-  ], [focusSearch, isEditing, showShortcuts, startEditing, saveDashboard, resetEditing])
+    { key: 'Escape', handler: () => { if (isEditing) resetEditing() } },
+    { key: '?', handler: () => setShowShortcuts(true) },
+  ], [focusSearch, isEditing, startEditing, saveDashboard, resetEditing])
 
-  useKeyboardShortcuts(shortcuts, !loading && !error)
+  useKeyboardShortcuts(shortcuts, !loading && !error, isOverlayOpen)
 
   if (error) {
     return (
