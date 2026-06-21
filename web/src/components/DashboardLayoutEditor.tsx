@@ -693,8 +693,10 @@ function DragClone({ drag }: { drag: DragState }) {
   const blockCount = Math.max(1, Math.min(drag.branchCount || 1, MAX_CLONE_SKELETON_BLOCKS));
 
   return (
-    <div style={style} className="opaque-drag-clone">
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border-medium bg-white shadow-floating">
+    // data-overlay: a drag is in progress and owns Escape (cancels the drag);
+    // the global Escape shortcut must not also discard the whole draft.
+    <div style={style} data-overlay className="opaque-drag-clone">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border-medium bg-surface-elevated shadow-floating">
         <div className="flex items-center gap-2 border-b border-border-light px-3 py-2">
           <IconGripVertical className="h-3.5 w-3.5 text-text-muted" />
           <span className="truncate text-xs font-medium uppercase tracking-wider text-text-secondary">
@@ -717,7 +719,7 @@ function SkeletonBlock() {
       <div className="h-7 w-7 flex-shrink-0 rounded-sm bg-surface-sunken" />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="h-2 w-1/2 rounded-full bg-surface-sunken" />
-        <div className="h-2 w-3/4 rounded-full bg-[#f1f1f1]" />
+        <div className="h-2 w-3/4 rounded-full bg-border-light" />
       </div>
     </div>
   );
@@ -757,7 +759,7 @@ function ResizeGutter({ column, isActive, hintText, onPointerDown }: ResizeGutte
         />
         {/* Grip pill. Faint at rest, solid on hover / active. */}
         <div
-          className={`absolute top-1/2 left-1/2 flex h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-white transition-all ${
+          className={`absolute top-1/2 left-1/2 flex h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border bg-surface-elevated transition-all ${
             isActive
               ? 'border-text-primary opacity-100'
               : 'border-border-medium opacity-60 group-hover/gutter:border-text-secondary group-hover/gutter:opacity-100'
@@ -769,7 +771,7 @@ function ResizeGutter({ column, isActive, hintText, onPointerDown }: ResizeGutte
           </span>
         </div>
         {isActive && hintText && (
-          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[calc(50%+1.25rem)] whitespace-nowrap rounded-sm border border-border-light bg-white px-1.5 py-0.5 font-mono text-[10px] tracking-tight text-text-secondary shadow-subtle">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[calc(50%+1.25rem)] whitespace-nowrap rounded-sm border border-border-light bg-surface-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-tight text-text-secondary shadow-subtle">
             {hintText}
           </div>
         )}
@@ -819,7 +821,7 @@ function UnassignedTray({
                 data-col-index={0}
                 onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
                 onClick={() => onForestChange(assignTreeToNewRow(forest, tree.root))}
-                className={`inline-flex cursor-grab touch-none items-center gap-1.5 border border-border-light bg-white px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-medium hover:text-text-primary active:cursor-grabbing ${draggingRoot === tree.root ? 'opacity-40' : ''}`}
+                className={`inline-flex cursor-grab touch-none items-center gap-1.5 border border-border-light bg-surface-elevated px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-border-medium hover:text-text-primary active:cursor-grabbing ${draggingRoot === tree.root ? 'opacity-40' : ''}`}
                 title="Drag onto the dashboard, or click to add a new row"
               >
                 <IconGripVertical className="h-3 w-3 text-text-muted" />

@@ -31,15 +31,22 @@ function matchesMeta(event: KeyboardEvent, wantsMeta: boolean | undefined): bool
 // A small global keyboard layer. Shortcuts are matched on keydown; the first
 // match wins and gets preventDefault. Re-binds whenever `shortcuts` changes, so
 // callers should memoize handlers or accept the cheap re-subscribe.
+//
+// `isBlocked` is evaluated per-event (not at subscribe time), so it can reflect
+// DOM state the React tree didn't re-render on — e.g. an open modal/menu that
+// owns the keyboard. When it returns true the whole layer stands down, letting
+// that overlay's own handlers take the keys.
 export function useKeyboardShortcuts(
   shortcuts: KeyboardShortcut[],
   enabled = true,
+  isBlocked?: () => boolean,
 ): void {
   useEffect(() => {
     if (!enabled) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.altKey) return; // Leave Alt combos to the browser/OS.
+      if (isBlocked?.()) return; // An overlay owns the keyboard right now.
       const inField = isEditableTarget(event.target);
 
       for (const shortcut of shortcuts) {
@@ -55,5 +62,5 @@ export function useKeyboardShortcuts(
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [shortcuts, enabled]);
+  }, [shortcuts, enabled, isBlocked]);
 }

@@ -219,7 +219,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             rel="noopener noreferrer"
             className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
           >
-            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors hover:bg-white">
+            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors hover:bg-surface-elevated">
               <SvgIcon
                 svg={leaf.icon}
                 fallback={DEFAULT_APPLICATION_ICON}
@@ -323,8 +323,8 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
                   data-drag-preview
                   className={`group w-full max-w-[320px] rounded-sm border p-3 transition-all ${
                     isLeafEditing
-                      ? 'border-border-strong bg-white'
-                      : 'border-transparent bg-transparent hover:bg-white'
+                      ? 'border-border-strong bg-surface-elevated'
+                      : 'border-transparent bg-transparent hover:bg-surface-elevated'
                   } ${
                     activeDrag?.type === 'application' && activeDrag.id === leaf.id
                       ? 'scale-[0.98] opacity-40'
@@ -450,7 +450,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
             <button
               type="button"
               onClick={() => addApplication(branch.id)}
-              className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-left transition-colors hover:border-accent-green hover:bg-white"
+              className="group flex min-h-[72px] w-full max-w-[320px] items-center gap-3 rounded-sm border border-dashed border-border-medium bg-surface-elevated/60 p-3 text-left transition-colors hover:border-accent-green hover:bg-surface-elevated"
               aria-label={`Add application to ${branch.name}`}
             >
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center text-text-tertiary transition-colors group-hover:text-accent-green">

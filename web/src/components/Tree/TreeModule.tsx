@@ -358,7 +358,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
           type="button"
           onClick={() => singleType && addModule(singleType)}
           disabled={!singleType}
-          className="group flex min-h-[72px] w-full max-w-[320px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-white/60 p-3 text-xs text-text-tertiary transition-colors enabled:hover:border-accent-green enabled:hover:text-text-primary disabled:opacity-60"
+          className="group flex min-h-[72px] w-full max-w-[320px] items-center justify-center gap-2 rounded-sm border border-dashed border-border-medium bg-surface-elevated/60 p-3 text-xs text-text-tertiary transition-colors enabled:hover:border-accent-green enabled:hover:text-text-primary disabled:opacity-60"
         >
           <IconPlus className="h-3.5 w-3.5" />
           {singleType
@@ -485,7 +485,7 @@ function ModuleEditCard({
   // Borderless at rest (matching view mode); a faint sunken tint on hover and a
   // dashed ring as merge target keep edit-mode cards readable as drag units.
   const mergeRing = isMergeTarget
-    ? 'rounded-sm outline-dashed outline-1 outline-ink-700 bg-[#fcfcfc]'
+    ? 'rounded-sm outline-dashed outline-1 outline-ink-700 bg-surface-elevated'
     : 'hover:bg-surface-sunken/50 rounded-sm';
   const shellClassName = embedded
     ? `relative transition-all ${activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''}`
@@ -501,8 +501,8 @@ function ModuleEditCard({
       onDrop={onDrop}
     >
       {isMergeTarget && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/70">
-          <span className="rounded-sm border border-ink-700 bg-white px-2 py-1 text-[10px] uppercase tracking-wider text-ink-700">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-surface-elevated/70">
+          <span className="rounded-sm border border-ink-700 bg-surface-elevated px-2 py-1 text-[10px] uppercase tracking-wider text-ink-700">
             Merge into tab group
           </span>
         </div>
@@ -715,7 +715,7 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
               key={cell.key}
               type="button"
               className={`mx-auto flex h-7 w-7 items-center justify-center text-xs transition-colors hover:bg-surface-sunken ${
-                cell.inMonth ? 'text-text-primary' : 'text-text-muted/45'
+                cell.inMonth ? 'text-text-primary' : 'text-text-muted'
               } ${cell.isToday ? 'border border-ink-500 bg-surface-sunken text-text-primary' : ''}`}
               title={calendarCellTitle(cell.date)}
               aria-label={calendarCellTitle(cell.date)}
@@ -1315,8 +1315,9 @@ function MediaPosterZoom({
       role="dialog"
       aria-modal="true"
       aria-label={item.title}
+      data-overlay
       onClick={onClose}
-      className="absolute inset-0 z-20 flex animate-poster-zoom cursor-zoom-out flex-col items-center justify-center gap-3 bg-white/95 p-5"
+      className="absolute inset-0 z-20 flex animate-poster-zoom cursor-zoom-out flex-col items-center justify-center gap-3 bg-surface-elevated/95 p-5"
     >
       <button
         type="button"
@@ -1459,7 +1460,7 @@ function PostsStackEditor({
     <div
       className={`rounded-sm p-3 transition-colors ${
         isDropTarget
-          ? 'outline-dashed outline-1 outline-ink-700 bg-[#fcfcfc]'
+          ? 'outline-dashed outline-1 outline-ink-700 bg-surface-elevated'
           : 'hover:bg-surface-sunken/50'
       }`}
       onDragOver={onDragOver}
@@ -1702,7 +1703,7 @@ function ModuleBodyState({
 }
 
 const skeletonBar = 'rounded-sm bg-surface-sunken';
-const skeletonBarSoft = 'rounded-sm bg-[#f1f1f1]';
+const skeletonBarSoft = 'rounded-sm bg-border-light';
 
 // Loading placeholders that echo each module's real content structure, so the
 // panel doesn't reshape when live data arrives.
@@ -2163,7 +2164,7 @@ function ConfigFieldLabel({
           </button>
           <span
             role="tooltip"
-            className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-64 -translate-x-1/2 border border-border-medium bg-white p-2 text-[10px] normal-case leading-relaxed tracking-normal text-text-secondary opacity-0 shadow-sm transition-opacity group-hover/help:opacity-100 group-focus-within/help:opacity-100"
+            className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-64 -translate-x-1/2 border border-border-medium bg-surface-elevated p-2 text-[10px] normal-case leading-relaxed tracking-normal text-text-secondary opacity-0 shadow-sm transition-opacity group-hover/help:opacity-100 group-focus-within/help:opacity-100"
           >
             {help}
           </span>

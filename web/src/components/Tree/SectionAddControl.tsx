@@ -66,7 +66,7 @@ export default function SectionAddControl({
       <button
         type="button"
         onClick={handleClick}
-        className="flex h-6 w-6 items-center justify-center rounded-sm border border-border-light bg-white text-text-muted transition-colors hover:border-border-medium hover:text-text-primary"
+        className="flex h-6 w-6 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-muted transition-colors hover:border-border-medium hover:text-text-primary"
         aria-label={label}
         aria-haspopup={options ? 'menu' : undefined}
         aria-expanded={options ? open : undefined}
@@ -78,7 +78,8 @@ export default function SectionAddControl({
       {open && options && options.length > 0 && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-1 min-w-[9rem] overflow-hidden rounded-sm border border-border-light bg-white py-1 shadow-[0_16px_42px_rgba(0,0,0,0.08)]"
+          data-overlay
+          className="absolute right-0 top-full z-50 mt-1 min-w-[9rem] overflow-hidden rounded-sm border border-border-light bg-surface-elevated py-1 shadow-[0_16px_42px_rgba(0,0,0,0.08)]"
         >
           {options.map((option) => (
             <button

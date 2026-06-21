@@ -19,7 +19,7 @@ export default function CookieBanner() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-[9000] w-[calc(100vw-2rem)] max-w-[34rem] rounded-sm border border-border-light bg-white p-3 shadow-[0_18px_46px_rgba(0,0,0,0.10)]">
+    <div className="fixed bottom-4 left-4 z-[9000] w-[calc(100vw-2rem)] max-w-[34rem] rounded-sm border border-border-light bg-surface-elevated p-3 shadow-[0_18px_46px_rgba(0,0,0,0.10)]">
       <div className="text-xs leading-relaxed text-text-secondary">
         OPAQUE uses essential cookies for sign-in and local preferences. No marketing cookies.
       </div>

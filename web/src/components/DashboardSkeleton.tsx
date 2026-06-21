@@ -93,7 +93,7 @@ export function readSnapshotRows(): LayoutSnapshotRow[] | null {
 }
 
 const bar = 'rounded-sm bg-surface-sunken';
-const barSoft = 'rounded-sm bg-[#f1f1f1]';
+const barSoft = 'rounded-sm bg-border-light';
 
 // Borderless bodies (matching the live, border-free cards): structure comes
 // from spacing alone. Each shape mirrors its real widget so the panel doesn't

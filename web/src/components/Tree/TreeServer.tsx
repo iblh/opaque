@@ -322,7 +322,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     icon,
                   }))}
                 />
-                <div className="rounded-sm border border-border-light bg-[#fcfcfc] px-2 py-1.5">
+                <div className="rounded-sm border border-border-light bg-surface-elevated px-2 py-1.5">
                   <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent id</div>
                   <div className="mt-1 flex items-center gap-2">
                     <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-secondary">
@@ -339,7 +339,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </button>
                   </div>
                 </div>
-                <div className="rounded-sm border border-border-light bg-[#fcfcfc] px-2 py-1.5">
+                <div className="rounded-sm border border-border-light bg-surface-elevated px-2 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-[10px] uppercase tracking-wider text-text-muted">Agent token</div>
                     <button
@@ -403,7 +403,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     {renderDragHandle(server)}
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-secondary">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-secondary">
                       <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">

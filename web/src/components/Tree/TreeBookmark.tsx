@@ -288,8 +288,8 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                     data-drag-preview
                     className={`group rounded-sm border p-2 transition-all ${
                       isLeafEditing
-                        ? 'border-border-strong bg-white'
-                        : 'border-border-light bg-white/70 hover:bg-white'
+                        ? 'border-border-strong bg-surface-elevated'
+                        : 'border-border-light bg-surface-elevated/70 hover:bg-surface-elevated'
                     } ${
                       activeDrag?.type === 'leaf' && activeDrag.id === leaf.id
                         ? 'scale-[0.98] opacity-40'
@@ -420,7 +420,7 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   rel="noopener noreferrer"
                   className="group block text-inherit no-underline"
                 >
-                  <div className="relative rounded-sm px-1 py-1.5 transition-colors hover:bg-white">
+                  <div className="relative rounded-sm px-1 py-1.5 transition-colors hover:bg-surface-elevated">
                     <div className="flex items-center gap-2 text-left">
                       <SvgIcon
                         svg={leaf.icon}

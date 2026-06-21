@@ -153,7 +153,7 @@ export default function DashboardOnboarding({
       <div className="grid gap-8 border-t border-border-light pt-8 md:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)]">
         <div className="min-w-0">
           <div className="mb-6 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-            <span className="flex h-5 w-5 items-center justify-center border border-border-light bg-white font-mono text-[10px] text-text-secondary">
+            <span className="flex h-5 w-5 items-center justify-center border border-border-light bg-surface-elevated font-mono text-[10px] text-text-secondary">
               01
             </span>
             First setup
@@ -185,8 +185,8 @@ export default function DashboardOnboarding({
                   onClick={() => selectKind(choice.kind)}
                   className={`group flex min-h-[7rem] flex-col justify-between border p-3 text-left transition-colors duration-200 ${
                     isActive
-                      ? 'border-text-primary bg-white text-text-primary'
-                      : 'border-border-light bg-transparent text-text-secondary hover:border-border-medium hover:bg-white'
+                      ? 'border-text-primary bg-surface-elevated text-text-primary'
+                      : 'border-border-light bg-transparent text-text-secondary hover:border-border-medium hover:bg-surface-elevated'
                   }`}
                 >
                   <span className="flex items-center justify-between">
@@ -247,7 +247,7 @@ export default function DashboardOnboarding({
                   </label>
                 </>
               ) : (
-                <div className="md:col-span-2 border border-border-light bg-white p-3 text-xs leading-relaxed text-text-tertiary">
+                <div className="md:col-span-2 border border-border-light bg-surface-elevated p-3 text-xs leading-relaxed text-text-tertiary">
                   This creates the default live-data modules for {activeChoice.label}. You can
                   configure, rename, disable, or remove modules in the editor before saving.
                 </div>
@@ -277,13 +277,13 @@ export default function DashboardOnboarding({
 
         <div className="border-l border-border-light pl-6">
           <div className="mb-6 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-            <span className="flex h-5 w-5 items-center justify-center border border-border-light bg-white font-mono text-[10px] text-text-secondary">
+            <span className="flex h-5 w-5 items-center justify-center border border-border-light bg-surface-elevated font-mono text-[10px] text-text-secondary">
               02
             </span>
             Preview
           </div>
 
-          <div className="border border-border-light bg-white p-4">
+          <div className="border border-border-light bg-surface-elevated p-4">
             <div className="flex items-center gap-2">
               <ActiveIcon className="h-4 w-4 text-text-secondary" />
               <div className="min-w-0">

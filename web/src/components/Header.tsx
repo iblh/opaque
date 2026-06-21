@@ -12,17 +12,18 @@ import {
     IconRefresh,
     IconSearch,
     IconServer,
+    IconSettings,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
 import {
     buildSearchUrl,
     DEFAULT_SEARCH_PROVIDER_ID,
     getSearchProvider,
-    SEARCH_PROVIDERS,
     type SearchProviderId,
 } from '@/lib/searchProviders';
 import NotificationsMenu from '@/components/NotificationsMenu';
 import type { AppNotification } from '@/lib/useNotifications';
+import SettingsDialog from '@/components/SettingsDialog';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -35,6 +36,8 @@ interface HeaderProps {
     notifications?: AppNotification[];
     unreadCount?: number;
     onNotificationsOpen?: () => void;
+    /** Lift a saved display-name change to the page (greeting/onboarding read it). */
+    onProfileNameChange?: (name: string) => void;
     onEdit?: () => void;
     onSave?: () => void;
     onReset?: () => void;
@@ -50,6 +53,7 @@ export default function Header({
     notifications = [],
     unreadCount = 0,
     onNotificationsOpen,
+    onProfileNameChange,
     onEdit,
     onSave,
     onReset,
@@ -57,27 +61,45 @@ export default function Header({
     const pathname = usePathname();
     const router = useRouter();
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchProviderId, setSearchProviderId] = useState<SearchProviderId>(DEFAULT_SEARCH_PROVIDER_ID);
+    // Locally reflect a display-name edit from Settings without waiting for a
+    // dashboard refetch.
+    const [nameOverride, setNameOverride] = useState<string | null>(null);
     const avatarRef = useRef<HTMLDivElement>(null);
-    const displayName = dashboard?.name || dashboard?.username || dashboard?.email || 'User';
+    const avatarButtonRef = useRef<HTMLButtonElement>(null);
+    const displayName = nameOverride || dashboard?.name || dashboard?.username || dashboard?.email || 'User';
     const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
     const avatarInitial = displayName.charAt(0).toUpperCase();
     const serverSummary = getServerSummary(dashboard);
     const searchProvider = getSearchProvider(searchProviderId);
 
     useEffect(() => {
+        if (!showAvatarDropdown) return;
+
         function handleClickOutside(event: MouseEvent) {
             if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
                 setShowAvatarDropdown(false);
             }
         }
 
-        if (showAvatarDropdown) {
-            document.addEventListener('mousedown', handleClickOutside);
+        // The dropdown is marked data-overlay, so the global shortcut layer
+        // stands down while it is open — it must own Escape itself.
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setShowAvatarDropdown(false);
+                avatarButtonRef.current?.focus();
+            }
         }
 
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, [showAvatarDropdown]);
 
     useEffect(() => {
@@ -104,7 +126,7 @@ export default function Header({
     };
 
     return (
-        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-white/95 px-6 py-3">
+        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/95 px-6 py-3">
             {pathname === '/login' && (
                 <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}
@@ -210,6 +232,7 @@ export default function Header({
 
                         <div className="relative" ref={avatarRef}>
                             <button
+                                ref={avatarButtonRef}
                                 onClick={() => setShowAvatarDropdown((value) => !value)}
                                 className="opaque-toolbar-avatar"
                                 aria-label="User menu"
@@ -224,7 +247,7 @@ export default function Header({
                                             <div className="text-xs font-medium leading-relaxed">
                                                 Server dashboard
                                             </div>
-                                            <div className="mt-2.5 h-0.5 rounded-full bg-white/80">
+                                            <div className="mt-2.5 h-0.5 rounded-full bg-background/30">
                                                 <div
                                                     className="h-full rounded-full bg-accent-green"
                                                     style={{
@@ -251,29 +274,15 @@ export default function Header({
                                             </span>
                                         </div>
 
-                                        <div className="opaque-menu-section px-3.5 py-2.5">
-                                            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                                                Search provider
-                                            </div>
-                                            <div className="mt-2 grid grid-cols-2 gap-1">
-                                                {SEARCH_PROVIDERS.map((provider) => (
-                                                    <button
-                                                        key={provider.id}
-                                                        type="button"
-                                                        onClick={() => updateSearchProvider(provider.id)}
-                                                        className={`h-6 rounded-sm px-2 text-left text-[11px] transition-colors ${
-                                                            searchProviderId === provider.id
-                                                                ? 'bg-ink-900 text-white'
-                                                                : 'bg-surface-sunken text-text-secondary hover:bg-border-light hover:text-text-primary'
-                                                        }`}
-                                                    >
-                                                        {provider.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
                                         <div className="opaque-menu-section">
+                                            <MenuItem
+                                                icon={<IconSettings />}
+                                                label="Settings"
+                                                onClick={() => {
+                                                    setShowAvatarDropdown(false);
+                                                    setShowSettings(true);
+                                                }}
+                                            />
                                             <MenuItem
                                                 icon={<IconMessageCircle />}
                                                 label="Send feedback"
@@ -299,6 +308,21 @@ export default function Header({
                         </div>
                     </div>
                 </nav>
+            )}
+
+            {showSettings && (
+                <SettingsDialog
+                    displayName={displayName}
+                    accountLabel={accountLabel}
+                    searchProviderId={searchProviderId}
+                    onSearchProviderChange={updateSearchProvider}
+                    onNameUpdated={(name) => {
+                        setNameOverride(name);
+                        onProfileNameChange?.(name);
+                    }}
+                    onClose={() => setShowSettings(false)}
+                    returnFocusRef={avatarButtonRef}
+                />
             )}
         </header>
     );

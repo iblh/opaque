@@ -9,29 +9,117 @@
         --opaque-menu-width: 272px;
         --opaque-menu-icon-size: 14px;
         --opaque-menu-avatar-size: 28px;
+
+        /* --- Light palette (the paper default). --- Solid tokens are bare
+           "R G B" channels so Tailwind can synthesize `/NN` opacity modifiers
+           (tailwind.config wraps them in rgb(var(--x) / <alpha-value>)).
+           Alpha-baked tokens stay full rgba() and are referenced directly. */
+        --accent-green: 126 132 107;
+        --accent-green-light: 157 160 133;
+        --accent-green-dark: 107 113 89;
+        --accent-green-subtle: rgba(126, 132, 107, 0.08);
+        --accent-green-hover: rgba(126, 132, 107, 0.15);
+        --accent-red: 167 103 103;
+        --accent-red-dark: 142 85 85;
+        --accent-red-subtle: rgba(167, 103, 103, 0.08);
+        --accent-amber: 176 141 87;
+        --accent-amber-dark: 151 120 74;
+        --accent-blue: 94 106 210;
+        --accent-blue-subtle: rgba(94, 106, 210, 0.08);
+        --accent-blue-hover: rgba(94, 106, 210, 0.15);
+        --text-primary: 26 29 31;
+        --text-secondary: rgba(26, 29, 31, 0.75);
+        --text-tertiary: rgba(26, 29, 31, 0.55);
+        --text-muted: rgba(26, 29, 31, 0.4);
+        --background: 255 255 255;
+        --surface: rgba(250, 250, 250, 0.8);
+        --surface-elevated: 255 255 255;
+        --surface-sunken: 247 247 247;
+        --border-light: 237 237 237;
+        --border-medium: 222 222 222;
+        --border-strong: 208 208 208;
+        --ink-100: 247 247 247;
+        --ink-200: 232 232 232;
+        --ink-300: 218 218 218;
+        --ink-400: 184 184 184;
+        --ink-500: 153 153 153;
+        --ink-600: 119 119 119;
+        --ink-700: 85 85 85;
+        --ink-800: 51 51 51;
+        --ink-900: 17 17 17;
+        /* The page canvas (one notch off pure white, like aged paper). */
+        --page-bg: #FAFAFA;
+    }
+
+    /* --- Dark palette: ink canvas, paper-light text. Quiet Instrumentality
+       preserved — same hierarchy, warmer-neutral charcoals, accents lifted just
+       enough to read on dark without turning loud. The ink-* ramp inverts so
+       existing `ink-700` (a mid-tone) still reads as a mid-tone. --- */
+    .dark {
+        --accent-green: 154 160 131;
+        --accent-green-light: 176 180 152;
+        --accent-green-dark: 130 136 112;
+        --accent-green-subtle: rgba(154, 160, 131, 0.12);
+        --accent-green-hover: rgba(154, 160, 131, 0.20);
+        --accent-red: 192 138 138;
+        --accent-red-dark: 210 158 158;
+        --accent-red-subtle: rgba(192, 138, 138, 0.14);
+        --accent-amber: 201 162 108;
+        --accent-amber-dark: 215 181 137;
+        --accent-blue: 139 149 230;
+        --accent-blue-subtle: rgba(139, 149, 230, 0.14);
+        --accent-blue-hover: rgba(139, 149, 230, 0.22);
+        --text-primary: 232 230 226;
+        --text-secondary: rgba(232, 230, 226, 0.74);
+        --text-tertiary: rgba(232, 230, 226, 0.52);
+        --text-muted: rgba(232, 230, 226, 0.38);
+        --background: 27 28 30;
+        --surface: rgba(34, 35, 38, 0.8);
+        --surface-elevated: 36 37 40;
+        --surface-sunken: 35 36 39;
+        --border-light: 44 45 48;
+        --border-medium: 58 59 63;
+        --border-strong: 74 75 80;
+        --ink-100: 35 36 39;
+        --ink-200: 46 47 51;
+        --ink-300: 60 61 66;
+        --ink-400: 86 87 96;
+        --ink-500: 128 130 140;
+        --ink-600: 158 160 170;
+        --ink-700: 188 190 198;
+        --ink-800: 214 215 220;
+        --ink-900: 236 237 240;
+        --page-bg: #161719;
     }
 
     body {
-        @apply min-h-screen bg-[#fafafa] font-body text-text-primary;
+        @apply min-h-screen bg-[var(--page-bg)] font-body text-text-primary;
         /* Numerals never jitter (see DESIGN_SPEC.md — Type). */
         font-variant-numeric: tabular-nums;
     }
 
-    /* Quiet focus: a thin ink outline, visible everywhere, never a glow. */
+    /* Quiet focus: a thin ink outline, visible everywhere, never a glow.
+       Reference the channel var directly — theme('colors.ink.700') would expand
+       to rgb(var(--ink-700) / <alpha-value>), and <alpha-value> is only resolved
+       inside generated color utilities, not a raw theme() consumer, so the
+       browser would discard the outline. */
     *:focus-visible {
-        outline: 1px solid theme('colors.ink.700');
+        outline: 1px solid rgb(var(--ink-700));
         outline-offset: 2px;
         @apply ring-0;
     }
 }
 
+/* WebKit paints its own background/text on autofilled inputs; override with the
+   theme tokens so it matches light and dark instead of forcing white/black. */
 input:-webkit-autofill,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px white inset !important; /* or your desired bg */
-  box-shadow: 0 0 0 1000px white inset !important;
-  -webkit-text-fill-color: #000 !important; /* your text color */
+  -webkit-box-shadow: 0 0 0 1000px rgb(var(--surface-elevated)) inset !important;
+  box-shadow: 0 0 0 1000px rgb(var(--surface-elevated)) inset !important;
+  -webkit-text-fill-color: rgb(var(--text-primary)) !important;
+  caret-color: rgb(var(--text-primary));
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -627,21 +715,21 @@ input:-webkit-autofill:active {
     }
 
     .opaque-card {
-        @apply rounded-sm border border-border-light bg-white shadow-none transition-colors;
+        @apply rounded-sm border border-border-light bg-surface-elevated shadow-none transition-colors;
     }
 
     .opaque-card:hover {
-        @apply border-border-medium bg-[#fcfcfc];
+        @apply border-border-medium bg-surface-elevated;
     }
 
     .opaque-button {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-white px-2 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-surface-elevated px-2 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
     }
 
     .opaque-button-primary {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-white transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-background transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
     }
 
     .opaque-button svg,
@@ -655,13 +743,13 @@ input:-webkit-autofill:active {
     }
 
     .opaque-input {
-        @apply h-8 rounded-sm border border-border-light bg-white px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
+        @apply h-8 rounded-sm border border-border-light bg-surface-elevated px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
     }
 
     .opaque-toolbar-icon {
         width: var(--opaque-header-control-size);
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center rounded-sm border border-border-light bg-white text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary;
+        @apply inline-flex items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary;
     }
 
     .opaque-toolbar-icon svg {
@@ -671,7 +759,7 @@ input:-webkit-autofill:active {
 
     .opaque-toolbar-counter {
         height: var(--opaque-header-control-size);
-        @apply hidden items-center gap-1 rounded-sm border border-border-light bg-[#f8f8f8] px-2 font-mono text-[11px] font-medium text-text-primary md:flex;
+        @apply hidden items-center gap-1 rounded-sm border border-border-light bg-surface-sunken px-2 font-mono text-[11px] font-medium text-text-primary md:flex;
     }
 
     .opaque-toolbar-counter svg {
@@ -683,7 +771,7 @@ input:-webkit-autofill:active {
     .opaque-toolbar-avatar {
         width: var(--opaque-header-control-size);
         height: var(--opaque-header-control-size);
-        @apply flex items-center justify-center rounded-full border border-transparent bg-surface-sunken text-[11px] font-medium text-text-primary transition-colors hover:bg-[#ededed];
+        @apply flex items-center justify-center rounded-full border border-transparent bg-surface-sunken text-[11px] font-medium text-text-primary transition-colors hover:bg-border-light;
     }
 
     .opaque-menu-popover {
@@ -692,15 +780,15 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-panel {
-        @apply overflow-hidden rounded-sm border border-border-light bg-white shadow-[0_16px_42px_rgba(0,0,0,0.08)];
+        @apply overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-[0_16px_42px_rgba(0,0,0,0.08)];
     }
 
     .opaque-menu-summary {
-        @apply bg-ink-900 p-3.5 text-white;
+        @apply bg-ink-900 p-3.5 text-background;
     }
 
     .opaque-menu-profile {
-        @apply flex w-full items-center gap-2.5 border-b border-border-light px-3.5 py-3 text-left hover:bg-[#fafafa];
+        @apply flex w-full items-center gap-2.5 border-b border-border-light px-3.5 py-3 text-left hover:bg-surface-sunken;
     }
 
     .opaque-menu-avatar {
@@ -714,7 +802,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-item {
-        @apply flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-text-primary hover:bg-[#fafafa];
+        @apply flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-text-primary hover:bg-surface-sunken;
     }
 
     .opaque-menu-item-icon {
@@ -734,7 +822,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-badge {
-        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white;
+        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-background;
     }
 
     .opaque-menu-account {

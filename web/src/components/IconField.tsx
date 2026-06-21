@@ -196,7 +196,7 @@ export default function IconField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-white text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary"
           aria-expanded={isOpen}
           aria-controls={pickerId}
           aria-label="Choose icon"
@@ -218,7 +218,8 @@ export default function IconField({
         <div
           id={pickerId}
           ref={pickerRef}
-          className="fixed z-[9999] rounded-sm border border-border-light bg-white shadow-[0_16px_40px_rgba(0,0,0,0.12)]"
+          data-overlay
+          className="fixed z-[9999] rounded-sm border border-border-light bg-surface-elevated shadow-[0_16px_40px_rgba(0,0,0,0.12)]"
           style={{
             left: pickerBounds.left,
             top: pickerBounds.top,
@@ -232,7 +233,7 @@ export default function IconField({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search all icons"
-                className="h-8 w-full rounded-sm border border-border-light bg-white px-2 pr-8 text-xs text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0"
+                className="h-8 w-full rounded-sm border border-border-light bg-surface-elevated px-2 pr-8 text-xs text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0"
               />
               {query ? (
                 <button
@@ -255,7 +256,7 @@ export default function IconField({
                   onClick={() => setActiveCategory(category)}
                   className={`h-6 flex-shrink-0 rounded-sm px-2 text-[11px] transition-colors ${
                     activeCategory === category
-                      ? 'bg-ink-900 text-white'
+                      ? 'bg-ink-900 text-background'
                       : 'bg-surface-sunken text-text-secondary hover:bg-border-light hover:text-text-primary'
                   }`}
                 >

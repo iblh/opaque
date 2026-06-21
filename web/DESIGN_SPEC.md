@@ -32,13 +32,24 @@ These are enforceable review criteria, not vibes.
 
 ### Color
 
-- Paper surfaces: `background` `#fafafa→#fff`, cards are `bg-white` with `border-border-light`.
-- **One accent: `accent-green` (#7E846B, moss).** It means *alive / active / current* — live status
-  dots, playback, active drop targets, hover accents. Never decorative.
-- Errors and destructive hovers use the muted rust `accent-red` (#A76767) family. **Never
-  `red-500`** — saturated alarm red is off-voice.
+- **All color is tokenized through CSS variables** (defined in `globals.css`, surfaced as Tailwind
+  tokens). Components use the semantic tokens (`text-primary`, `surface-sunken`, `border-light`,
+  `ink-*`, `accent-*`, …) — **never hardcode hex or `bg-white`/`bg-[#…]`**, so the palette can flip
+  with the theme.
+- **Two themes, one voice.** Light is the paper default (`--page-bg #fafafa`, near-white surfaces,
+  ink text). Dark is an ink canvas (`#1B1C1E`) with paper-light text; the `ink-*` ramp inverts so a
+  mid-tone like `ink-700` stays a mid-tone in both. Quiet Instrumentality is identical in both —
+  same hierarchy, hairlines, restraint. Theme = light / dark / system (default), persisted to
+  `localStorage` and applied pre-paint via a `<head>` script (no flash); `.dark` on `<html>`.
+- **One accent: `accent-green` (moss).** It means *alive / active / current* — live status dots,
+  playback, active drop targets, hover accents. Never decorative. (Lifts slightly in dark to stay
+  legible.)
+- Errors and destructive hovers use the muted rust `accent-red` family. **Never `red-500`** —
+  saturated alarm red is off-voice.
 - Warnings (e.g. load thresholds) use muted ochre `accent-amber`. Never `amber-500`.
 - `accent-blue` is legacy; do not introduce new uses on the dashboard.
+- Alpha-on-token utilities (e.g. `bg-surface-sunken/50`) are fine — the tokens resolve to full
+  colors, so Tailwind composites the alpha normally in both themes.
 
 ### Motion
 
