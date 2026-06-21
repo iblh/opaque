@@ -529,7 +529,10 @@ async function fetchReddit(module: ModuleBranch): Promise<ModuleData> {
     throw new ModuleDataError('Enter a valid subreddit name.', 400);
   }
 
-  const url = new URL(`https://www.reddit.com/r/${subreddit}/${sort}/.rss`);
+  // An optional base URL lets tests (and self-hosted proxies) point the feed at
+  // a controlled endpoint instead of reddit.com. Defaults to the public host.
+  const base = optionalHttpBase(module, 'https://www.reddit.com');
+  const url = new URL(`r/${subreddit}/${sort}/.rss`, base);
   url.searchParams.set('limit', String(Math.max(limit, 10)));
   if (sort === 'top') url.searchParams.set('t', 'day');
 
@@ -551,14 +554,16 @@ async function fetchHackerNews(module: ModuleBranch): Promise<ModuleData> {
   const feed = configString(module, 'feed', 'top');
   const endpoint = hackerNewsEndpoint(feed);
   const limit = clamp(configNumber(module, 'limit', 5), 1, 15);
+  // Optional base URL override (tests / self-hosted proxy); defaults to Firebase.
+  const base = optionalHttpBase(module, 'https://hacker-news.firebaseio.com');
   const ids = arrayValue(await fetchJson(
-    new URL(`https://hacker-news.firebaseio.com/v0/${endpoint}.json`),
+    new URL(`v0/${endpoint}.json`, base),
     {},
     'Hacker News',
   )).slice(0, limit * 2);
 
   const items = await Promise.all(ids.map((id) => fetchJson(
-    new URL(`https://hacker-news.firebaseio.com/v0/item/${id}.json`),
+    new URL(`v0/item/${id}.json`, base),
     {},
     'Hacker News',
   )));
@@ -1237,6 +1242,26 @@ function configString(module: ModuleBranch, key: string, fallback = '') {
 function optionalConfigString(module: ModuleBranch, key: string) {
   const value = module.config?.[key];
   return typeof value === 'string' ? value.trim() : '';
+}
+
+// Resolve an optional `config.baseUrl` override (used by feed providers like
+// reddit/hacker-news so tests can target a mock host) to a base ending in '/'
+// for new URL(relative, base). Falls back to the given default; ignores values
+// that aren't http(s).
+function optionalHttpBase(module: ModuleBranch, fallback: string): string {
+  const raw = optionalConfigString(module, 'baseUrl');
+  const candidate = raw || fallback;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return ensureTrailingSlash(fallback);
+    return ensureTrailingSlash(url.toString());
+  } catch {
+    return ensureTrailingSlash(fallback);
+  }
+}
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`;
 }
 
 function hasConfigKey(module: ModuleBranch, key: string) {

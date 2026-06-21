@@ -1703,7 +1703,7 @@ function ModuleBodyState({
 }
 
 const skeletonBar = 'rounded-sm bg-surface-sunken';
-const skeletonBarSoft = 'rounded-sm bg-[#f1f1f1]';
+const skeletonBarSoft = 'rounded-sm bg-border-light';
 
 // Loading placeholders that echo each module's real content structure, so the
 // panel doesn't reshape when live data arrives.

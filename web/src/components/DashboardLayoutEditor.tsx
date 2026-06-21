@@ -719,7 +719,7 @@ function SkeletonBlock() {
       <div className="h-7 w-7 flex-shrink-0 rounded-sm bg-surface-sunken" />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="h-2 w-1/2 rounded-full bg-surface-sunken" />
-        <div className="h-2 w-3/4 rounded-full bg-[#f1f1f1]" />
+        <div className="h-2 w-3/4 rounded-full bg-border-light" />
       </div>
     </div>
   );

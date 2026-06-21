@@ -110,13 +110,16 @@
     }
 }
 
+/* WebKit paints its own background/text on autofilled inputs; override with the
+   theme tokens so it matches light and dark instead of forcing white/black. */
 input:-webkit-autofill,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px white inset !important; /* or your desired bg */
-  box-shadow: 0 0 0 1000px white inset !important;
-  -webkit-text-fill-color: #000 !important; /* your text color */
+  -webkit-box-shadow: 0 0 0 1000px rgb(var(--surface-elevated)) inset !important;
+  box-shadow: 0 0 0 1000px rgb(var(--surface-elevated)) inset !important;
+  -webkit-text-fill-color: rgb(var(--text-primary)) !important;
+  caret-color: rgb(var(--text-primary));
   transition: background-color 5000s ease-in-out 0s;
 }
 

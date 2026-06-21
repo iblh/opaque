@@ -158,14 +158,16 @@ test('dashboard, modules, and metrics API contract', async (t) => {
                     name: 'Contract Hacker News',
                     moduleType: 'hacker-news',
                     enabled: true,
-                    config: { feed: 'top', limit: 2 },
+                    // baseUrl points the provider at the mock server (no live HN).
+                    config: { feed: 'top', limit: 2, baseUrl: `${moduleMock.baseUrl}/hn` },
                   },
                   {
                     id: moduleIds.reddit,
                     name: 'Contract Reddit',
                     moduleType: 'reddit',
                     enabled: true,
-                    config: { subreddit: 'selfhosted', sort: 'new', limit: 1 },
+                    // baseUrl points the provider at the mock server (no live Reddit).
+                    config: { subreddit: 'selfhosted', sort: 'new', limit: 1, baseUrl: `${moduleMock.baseUrl}/reddit` },
                   },
                 ],
               }
@@ -416,6 +418,33 @@ async function startModuleMockServer() {
         <pubDate>${new Date().toUTCString()}</pubDate></item>
         </channel></rss>`);
       return;
+    }
+
+    // Reddit: the provider requests /reddit/r/<sub>/<sort>/.rss (Atom/RSS feed).
+    if (path.startsWith('/reddit/r/') && path.endsWith('/.rss')) {
+      response.writeHead(200, { 'Content-Type': 'application/atom+xml' });
+      response.end(`<?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom"><title>r/selfhosted</title>
+        <entry><id>contract-reddit-1</id><title>Contract subreddit post</title>
+        <link href="${moduleMockUrl(request)}/reddit/post-1"/>
+        <updated>${new Date().toISOString()}</updated></entry>
+        </feed>`);
+      return;
+    }
+
+    // Hacker News (Firebase API shape): a story-id list, then per-item objects.
+    if (path === '/hn/v0/topstories.json') {
+      return sendJson(response, 200, [101, 102]);
+    }
+    if (path.startsWith('/hn/v0/item/')) {
+      const id = Number(path.replace('/hn/v0/item/', '').replace('.json', ''));
+      return sendJson(response, 200, {
+        id,
+        title: `Contract HN story ${id}`,
+        url: `${moduleMockUrl(request)}/hn/story-${id}`,
+        score: 100 + id,
+        descendants: id,
+      });
     }
 
     if (path.startsWith('/plex/')) {

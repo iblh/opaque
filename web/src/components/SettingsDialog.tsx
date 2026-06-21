@@ -23,6 +23,7 @@ import {
   type ThemePreference,
 } from '@/lib/theme';
 import { ShortcutsList } from '@/components/shortcuts';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 type SettingsTab = 'appearance' | 'preferences' | 'account' | 'shortcuts';
 
@@ -51,6 +52,7 @@ export default function SettingsDialog({
   onClose,
 }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>('appearance');
+  const panelRef = useFocusTrap<HTMLDivElement>(true);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -73,6 +75,7 @@ export default function SettingsDialog({
       className="fixed inset-0 z-[80] flex animate-fade-in items-center justify-center bg-ink-900/20 p-4"
     >
       <div
+        ref={panelRef}
         onClick={(event) => event.stopPropagation()}
         className="relative flex h-[26rem] w-full max-w-2xl overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-floating"
       >

@@ -68,6 +68,7 @@ export default function Header({
     // dashboard refetch.
     const [nameOverride, setNameOverride] = useState<string | null>(null);
     const avatarRef = useRef<HTMLDivElement>(null);
+    const avatarButtonRef = useRef<HTMLButtonElement>(null);
     const displayName = nameOverride || dashboard?.name || dashboard?.username || dashboard?.email || 'User';
     const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
     const avatarInitial = displayName.charAt(0).toUpperCase();
@@ -75,17 +76,30 @@ export default function Header({
     const searchProvider = getSearchProvider(searchProviderId);
 
     useEffect(() => {
+        if (!showAvatarDropdown) return;
+
         function handleClickOutside(event: MouseEvent) {
             if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
                 setShowAvatarDropdown(false);
             }
         }
 
-        if (showAvatarDropdown) {
-            document.addEventListener('mousedown', handleClickOutside);
+        // The dropdown is marked data-overlay, so the global shortcut layer
+        // stands down while it is open — it must own Escape itself.
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setShowAvatarDropdown(false);
+                avatarButtonRef.current?.focus();
+            }
         }
 
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, [showAvatarDropdown]);
 
     useEffect(() => {
@@ -218,6 +232,7 @@ export default function Header({
 
                         <div className="relative" ref={avatarRef}>
                             <button
+                                ref={avatarButtonRef}
                                 onClick={() => setShowAvatarDropdown((value) => !value)}
                                 className="opaque-toolbar-avatar"
                                 aria-label="User menu"

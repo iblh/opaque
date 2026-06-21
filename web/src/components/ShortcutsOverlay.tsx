@@ -3,10 +3,13 @@
 import { useEffect } from 'react';
 import { IconX } from '@tabler/icons-react';
 import { ShortcutsList } from '@/components/shortcuts';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 // A quiet, centered cheat-sheet (the '?' overlay). Follows Quiet
 // Instrumentality: serif title, hairline divider, mono keycaps, no decoration.
 export default function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
+  const panelRef = useFocusTrap<HTMLDivElement>(true);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -28,6 +31,7 @@ export default function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-[80] flex animate-fade-in items-center justify-center bg-ink-900/20 p-4"
     >
       <div
+        ref={panelRef}
         onClick={(event) => event.stopPropagation()}
         className="relative w-full max-w-sm rounded-sm border border-border-light bg-surface-elevated p-5 shadow-floating"
       >
