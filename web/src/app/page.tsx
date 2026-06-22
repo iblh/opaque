@@ -157,26 +157,25 @@ export default function HomePage() {
   }, [dashboard])
 
   // Structural-only forest used to paint the real layout while the verified
-  // dashboard is still loading. Initialized to a fixed default frame so server
-  // and client first render match (no hydration mismatch); the saved layout
-  // snapshot is then reconciled in a *layout* effect — it runs after commit but
-  // before the browser paints, so the corrected layout is what the user first
-  // sees (no visible default→snapshot reflow).
-  const [skeletonForest, setSkeletonForest] = useState<Tree[]>(() => buildSkeletonForest())
+  // dashboard is still loading. Keep this null through SSR and the first client
+  // render: otherwise the server can paint DEFAULT_ROWS before hydration has a
+  // chance to read localStorage, causing the visible default→snapshot jump.
+  const [skeletonForest, setSkeletonForest] = useState<Tree[] | null>(null)
 
   useIsomorphicLayoutEffect(() => {
     const rows = readSnapshotRows()
-    if (rows) setSkeletonForest(buildSkeletonForest(rows))
+    setSkeletonForest(rows ? buildSkeletonForest(rows) : buildSkeletonForest())
   }, [])
 
   // Until the real dashboard arrives, lay out the skeleton forest in the very
   // same DashboardLayoutEditor so there is no component swap (hence no jitter)
   // when content fills in.
   const showSkeleton = !visibleDashboard
+  const skeletonLayoutReady = !showSkeleton || skeletonForest !== null
   const layoutForest = useMemo(() => (
     visibleDashboard
       ? materializeImplicitLayout(visibleDashboard.forest, isEditing)
-      : skeletonForest
+      : skeletonForest ?? []
   ), [visibleDashboard, isEditing, skeletonForest])
 
   const startEditing = useCallback(() => {
@@ -389,22 +388,26 @@ export default function HomePage() {
               />
             ) : (
               <div className="mt-8 animate-fade-in-up">
-                <DashboardLayoutEditor
-                  forest={layoutForest}
-                  isEditing={isEditing}
-                  onForestChange={updateForest}
-                  renderSection={(tree) => (
-                    showSkeleton
-                      ? <SectionBodySkeleton root={tree.root} />
-                      : (
-                        <RootContent
-                          tree={tree}
-                          isEditing={isEditing}
-                          onTreeChange={updateTree}
-                        />
-                      )
-                  )}
-                />
+                {skeletonLayoutReady ? (
+                  <DashboardLayoutEditor
+                    forest={layoutForest}
+                    isEditing={isEditing}
+                    onForestChange={updateForest}
+                    renderSection={(tree) => (
+                      showSkeleton
+                        ? <SectionBodySkeleton root={tree.root} />
+                        : (
+                          <RootContent
+                            tree={tree}
+                            isEditing={isEditing}
+                            onTreeChange={updateTree}
+                          />
+                        )
+                    )}
+                  />
+                ) : (
+                  <div className="min-h-[18rem]" aria-hidden="true" />
+                )}
               </div>
             )}
           </div>
