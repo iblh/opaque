@@ -373,7 +373,7 @@ export default function HomePage() {
       <div className="relative flex-1 overflow-x-hidden bg-background">
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
-            <div className="mx-4 animate-fade-in md:mx-8">
+            <div className="mx-6 animate-fade-in sm:mx-8 lg:mx-12 xl:mx-16 2xl:mx-24">
               <p className="font-serif text-sm leading-none text-text-secondary">
                 {timeGreeting()}{displayName ? `, ${displayName}` : ''}
                 <span className="text-text-muted"> — {todayLabel()}</span>

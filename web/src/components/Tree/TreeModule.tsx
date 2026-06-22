@@ -80,22 +80,30 @@ interface TabDragProps {
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
 const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
-const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start gap-x-5 gap-y-6 md:gap-x-8';
+const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start';
+const moduleGridGapClass = 'gap-x-6 gap-y-8 md:gap-x-10 md:gap-y-10';
+const mediaModuleGridGapClass = 'gap-x-8 gap-y-10 md:gap-x-12 md:gap-y-12';
 
 function moduleGridClassName(root: string) {
   // Posts use a wider reading column; the width must match between view and
   // edit modes so entering edit mode doesn't reshape the section (WYSIWYG).
   if (root === 'posts') {
-    return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
+    return `${moduleGridBaseClass} ${moduleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,732px),732px))]`;
   }
 
   // Weather/calendar/markets are glanceable summaries; a narrower column keeps
   // them tidy. Each is its own single-module root now, so the grid holds one.
   if (isSingleModuleRoot(root)) {
-    return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
+    return `${moduleGridBaseClass} ${moduleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
   }
 
-  return `${moduleGridBaseClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
+  // Media cards need a little more room for libraries and recent covers, but
+  // still stay fixed-width so adding servers does not stretch every card.
+  if (root === 'media') {
+    return `${moduleGridBaseClass} ${mediaModuleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,390px),390px))]`;
+  }
+
+  return `${moduleGridBaseClass} ${moduleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
 }
 
 const TreeModule: React.FC<TreeModuleProps> = ({
@@ -1040,7 +1048,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          <div className="mb-4 flex items-baseline justify-between">
+          <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-border-light pb-3">
             <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
               <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
               {streamCount > 0 ? `${streamCount} playing` : data.status}
@@ -1051,7 +1059,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           </div>
 
           {nowPlaying.length > 0 && (
-            <div className="mb-4 space-y-2.5">
+            <div className="mb-5 space-y-3 border-b border-border-light pb-4">
               {nowPlaying.map((item) => (
                 <NowPlayingRow key={item.id} item={item} />
               ))}
@@ -1059,8 +1067,8 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
 
           {queue.length > 0 && (
-            <div className="mb-4">
-              <div className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+            <div className="mb-5 border-b border-border-light pb-4">
+              <div className="mb-2.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
                 <IconDownload className="h-3 w-3" />
                 Downloading
               </div>
@@ -1075,7 +1083,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           {data.libraries && data.libraries.length > 0 ? (
             <MediaLibraries libraries={data.libraries} />
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
               {data.stats.map((stat) => (
                 <div key={stat.label} className="flex items-baseline justify-between gap-2">
                   <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
@@ -1107,7 +1115,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
 
 // Compact library list: single-line rows (type as a trailing tag), capped with
 // a quiet "+N more" expander so a server with many libraries stays short.
-const LIBRARY_PREVIEW_COUNT = 6;
+const LIBRARY_PREVIEW_COUNT = 4;
 
 function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -1116,13 +1124,13 @@ function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between gap-2 text-[10px] uppercase tracking-wider text-text-tertiary">
+      <div className="mb-2.5 flex items-baseline justify-between gap-2 text-[10px] uppercase tracking-wider text-text-tertiary">
         <span>Libraries</span>
         <span className="font-mono">{libraries.length}</span>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {visible.map((library) => (
-          <div key={library.id} className="flex items-baseline justify-between gap-2">
+          <div key={library.id} className="flex items-baseline justify-between gap-2 py-0.5">
             <div className="flex min-w-0 items-baseline gap-1.5">
               <span className="truncate text-xs text-text-primary">{library.name}</span>
               {library.type && (
@@ -1141,7 +1149,7 @@ function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="mt-1.5 font-mono text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+          className="mt-2 font-mono text-[10px] text-text-muted transition-colors hover:text-text-secondary"
         >
           {expanded ? 'Show less' : `+${hidden} more`}
         </button>
@@ -1151,8 +1159,8 @@ function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
 }
 
 // Recently added: a collapsible block (state persisted per module) showing a
-// 4-up window of covers with ‹ › paging when there are more than fit.
-const RECENT_WINDOW = 4;
+// 3-up window of covers with ‹ › paging when there are more than fit.
+const RECENT_WINDOW = 3;
 
 function MediaRecentlyAdded({
   moduleId,
@@ -1181,8 +1189,8 @@ function MediaRecentlyAdded({
   };
 
   return (
-    <div className="mt-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <div className="mt-5 border-t border-border-light pt-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
@@ -1225,7 +1233,7 @@ function MediaRecentlyAdded({
         </div>
       </div>
       {!collapsed && (
-        <div className="grid grid-cols-4 items-start gap-2">
+        <div className="grid grid-cols-3 items-start gap-3">
           {window.map((item) => (
             <MediaRecentCell key={item.id} item={item} onZoom={onZoom} />
           ))}
@@ -1244,7 +1252,7 @@ function MediaRecentCell({
 }) {
   const body = (
     <>
-      <div className="relative aspect-[2/3] overflow-hidden border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -1267,7 +1275,7 @@ function MediaRecentCell({
         )}
       </div>
       <div
-        className="mt-1 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
+        className="mt-1.5 line-clamp-2 text-[10px] font-medium leading-tight text-text-primary"
         title={item.title}
       >
         {item.title}
@@ -1749,11 +1757,11 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   if (kind === 'media') {
     return (
       <div className="animate-pulse" aria-hidden>
-        <div className="mb-4 flex items-baseline justify-between">
+        <div className="mb-5 flex items-baseline justify-between border-b border-border-light pb-3">
           <div className={`h-2 w-12 ${skeletonBar}`} />
           <div className={`h-2 w-16 ${skeletonBarSoft}`} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
           {[0, 1].map((index) => (
             <div key={index}>
               <div className={`h-2 w-14 ${skeletonBarSoft}`} />
@@ -1761,10 +1769,10 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
             </div>
           ))}
         </div>
-        <div className="mt-4 border-t border-border-light pt-3">
+        <div className="mt-5 border-t border-border-light pt-4">
           <div className={`h-2 w-24 ${skeletonBarSoft}`} />
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((index) => (
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {[0, 1, 2].map((index) => (
               <div key={index}>
                 <div className={`aspect-[2/3] ${skeletonBar}`} />
                 <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />

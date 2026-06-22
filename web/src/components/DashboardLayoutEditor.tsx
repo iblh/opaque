@@ -477,7 +477,7 @@ export default function DashboardLayoutEditor({
     <div
       ref={containerRef}
       data-layout-editor
-      className="mx-4 flex flex-col gap-8 md:mx-8 md:gap-10"
+      className="mx-6 flex flex-col gap-10 sm:mx-8 md:gap-12 lg:mx-12 xl:mx-16 xl:gap-14 2xl:mx-24"
     >
       {rows.map((row) => (
         <LayoutRow
@@ -568,7 +568,7 @@ function LayoutRow({
     <div
       data-layout-row
       data-row-id={row.rowId}
-      className="relative [--row-gap:1rem] md:[--row-gap:1.25rem]"
+      className="relative [--row-gap:1.25rem] md:[--row-gap:1.5rem] xl:[--row-gap:2rem]"
     >
       {newRowEdge && <NewRowIndicator edge={newRowEdge} />}
       <div
@@ -635,7 +635,7 @@ interface SectionHeaderProps {
 function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: SectionHeaderProps) {
   const label = getRootLabel(tree.root);
   return (
-    <div className={`mb-5 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
+    <div className={`mb-6 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
       {isEditing && (
         <button
           type="button"
