@@ -162,16 +162,21 @@ export function SectionBodySkeleton({ root }: { root: string }) {
   if (root === 'media') {
     return (
       <div className="w-full max-w-[430px] animate-pulse">
-        <div className="mb-5 flex items-baseline justify-between border-b border-border-light pb-3">
+        <div className="mb-4 flex items-baseline justify-between border-b border-border-light pb-3">
           <div className={`h-2 w-12 ${bar}`} />
           <div className={`h-2 w-16 ${barSoft}`} />
         </div>
-        <div className="border-y border-border-light">
+        <div className="mb-4 grid grid-cols-4 gap-1.5">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light py-2 last:border-b-0">
-              <div className={`h-2.5 ${barSoft}`} style={{ width: `${68 - index * 8}%` }} />
-              <div className={`h-2.5 w-8 ${bar}`} />
+            <div key={index} className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
+              <div className={`h-2 w-10 ${barSoft}`} />
+              <div className={`mt-1.5 h-2.5 w-8 ${bar}`} />
             </div>
+          ))}
+        </div>
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {[0, 1, 2, 3, 4].map((index) => (
+            <div key={index} className={`h-5 rounded-sm border border-border-light bg-surface-sunken/45 ${index % 2 === 0 ? 'w-20' : 'w-24'}`} />
           ))}
         </div>
         <div className="mt-5 border-t border-border-light pt-4">
@@ -201,13 +206,18 @@ export function SectionBodySkeleton({ root }: { root: string }) {
 
   if (root === 'servers') {
     return (
-      <div className="w-[360px] max-w-full animate-pulse">
-        <div className="grid grid-cols-2 gap-3">
+      <div className="w-[390px] max-w-full animate-pulse">
+        <div className="grid grid-cols-2 gap-2">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index}>
+            <div key={index} className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
               <div className={`h-2 w-12 ${barSoft}`} />
-              <div className={`mt-1.5 h-1.5 w-full ${barSoft}`} />
+              <div className={`mt-2 h-1 w-full ${barSoft}`} />
             </div>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {[0, 1, 2, 3, 4].map((index) => (
+            <div key={index} className={`h-5 rounded-sm border border-border-light bg-surface-elevated/60 ${index % 2 === 0 ? 'w-24' : 'w-16'}`} />
           ))}
         </div>
       </div>

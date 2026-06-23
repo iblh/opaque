@@ -1105,7 +1105,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   const streamCount = data
     ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
     : 0;
-  const summary = data ? mediaSummary(data) : null;
+  const overview = data ? mediaOverview(data, streamCount, queue.length) : null;
   const [zoomedRecent, setZoomedRecent] = useState<MediaRecentItem | null>(null);
 
   useEffect(() => {
@@ -1123,7 +1123,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          <div className="mb-5 flex items-baseline justify-between gap-3 border-b border-border-light pb-3">
+          <div className="mb-4 flex items-baseline justify-between gap-3 border-b border-border-light pb-3">
             <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
               <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
               {streamCount > 0 ? `${streamCount} playing` : data.status}
@@ -1155,11 +1155,14 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
             </div>
           )}
 
-          {summary && (
-            <MediaSummaryRows
-              title={summary.title}
-              caption={summary.caption}
-              rows={summary.rows}
+          {overview && overview.insights.length > 0 && (
+            <MediaInsightBadges items={overview.insights} />
+          )}
+
+          {overview && overview.libraries.length > 0 && (
+            <MediaLibraryChips
+              libraries={overview.libraries}
+              totalItems={overview.totalItems}
             />
           )}
           {data.recent && data.recent.length > 0 && (
@@ -1179,94 +1182,187 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
-interface MediaSummaryRow {
+interface MediaInsight {
   id: string;
   label: string;
   value: string;
-  detail?: string;
+  tone?: 'neutral' | 'accent' | 'warning';
 }
 
-const MEDIA_SUMMARY_PREVIEW_COUNT = 5;
+interface MediaLibraryChip {
+  id: string;
+  name: string;
+  count: number;
+  type?: string;
+}
 
-function mediaSummary(data: MediaModuleData): { title: string; caption?: string; rows: MediaSummaryRow[] } | null {
+const MEDIA_LIBRARY_PREVIEW_COUNT = 6;
+
+function mediaOverview(
+  data: MediaModuleData,
+  streamCount: number,
+  queueCount: number,
+): { insights: MediaInsight[]; libraries: MediaLibraryChip[]; totalItems: number } {
   const libraries = data.libraries ?? [];
+  const totalItems = libraries.reduce((sum, library) => sum + Math.max(0, library.count || 0), 0);
+  const insights: MediaInsight[] = [];
 
   if (libraries.length > 0) {
-    const totalItems = libraries.reduce((sum, library) => sum + Math.max(0, library.count || 0), 0);
-    return {
-      title: 'Libraries',
-      caption: totalItems > 0 ? `${formatCompactNumber(totalItems)} items` : `${libraries.length} libraries`,
-      rows: libraries.map((library) => ({
-        id: library.id,
-        label: library.name,
-        detail: library.type ? formatMediaLibraryType(library.type) : undefined,
-        value: formatCompactNumber(library.count),
-      })),
-    };
+    insights.push({
+      id: 'libraries',
+      label: 'Libraries',
+      value: formatCompactNumber(libraries.length),
+    });
   }
 
-  const rows = data.stats
-    .filter((stat) => stat.label.toLowerCase() !== 'streams')
-    .map((stat) => ({
-      id: stat.label,
-      label: stat.label,
-      value: formatCompactStatValue(stat.value),
-    }));
+  if (totalItems > 0) {
+    insights.push({
+      id: 'items',
+      label: 'Items',
+      value: formatCompactNumber(totalItems),
+    });
+  }
 
-  if (rows.length === 0) return null;
+  if (streamCount > 0) {
+    insights.push({
+      id: 'streams',
+      label: 'Streams',
+      value: formatCompactNumber(streamCount),
+      tone: 'accent',
+    });
+  }
+
+  data.stats
+    .filter((stat) => stat.label.toLowerCase() !== 'streams')
+    .forEach((stat) => {
+      const count = toCount(stat.value);
+      insights.push({
+        id: stat.label,
+        label: stat.label,
+        value: formatCompactStatValue(stat.value),
+        tone: ['missing', 'queue'].includes(stat.label.toLowerCase()) && count > 0
+          ? 'warning'
+          : 'neutral',
+      });
+    });
+
+  if (queueCount > 0 && !insights.some((item) => item.id.toLowerCase() === 'queue')) {
+    insights.push({
+      id: 'queue',
+      label: 'Queue',
+      value: formatCompactNumber(queueCount),
+      tone: 'warning',
+    });
+  }
+
+  if (data.lastAddedAt) {
+    insights.push({
+      id: 'last-added',
+      label: 'Added',
+      value: formatRelativeTime(data.lastAddedAt),
+    });
+  }
 
   return {
-    title: 'Status',
-    caption: data.service,
-    rows,
+    insights: dedupeMediaInsights(insights).slice(0, 4),
+    libraries: libraries.map((library) => ({
+      id: library.id,
+      name: library.name,
+      count: library.count,
+      type: library.type,
+    })),
+    totalItems,
   };
 }
 
-function MediaSummaryRows({
-  title,
-  caption,
-  rows,
+function dedupeMediaInsights(insights: MediaInsight[]) {
+  const seen = new Set<string>();
+  return insights.filter((insight) => {
+    const key = insight.id.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function MediaInsightBadges({ items }: { items: MediaInsight[] }) {
+  return (
+    <div className="mb-4 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className={`rounded-sm border px-2 py-1.5 ${
+            item.tone === 'accent'
+              ? 'border-accent-green/25 bg-accent-green/10'
+              : item.tone === 'warning'
+                ? 'border-accent-amber/25 bg-accent-amber/10'
+                : 'border-border-light bg-surface-sunken/35'
+          }`}
+        >
+          <div className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
+            {item.label}
+          </div>
+          <div className="mt-0.5 truncate font-mono text-[11px] font-medium text-text-primary">
+            {item.value || '-'}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MediaLibraryChips({
+  libraries,
+  totalItems,
 }: {
-  title: string;
-  caption?: string;
-  rows: MediaSummaryRow[];
+  libraries: MediaLibraryChip[];
+  totalItems: number;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? rows : rows.slice(0, MEDIA_SUMMARY_PREVIEW_COUNT);
-  const hidden = rows.length - visible.length;
+  const sorted = [...libraries].sort((a, b) => b.count - a.count);
+  const visible = expanded ? sorted : sorted.slice(0, MEDIA_LIBRARY_PREVIEW_COUNT);
+  const hidden = sorted.length - visible.length;
 
   return (
-    <div>
-      <div className="mb-2.5 flex items-baseline justify-between gap-2 text-[10px] uppercase tracking-wider text-text-tertiary">
-        <span>{title}</span>
-        {caption && <span className="font-mono normal-case tracking-normal">{caption}</span>}
+    <div className="mb-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+          Libraries
+        </div>
+        <div className="font-mono text-[10px] text-text-muted">
+          {totalItems > 0 ? `${formatCompactNumber(totalItems)} items` : `${libraries.length} total`}
+        </div>
       </div>
-      <div className="divide-y divide-border-light border-y border-border-light">
-        {visible.map((row) => (
-          <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2">
-            <div className="flex min-w-0 items-baseline gap-2">
-              <span className="truncate text-xs text-text-primary">{row.label}</span>
-              {row.detail && (
-                <span className="flex-shrink-0 font-mono text-[9px] uppercase tracking-wider text-text-muted">
-                  {row.detail}
-                </span>
-              )}
-            </div>
-            <span className="flex-shrink-0 font-mono text-xs font-medium text-text-secondary">
-              {row.value}
-            </span>
-          </div>
+      <div className="flex flex-wrap gap-1.5">
+        {visible.map((library) => (
+          <span
+            key={library.id}
+            className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 text-[11px] text-text-secondary"
+            title={[
+              library.name,
+              library.type ? formatMediaLibraryType(library.type) : '',
+              `${formatCompactNumber(library.count)} items`,
+            ].filter(Boolean).join(' · ')}
+          >
+            <span className="min-w-0 max-w-[9rem] truncate text-text-primary">{library.name}</span>
+            <span className="font-mono text-[10px] text-text-muted">{formatCompactNumber(library.count)}</span>
+            {library.type && (
+              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-text-muted sm:inline">
+                {formatMediaLibraryType(library.type)}
+              </span>
+            )}
+          </span>
         ))}
+        {(hidden > 0 || expanded) && (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="inline-flex items-center rounded-sm border border-border-light px-2 py-1 font-mono text-[10px] text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-secondary"
+          >
+            {expanded ? 'Show less' : `+${hidden} more`}
+          </button>
+        )}
       </div>
-      {(hidden > 0 || expanded) && (
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="mt-2 font-mono text-[10px] text-text-muted transition-colors hover:text-text-secondary"
-        >
-          {expanded ? 'Show less' : `+${hidden} more`}
-        </button>
-      )}
     </div>
   );
 }
@@ -1928,16 +2024,21 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   if (kind === 'media') {
     return (
       <div className="animate-pulse" aria-hidden>
-        <div className="mb-5 flex items-baseline justify-between border-b border-border-light pb-3">
+        <div className="mb-4 flex items-baseline justify-between border-b border-border-light pb-3">
           <div className={`h-2 w-12 ${skeletonBar}`} />
           <div className={`h-2 w-16 ${skeletonBarSoft}`} />
         </div>
-        <div className="border-y border-border-light">
+        <div className="mb-4 grid grid-cols-4 gap-1.5">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light py-2 last:border-b-0">
-              <div className={`h-2.5 ${skeletonBarSoft}`} style={{ width: `${68 - index * 8}%` }} />
-              <div className={`h-2.5 w-8 ${skeletonBar}`} />
+            <div key={index} className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
+              <div className={`h-2 w-10 ${skeletonBarSoft}`} />
+              <div className={`mt-1.5 h-2.5 w-8 ${skeletonBar}`} />
             </div>
+          ))}
+        </div>
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {[0, 1, 2, 3, 4].map((index) => (
+            <div key={index} className={`h-5 rounded-sm border border-border-light bg-surface-sunken/45 ${index % 2 === 0 ? 'w-20' : 'w-24'}`} />
           ))}
         </div>
         <div className="mt-5 border-t border-border-light pt-4">

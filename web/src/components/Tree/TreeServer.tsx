@@ -268,7 +268,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
           <div
             key={server.id}
             data-drag-preview
-            className={`relative w-[360px] max-w-full flex-none rounded-sm p-4 transition-all ${
+            className={`relative w-[390px] max-w-full flex-none rounded-sm p-3.5 transition-all ${
               isServerEditing
                 ? 'bg-surface-sunken/60'
                 : 'hover:bg-surface-sunken/50'
@@ -389,10 +389,10 @@ const TreeServer: React.FC<TreeServerProps> = ({
               </div>
             ) : (
               <>
-                <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="mb-3.5 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     {renderDragHandle(server)}
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-secondary">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-secondary">
                       <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -405,12 +405,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`h-2 w-2 rounded-full ${stats.status === 'online' && !isStale ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <span className="text-xs text-text-tertiary">
-                        {stats.status === 'online' && !isStale ? 'online' : 'stale'}
-                      </span>
-                    </div>
+                    <ServerStatusBadge online={stats.status === 'online' && !isStale} />
                     {isEditing && (
                       <button
                         type="button"
@@ -425,30 +420,14 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <MetricBar label="CPU" valueLabel={`${stats.cpu.toFixed(1)}%`} percent={stats.cpu} />
-                  <MetricBar label="Memory" valueLabel={`${memoryPercent}%`} percent={memoryPercent} />
-                  <MetricBar label="Storage" valueLabel={`${diskPercent}%`} percent={diskPercent} />
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs uppercase tracking-wider text-text-tertiary">Cores</div>
-                      <div className="font-mono text-xs font-medium text-text-primary">
-                        {stats.cores || '-'}
-                      </div>
-                    </div>
-                    <div className="font-mono text-[11px] text-text-tertiary">
-                      load {stats.load?.slice(0, 3).join(' / ') || '-'}
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <ServerUsageCard label="CPU" valueLabel={`${stats.cpu.toFixed(1)}%`} percent={stats.cpu} />
+                  <ServerUsageCard label="Memory" valueLabel={`${memoryPercent}%`} percent={memoryPercent} />
+                  <ServerUsageCard label="Storage" valueLabel={`${diskPercent}%`} percent={diskPercent} />
+                  <ServerLoadCard stats={stats} />
                 </div>
 
-                <div className="opaque-meta-table mt-4">
-                  <MetaRow label="Memory" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} />
-                  <MetaRow label="Storage" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} />
-                  <MetaRow label="Network in" value={formatBandwidth(stats.network.in)} />
-                  <MetaRow label="Network out" value={formatBandwidth(stats.network.out)} />
-                  <MetaRow label="Uptime" value={stats.uptime || '-'} />
-                </div>
+                <ServerFactChips stats={stats} />
 
                 {!isEditing && (
                   <ServerTrendPanel
@@ -466,7 +445,22 @@ const TreeServer: React.FC<TreeServerProps> = ({
   );
 };
 
-function MetricBar({
+function ServerStatusBadge({ online }: { online: boolean }) {
+  return (
+    <div
+      className={`inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 font-mono text-[10px] uppercase tracking-wider ${
+        online
+          ? 'border-accent-green/25 bg-accent-green/10 text-accent-green-dark'
+          : 'border-border-light bg-surface-sunken/45 text-text-muted'
+      }`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-accent-green' : 'bg-ink-300'}`} />
+      {online ? 'online' : 'stale'}
+    </div>
+  );
+}
+
+function ServerUsageCard({
   label,
   valueLabel,
   percent: rawPercent,
@@ -478,12 +472,12 @@ function MetricBar({
   const normalized = Math.max(0, Math.min(100, rawPercent));
 
   return (
-    <div className="space-y-1.5">
+    <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wider text-text-tertiary">{label}</div>
-        <div className="font-mono text-xs font-medium text-text-primary">{valueLabel}</div>
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{label}</div>
+        <div className="font-mono text-[11px] font-medium text-text-primary">{valueLabel}</div>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border-light">
         <div
           className={`h-full rounded-full transition-all ${normalized < 70 ? 'bg-accent-green' : normalized < 90 ? 'bg-accent-amber' : 'bg-accent-red'}`}
           style={{ width: `${normalized}%` }}
@@ -493,11 +487,65 @@ function MetricBar({
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
+function ServerLoadCard({ stats }: { stats: ServerStats }) {
   return (
-    <div className="opaque-meta-row">
-      <div className="opaque-meta-label">{label}</div>
-      <div className="opaque-meta-value">{value}</div>
+    <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Load</div>
+        <div className="font-mono text-[11px] font-medium text-text-primary">
+          {stats.cores || '-'} cores
+        </div>
+      </div>
+      <div className="mt-1.5 truncate font-mono text-[10px] text-text-tertiary">
+        {stats.load?.slice(0, 3).map(formatLoadValue).join(' / ') || '-'}
+      </div>
+    </div>
+  );
+}
+
+function ServerFactChips({ stats }: { stats: ServerStats }) {
+  const facts = [
+    {
+      label: 'Mem',
+      value: `${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`,
+    },
+    {
+      label: 'Disk',
+      value: `${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`,
+    },
+    {
+      label: 'In',
+      value: formatBandwidth(stats.network.in),
+    },
+    {
+      label: 'Out',
+      value: formatBandwidth(stats.network.out),
+    },
+    {
+      label: 'Up',
+      value: stats.uptime || '-',
+    },
+    ...(stats.temperature > 0 ? [{
+      label: 'Temp',
+      value: `${Math.round(stats.temperature)}C`,
+    }] : []),
+  ];
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      {facts.map((fact) => (
+        <span
+          key={fact.label}
+          className="inline-flex min-w-0 items-center gap-1.5 rounded-sm border border-border-light bg-surface-elevated/60 px-2 py-1 text-[11px]"
+        >
+          <span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
+            {fact.label}
+          </span>
+          <span className="max-w-[8.5rem] truncate font-mono text-[10px] text-text-secondary">
+            {fact.value}
+          </span>
+        </span>
+      ))}
     </div>
   );
 }
@@ -521,7 +569,7 @@ function ServerTrendPanel({
     : 'waiting';
 
   return (
-    <div className="mt-4 border-t border-border-light pt-3">
+    <div className="mt-4 rounded-sm border border-border-light bg-surface-sunken/25 p-2.5">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
           24h telemetry
@@ -557,7 +605,7 @@ function TrendMini({
   values: number[];
 }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 rounded-sm bg-surface-elevated/60 p-1.5">
       <div className="mb-1 flex items-center justify-between gap-1">
         <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
           {label}
@@ -575,7 +623,7 @@ function TrendSparkline({ values }: { values: number[] }) {
   const points = sparklinePoints(values);
 
   if (!points) {
-    return <div className="h-7 border-t border-border-light" />;
+    return <div className="h-7 rounded-sm bg-surface-sunken/45" />;
   }
 
   return (
@@ -629,6 +677,10 @@ function isStatsStale(stats: ServerStats) {
 function percent(used: number, total: number) {
   if (!total) return 0;
   return Math.max(0, Math.min(100, Math.round((used / total) * 100)));
+}
+
+function formatLoadValue(value: number) {
+  return Number.isFinite(value) ? value.toFixed(2) : '-';
 }
 
 function formatBytes(bytes: number, decimals = 1): string {
