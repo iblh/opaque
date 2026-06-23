@@ -28,7 +28,6 @@ import {
 } from '@tabler/icons-react';
 import type {
   MarketsModuleData,
-  MediaLibraryStat,
   MediaModuleData,
   MediaNowPlayingItem,
   MediaQueueItem,
@@ -97,10 +96,11 @@ function moduleGridClassName(root: string) {
     return `${moduleGridBaseClass} ${moduleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,320px),320px))]`;
   }
 
-  // Media cards need a little more room for libraries and recent covers, but
-  // still stay fixed-width so adding servers does not stretch every card.
+  // Media cards need enough room for a useful library/status summary plus
+  // recent artwork, but still stay fixed-width so adding servers does not
+  // stretch every card.
   if (root === 'media') {
-    return `${moduleGridBaseClass} ${mediaModuleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,390px),390px))]`;
+    return `${moduleGridBaseClass} ${mediaModuleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,430px),430px))]`;
   }
 
   return `${moduleGridBaseClass} ${moduleGridGapClass} grid-cols-[repeat(auto-fill,minmax(min(100%,360px),360px))]`;
@@ -1105,6 +1105,7 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   const streamCount = data
     ? Math.max(nowPlaying.length, toCount(mediaStatValue(data, 'Streams')))
     : 0;
+  const summary = data ? mediaSummary(data) : null;
   const [zoomedRecent, setZoomedRecent] = useState<MediaRecentItem | null>(null);
 
   useEffect(() => {
@@ -1154,21 +1155,12 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
             </div>
           )}
 
-          {data.libraries && data.libraries.length > 0 ? (
-            <MediaLibraries libraries={data.libraries} />
-          ) : (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-              {data.stats.map((stat) => (
-                <div key={stat.label} className="flex items-baseline justify-between gap-2">
-                  <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
-                    {stat.label}
-                  </div>
-                  <div className="flex-shrink-0 font-mono text-xs font-medium text-text-primary">
-                    {formatCompactStatValue(stat.value)}
-                  </div>
-                </div>
-              ))}
-            </div>
+          {summary && (
+            <MediaSummaryRows
+              title={summary.title}
+              caption={summary.caption}
+              rows={summary.rows}
+            />
           )}
           {data.recent && data.recent.length > 0 && (
             <MediaRecentlyAdded
@@ -1187,34 +1179,81 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
   );
 }
 
-// Compact library list: single-line rows (type as a trailing tag), capped with
-// a quiet "+N more" expander so a server with many libraries stays short.
-const LIBRARY_PREVIEW_COUNT = 4;
+interface MediaSummaryRow {
+  id: string;
+  label: string;
+  value: string;
+  detail?: string;
+}
 
-function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
+const MEDIA_SUMMARY_PREVIEW_COUNT = 5;
+
+function mediaSummary(data: MediaModuleData): { title: string; caption?: string; rows: MediaSummaryRow[] } | null {
+  const libraries = data.libraries ?? [];
+
+  if (libraries.length > 0) {
+    const totalItems = libraries.reduce((sum, library) => sum + Math.max(0, library.count || 0), 0);
+    return {
+      title: 'Libraries',
+      caption: totalItems > 0 ? `${formatCompactNumber(totalItems)} items` : `${libraries.length} libraries`,
+      rows: libraries.map((library) => ({
+        id: library.id,
+        label: library.name,
+        detail: library.type ? formatMediaLibraryType(library.type) : undefined,
+        value: formatCompactNumber(library.count),
+      })),
+    };
+  }
+
+  const rows = data.stats
+    .filter((stat) => stat.label.toLowerCase() !== 'streams')
+    .map((stat) => ({
+      id: stat.label,
+      label: stat.label,
+      value: formatCompactStatValue(stat.value),
+    }));
+
+  if (rows.length === 0) return null;
+
+  return {
+    title: 'Status',
+    caption: data.service,
+    rows,
+  };
+}
+
+function MediaSummaryRows({
+  title,
+  caption,
+  rows,
+}: {
+  title: string;
+  caption?: string;
+  rows: MediaSummaryRow[];
+}) {
   const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? libraries : libraries.slice(0, LIBRARY_PREVIEW_COUNT);
-  const hidden = libraries.length - visible.length;
+  const visible = expanded ? rows : rows.slice(0, MEDIA_SUMMARY_PREVIEW_COUNT);
+  const hidden = rows.length - visible.length;
 
   return (
     <div>
       <div className="mb-2.5 flex items-baseline justify-between gap-2 text-[10px] uppercase tracking-wider text-text-tertiary">
-        <span>Libraries</span>
-        <span className="font-mono">{libraries.length}</span>
+        <span>{title}</span>
+        {caption && <span className="font-mono normal-case tracking-normal">{caption}</span>}
       </div>
-      <div className="space-y-1.5">
-        {visible.map((library) => (
-          <div key={library.id} className="flex items-baseline justify-between gap-2 py-0.5">
-            <div className="flex min-w-0 items-baseline gap-1.5">
-              <span className="truncate text-xs text-text-primary">{library.name}</span>
-              {library.type && (
+      <div className="divide-y divide-border-light border-y border-border-light">
+        {visible.map((row) => (
+          <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate text-xs text-text-primary">{row.label}</span>
+              {row.detail && (
                 <span className="flex-shrink-0 font-mono text-[9px] uppercase tracking-wider text-text-muted">
-                  {library.type}
+                  {row.detail}
                 </span>
               )}
             </div>
-            <span className="flex-shrink-0 font-mono text-[11px] text-text-secondary">
-              {formatCompactNumber(library.count)}
+            <span className="flex-shrink-0 font-mono text-xs font-medium text-text-secondary">
+              {row.value}
             </span>
           </div>
         ))}
@@ -1232,9 +1271,15 @@ function MediaLibraries({ libraries }: { libraries: MediaLibraryStat[] }) {
   );
 }
 
+function formatMediaLibraryType(type: string) {
+  return type
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 // Recently added: a collapsible block (state persisted per module) showing a
-// 3-up window of covers with ‹ › paging when there are more than fit.
-const RECENT_WINDOW = 3;
+// 4-up window of covers with ‹ › paging when there are more than fit.
+const RECENT_WINDOW = 4;
 
 function MediaRecentlyAdded({
   moduleId,
@@ -1307,7 +1352,7 @@ function MediaRecentlyAdded({
         </div>
       </div>
       {!collapsed && (
-        <div className="grid grid-cols-3 items-start gap-3">
+        <div className="grid grid-cols-4 items-start gap-2.5">
           {window.map((item) => (
             <MediaRecentCell key={item.id} item={item} onZoom={onZoom} />
           ))}
@@ -1331,8 +1376,8 @@ function MediaRecentCell({
           <Image
             src={item.imageUrl}
             alt={`${item.title} cover`}
-            width={72}
-            height={108}
+            width={96}
+            height={144}
             loading="lazy"
             unoptimized
             className="h-full w-full object-cover"
@@ -1715,7 +1760,7 @@ function PostsContent({
 }) {
   const { isRead, markRead } = useReadPosts();
   const listRef = useRef<HTMLDivElement>(null);
-  const [hoverIndicator, setHoverIndicator] = useState<{ top: number; height: number } | null>(null);
+  const [hoverIndicator, setHoverIndicator] = useState<{ top: number; height: number; visible: boolean } | null>(null);
 
   const moveHoverIndicator = (element: HTMLElement) => {
     const list = listRef.current;
@@ -1726,6 +1771,26 @@ function PostsContent({
     setHoverIndicator({
       top: itemRect.top - listRect.top + 4,
       height: Math.max(8, itemRect.height - 8),
+      visible: true,
+    });
+  };
+
+  const hideHoverIndicator = (clientY?: number) => {
+    const list = listRef.current;
+    setHoverIndicator((current) => {
+      if (!current) return null;
+      if (!list || typeof clientY !== 'number') {
+        return { ...current, visible: false };
+      }
+
+      const rect = list.getBoundingClientRect();
+      if (clientY >= rect.bottom) {
+        return { ...current, top: rect.height + 4, visible: false };
+      }
+      if (clientY <= rect.top) {
+        return { ...current, top: -current.height - 4, visible: false };
+      }
+      return { ...current, visible: false };
     });
   };
 
@@ -1736,10 +1801,10 @@ function PostsContent({
     <div
       ref={listRef}
       className="-mx-2 relative space-y-0.5"
-      onPointerLeave={() => setHoverIndicator(null)}
+      onPointerLeave={(event) => hideHoverIndicator(event.clientY)}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          setHoverIndicator(null);
+          hideHoverIndicator();
         }
       }}
     >
@@ -1747,7 +1812,7 @@ function PostsContent({
         aria-hidden
         data-post-hover-indicator
         className={`pointer-events-none absolute left-0 z-10 w-px origin-top bg-accent-green transition-[height,opacity,transform] duration-200 ease-out ${
-          hoverIndicator ? 'opacity-100' : 'opacity-0'
+          hoverIndicator?.visible ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
           height: hoverIndicator?.height ?? 8,
@@ -1867,18 +1932,18 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
           <div className={`h-2 w-12 ${skeletonBar}`} />
           <div className={`h-2 w-16 ${skeletonBarSoft}`} />
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-          {[0, 1].map((index) => (
-            <div key={index}>
-              <div className={`h-2 w-14 ${skeletonBarSoft}`} />
-              <div className={`mt-1.5 h-3.5 w-10 ${skeletonBar}`} />
+        <div className="border-y border-border-light">
+          {[0, 1, 2, 3].map((index) => (
+            <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light py-2 last:border-b-0">
+              <div className={`h-2.5 ${skeletonBarSoft}`} style={{ width: `${68 - index * 8}%` }} />
+              <div className={`h-2.5 w-8 ${skeletonBar}`} />
             </div>
           ))}
         </div>
         <div className="mt-5 border-t border-border-light pt-4">
           <div className={`h-2 w-24 ${skeletonBarSoft}`} />
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            {[0, 1, 2].map((index) => (
+          <div className="mt-3 grid grid-cols-4 gap-2.5">
+            {[0, 1, 2, 3].map((index) => (
               <div key={index}>
                 <div className={`aspect-[2/3] ${skeletonBar}`} />
                 <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />

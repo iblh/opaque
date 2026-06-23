@@ -161,23 +161,23 @@ export function SectionBodySkeleton({ root }: { root: string }) {
 
   if (root === 'media') {
     return (
-      <div className="w-full max-w-[390px] animate-pulse">
+      <div className="w-full max-w-[430px] animate-pulse">
         <div className="mb-5 flex items-baseline justify-between border-b border-border-light pb-3">
           <div className={`h-2 w-12 ${bar}`} />
           <div className={`h-2 w-16 ${barSoft}`} />
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+        <div className="border-y border-border-light">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="flex items-baseline justify-between gap-2">
-              <div className={`h-2.5 w-16 ${barSoft}`} />
+            <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-light py-2 last:border-b-0">
+              <div className={`h-2.5 ${barSoft}`} style={{ width: `${68 - index * 8}%` }} />
               <div className={`h-2.5 w-8 ${bar}`} />
             </div>
           ))}
         </div>
         <div className="mt-5 border-t border-border-light pt-4">
           <div className={`h-2 w-24 ${barSoft}`} />
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            {[0, 1, 2].map((index) => (
+          <div className="mt-3 grid grid-cols-4 gap-2.5">
+            {[0, 1, 2, 3].map((index) => (
               <div key={index} className={`aspect-[2/3] ${bar}`} />
             ))}
           </div>
