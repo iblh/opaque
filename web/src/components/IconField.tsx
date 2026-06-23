@@ -317,13 +317,28 @@ function dedupeIcons(icons: IconPreset[]) {
   const result: IconPreset[] = [];
 
   icons.forEach((icon) => {
-    const key = icon.svg;
-    if (seen.has(key)) return;
-    seen.add(key);
+    const keys = iconDedupeKeys(icon);
+    if (keys.some((key) => seen.has(key))) return;
+    keys.forEach((key) => seen.add(key));
     result.push(icon);
   });
 
   return result;
+}
+
+function iconDedupeKeys(icon: IconPreset) {
+  const keys = new Set<string>();
+  const normalizedId = icon.id.trim().toLowerCase().replace(/^simple-/, '');
+  if (normalizedId) keys.add(`id:${normalizedId}`);
+
+  const pathMatch = icon.svg.match(/\sd=(["'])(.*?)\1/i);
+  const path = pathMatch?.[2]?.replace(/\s+/g, ' ').trim();
+  if (path) keys.add(`path:${path}`);
+
+  const normalizedSvg = icon.svg.replace(/\s+/g, ' ').trim();
+  if (normalizedSvg) keys.add(`svg:${normalizedSvg}`);
+
+  return Array.from(keys);
 }
 
 function isIconPreset(value: unknown): value is IconPreset {

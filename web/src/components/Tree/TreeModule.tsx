@@ -490,6 +490,54 @@ function ModuleEditCard({
   onDragOver,
   onDrop,
 }: ModuleEditCardProps) {
+  const singleRootType = !embedded && isSingleModuleRoot(module.moduleType)
+    ? module.moduleType
+    : null;
+
+  if (singleRootType) {
+    return (
+      <div
+        data-drag-preview
+        className={`relative rounded-sm border border-border-light bg-surface-elevated/70 p-3 transition-all hover:border-border-medium hover:bg-surface-elevated ${
+          activeDragId === module.id ? 'scale-[0.98] opacity-45' : ''
+        }`}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3 border-b border-border-light pb-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-text-secondary">
+              <ModuleIcon moduleType={singleRootType} className="h-3.5 w-3.5" />
+              <span>{singleRootEditTitle(singleRootType)}</span>
+            </div>
+            <div className="mt-1 text-[10px] leading-relaxed text-text-muted">
+              {singleRootEditDescription(singleRootType)}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex h-6 flex-shrink-0 items-center gap-1 rounded-sm px-1.5 font-mono text-[10px] uppercase tracking-wider text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
+            aria-label={`Hide ${MODULE_LABELS[singleRootType]}`}
+            title={`Hide ${MODULE_LABELS[singleRootType]}`}
+          >
+            <IconTrash className="h-3 w-3" />
+            Hide
+          </button>
+        </div>
+
+        <ModuleConfigFields
+          module={module}
+          variant="single-root"
+          onChange={(config) => onUpdate((item) => ({
+            ...item,
+            config,
+          }))}
+        />
+      </div>
+    );
+  }
+
   // Borderless at rest (matching view mode); a faint sunken tint on hover and a
   // dashed ring as merge target keep edit-mode cards readable as drag units.
   const mergeRing = isMergeTarget
@@ -625,6 +673,32 @@ function ModuleEditCard({
       </div>
     </div>
   );
+}
+
+function singleRootEditTitle(moduleType: KnownModuleType) {
+  switch (moduleType) {
+    case 'weather':
+      return 'Location';
+    case 'calendar':
+      return 'Month view';
+    case 'markets':
+      return 'Watchlist';
+    default:
+      return 'Settings';
+  }
+}
+
+function singleRootEditDescription(moduleType: KnownModuleType) {
+  switch (moduleType) {
+    case 'weather':
+      return 'Choose the place and units for the weather summary.';
+    case 'calendar':
+      return 'Local calendar only. No account or feed is required.';
+    case 'markets':
+      return 'Track fixed-width ticker rows in the markets card.';
+    default:
+      return 'Configure this module.';
+  }
 }
 
 interface ModuleDataState {
@@ -1640,12 +1714,46 @@ function PostsContent({
   state: ModuleDataState;
 }) {
   const { isRead, markRead } = useReadPosts();
+  const listRef = useRef<HTMLDivElement>(null);
+  const [hoverIndicator, setHoverIndicator] = useState<{ top: number; height: number } | null>(null);
+
+  const moveHoverIndicator = (element: HTMLElement) => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const listRect = list.getBoundingClientRect();
+    const itemRect = element.getBoundingClientRect();
+    setHoverIndicator({
+      top: itemRect.top - listRect.top + 4,
+      height: Math.max(8, itemRect.height - 8),
+    });
+  };
 
   if (!data) return <ModuleBodyState state={state} skeleton="posts" />;
   if (data.posts.length === 0) return <EmptyModuleState>Nothing new today.</EmptyModuleState>;
 
   return (
-    <div className="-mx-2 space-y-0.5">
+    <div
+      ref={listRef}
+      className="-mx-2 relative space-y-0.5"
+      onPointerLeave={() => setHoverIndicator(null)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setHoverIndicator(null);
+        }
+      }}
+    >
+      <span
+        aria-hidden
+        data-post-hover-indicator
+        className={`pointer-events-none absolute left-0 z-10 w-px origin-top bg-accent-green transition-[height,opacity,transform] duration-200 ease-out ${
+          hoverIndicator ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          height: hoverIndicator?.height ?? 8,
+          transform: `translateY(${hoverIndicator?.top ?? 0}px)`,
+        }}
+      />
       {data.posts.map((post) => {
         const read = isRead(post.url);
         return (
@@ -1655,15 +1763,13 @@ function PostsContent({
             target="_blank"
             rel="noreferrer"
             onClick={() => markRead(post.url)}
+            onPointerEnter={(event) => moveHoverIndicator(event.currentTarget)}
+            onFocus={(event) => moveHoverIndicator(event.currentTarget)}
             onAuxClick={(event) => {
               if (event.button === 1) markRead(post.url);
             }}
             className="group relative block rounded-sm px-2 py-1.5 text-inherit no-underline transition-colors hover:bg-surface-sunken/70"
           >
-            <span
-              aria-hidden
-              className="absolute inset-y-1 left-0 w-px origin-top scale-y-0 bg-accent-green transition-transform group-hover:scale-y-100"
-            />
             <div
               className={`line-clamp-2 text-xs leading-relaxed transition-colors ${
                 read
@@ -1816,18 +1922,53 @@ function EmptyModuleState({ children }: { children: React.ReactNode }) {
 
 function ModuleConfigFields({
   module,
+  variant = 'default',
   onChange,
 }: {
   module: ModuleBranch;
+  variant?: 'default' | 'single-root';
   onChange: (config: Record<string, unknown>) => void;
 }) {
   const config = module.config || {};
+  const isSingleRootVariant = variant === 'single-root';
   const setValue = (key: string, value: unknown) => onChange({ ...config, [key]: value });
 
   let fields: React.ReactNode;
   switch (module.moduleType) {
     case 'weather':
-      fields = (
+      fields = isSingleRootVariant ? (
+        <>
+          <ConfigInput
+            label="Place"
+            value={configText(config, 'location')}
+            placeholder="Foster City"
+            onChange={(value) => setValue('location', value)}
+          />
+          <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
+            <ConfigInput
+              label="Country"
+              value={configText(config, 'countryCode')}
+              placeholder="US"
+              onChange={(value) => setValue('countryCode', value.toUpperCase())}
+            />
+            <ConfigInput
+              label="Region"
+              value={configText(config, 'region')}
+              placeholder="California"
+              onChange={(value) => setValue('region', value)}
+            />
+          </div>
+          <ConfigSelect
+            label="Units"
+            value={configText(config, 'units') || 'imperial'}
+            onChange={(value) => setValue('units', value)}
+            options={[
+              ['imperial', 'Imperial'],
+              ['metric', 'Metric'],
+            ]}
+          />
+        </>
+      ) : (
         <>
           <ConfigInput
             label="Location"
@@ -1861,19 +2002,29 @@ function ModuleConfigFields({
       break;
     case 'calendar':
       fields = (
-        <div className="text-[10px] leading-relaxed text-text-muted">
-          No configuration required. Calendar is a local month view.
+        <div className="rounded-sm border border-border-light bg-surface-sunken/35 px-3 py-2">
+          <div className="text-xs text-text-secondary">Current month grid</div>
+          <div className="mt-1 text-[10px] leading-relaxed text-text-muted">
+            Uses your browser date. Events and iCalendar feeds are intentionally not shown.
+          </div>
         </div>
       );
       break;
     case 'markets':
       fields = (
-        <ConfigInput
-          label="Symbols"
-          value={configListText(config, 'symbols')}
-          placeholder="SPY, BTC-USD, NVDA, AAPL, MSFT"
-          onChange={(value) => setValue('symbols', value)}
-        />
+        <>
+          <ConfigInput
+            label={isSingleRootVariant ? 'Tickers' : 'Symbols'}
+            value={configListText(config, 'symbols')}
+            placeholder="SPY, BTC-USD, NVDA, AAPL, MSFT"
+            onChange={(value) => setValue('symbols', value)}
+          />
+          {isSingleRootVariant && (
+            <div className="font-mono text-[10px] leading-relaxed text-text-muted">
+              Use comma-separated Yahoo-style symbols. Order here is the order shown in the card.
+            </div>
+          )}
+        </>
       );
       break;
     case 'plex':
@@ -1997,9 +2148,9 @@ function ModuleConfigFields({
   }
 
   return (
-    <div className="space-y-2 border-t border-border-light pt-3">
+    <div className={isSingleRootVariant ? 'space-y-2.5' : 'space-y-2 border-t border-border-light pt-3'}>
       {fields}
-      {module.moduleType !== 'calendar' && (
+      {!isSingleRootVariant && module.moduleType !== 'calendar' && (
         <div className="text-[10px] leading-relaxed text-text-muted">
           Live data refreshes after the dashboard is saved.
         </div>

@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  IconCheck,
   IconGripVertical,
   IconPencil,
   IconPlus,
@@ -312,15 +311,26 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   >
                     {isLeafEditing ? (
                       <div className="space-y-2">
-                        <input
-                          value={leaf.name}
-                          onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
-                            ...item,
-                            name: event.target.value,
-                          }))}
-                          placeholder="Name"
-                          className={bookmarkInputClass}
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={leaf.name}
+                            onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
+                              ...item,
+                              name: event.target.value,
+                            }))}
+                            placeholder="Name"
+                            className={bookmarkInputClass}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeLeaf(branch.id, leaf.id)}
+                            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
+                            aria-label={`Delete ${leaf.name}`}
+                            title="Delete bookmark"
+                          >
+                            <IconTrash className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <input
                           value={leaf.url}
                           onChange={(event) => updateLeaf(branch.id, leaf.id, (item) => ({
@@ -344,25 +354,6 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                             icon,
                           }))}
                         />
-                        <div className="flex items-center justify-between">
-                          <button
-                            type="button"
-                            onClick={() => setEditingLeafId(null)}
-                            className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
-                          >
-                            <IconCheck className="h-3.5 w-3.5" />
-                            Done
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeLeaf(branch.id, leaf.id)}
-                            className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
-                            aria-label={`Delete ${leaf.name}`}
-                            title="Delete bookmark"
-                          >
-                            <IconTrash className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">

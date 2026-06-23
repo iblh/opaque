@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  IconCheck,
   IconCopy,
   IconGripVertical,
   IconKey,
@@ -302,6 +301,15 @@ const TreeServer: React.FC<TreeServerProps> = ({
                     placeholder="Name"
                     className={serverInputClass}
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeServer(server.id)}
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
+                    aria-label={`Delete ${server.name}`}
+                    title="Delete server"
+                  >
+                    <IconTrash className="h-3.5 w-3.5" />
+                  </button>
                 </div>
                 <input
                   value={server.url}
@@ -377,25 +385,6 @@ const TreeServer: React.FC<TreeServerProps> = ({
                       {agentTokenErrors[server.id]}
                     </div>
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setEditingServerId(null)}
-                    className="flex h-6 items-center gap-1 rounded-sm px-2 text-xs text-text-secondary hover:bg-surface-sunken"
-                  >
-                    <IconCheck className="h-3.5 w-3.5" />
-                    Done
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeServer(server.id)}
-                    className="flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-accent-red-dark"
-                    aria-label={`Delete ${server.name}`}
-                    title="Delete server"
-                  >
-                    <IconTrash className="h-3.5 w-3.5" />
-                  </button>
                 </div>
               </div>
             ) : (
