@@ -31,13 +31,13 @@
         --text-secondary: rgba(26, 29, 31, 0.75);
         --text-tertiary: rgba(26, 29, 31, 0.55);
         --text-muted: rgba(26, 29, 31, 0.4);
-        --background: 255 255 255;
-        --surface: rgba(250, 250, 250, 0.8);
-        --surface-elevated: 255 255 255;
-        --surface-sunken: 247 247 247;
-        --border-light: 237 237 237;
-        --border-medium: 222 222 222;
-        --border-strong: 208 208 208;
+        --background: 250 248 243;
+        --surface: rgba(248, 246, 240, 0.82);
+        --surface-elevated: 253 251 246;
+        --surface-sunken: 243 241 235;
+        --border-light: 229 226 218;
+        --border-medium: 214 210 201;
+        --border-strong: 196 191 181;
         --ink-100: 247 247 247;
         --ink-200: 232 232 232;
         --ink-300: 218 218 218;
@@ -47,8 +47,10 @@
         --ink-700: 85 85 85;
         --ink-800: 51 51 51;
         --ink-900: 17 17 17;
-        /* The page canvas (one notch off pure white, like aged paper). */
-        --page-bg: #FAFAFA;
+        /* The page canvas: warm off-white, closer to archival paper than UI chrome. */
+        --page-bg: #F7F5EF;
+        --paper-grain: rgba(17, 17, 17, 0.026);
+        --paper-rule: rgba(17, 17, 17, 0.018);
     }
 
     /* --- Dark palette: ink canvas, paper-light text. Quiet Instrumentality
@@ -90,12 +92,19 @@
         --ink-800: 214 215 220;
         --ink-900: 236 237 240;
         --page-bg: #161719;
+        --paper-grain: rgba(236, 237, 240, 0.026);
+        --paper-rule: rgba(236, 237, 240, 0.018);
     }
 
     body {
         @apply min-h-screen bg-[var(--page-bg)] font-body text-text-primary;
         /* Numerals never jitter (see DESIGN_SPEC.md — Type). */
         font-variant-numeric: tabular-nums;
+        background-image:
+            radial-gradient(circle at 1px 1px, var(--paper-grain) 0.65px, transparent 0),
+            linear-gradient(to bottom, transparent 0, transparent 23px, var(--paper-rule) 24px);
+        background-size: 18px 18px, 100% 24px;
+        background-attachment: fixed;
     }
 
     /* Quiet focus: a thin ink outline, visible everywhere, never a glow.
@@ -722,14 +731,38 @@ input:-webkit-autofill:active {
         @apply border-border-medium bg-surface-elevated;
     }
 
+    .opaque-paper-surface {
+        @apply border border-border-light bg-surface-elevated/70;
+    }
+
+    .opaque-kicker {
+        @apply font-condensed text-[10px] font-medium uppercase tracking-[0.16em] text-text-tertiary;
+    }
+
+    .opaque-spec-label {
+        @apply font-condensed text-[10px] font-medium uppercase tracking-[0.14em] text-text-tertiary;
+    }
+
+    .opaque-spec-value {
+        @apply font-mono text-[10px] text-text-secondary;
+    }
+
+    .opaque-spec-chip {
+        @apply inline-flex items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 font-condensed text-[10px] font-medium uppercase tracking-[0.12em] text-text-secondary;
+    }
+
+    .opaque-technical-rule {
+        @apply h-px w-full bg-border-light;
+    }
+
     .opaque-button {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-surface-elevated px-2 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-border-light bg-surface-elevated px-2 font-condensed text-[11px] font-medium uppercase tracking-[0.08em] text-text-secondary transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45;
     }
 
     .opaque-button-primary {
         height: var(--opaque-header-control-size);
-        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 text-[11px] font-medium text-background transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
+        @apply inline-flex items-center justify-center gap-1 rounded-sm border border-text-primary bg-text-primary px-2 font-condensed text-[11px] font-medium uppercase tracking-[0.08em] text-background transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:border-border-medium disabled:bg-surface-sunken disabled:text-text-muted;
     }
 
     .opaque-button svg,
@@ -743,7 +776,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-input {
-        @apply h-8 rounded-sm border border-border-light bg-surface-elevated px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
+        @apply h-8 rounded-sm border border-border-light bg-surface-elevated/70 px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
     }
 
     .opaque-toolbar-icon {
@@ -759,7 +792,7 @@ input:-webkit-autofill:active {
 
     .opaque-toolbar-counter {
         height: var(--opaque-header-control-size);
-        @apply hidden items-center gap-1 rounded-sm border border-border-light bg-surface-sunken px-2 font-mono text-[11px] font-medium text-text-primary md:flex;
+        @apply hidden items-center gap-1 rounded-sm border border-border-light bg-surface-sunken px-2 font-condensed text-[11px] font-medium uppercase tracking-[0.1em] text-text-primary md:flex;
     }
 
     .opaque-toolbar-counter svg {
@@ -822,7 +855,7 @@ input:-webkit-autofill:active {
     }
 
     .opaque-menu-badge {
-        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-background;
+        @apply rounded-sm bg-ink-900 px-1.5 py-0.5 font-condensed text-[9px] font-semibold uppercase tracking-[0.14em] text-background;
     }
 
     .opaque-menu-account {

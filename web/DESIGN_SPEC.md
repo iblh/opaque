@@ -1,20 +1,23 @@
-# OPAQUE Design Spec — Quiet Instrumentality
+# OPAQUE Design Spec — Archival Technical Minimalism
 
-> 安静的工具主义。这份文档是所有 UI 决策的最终依据；新代码与这里冲突时，改代码。
+> 档案式工具面板美学。这份文档是所有 UI 决策的最终依据；新代码与这里冲突时，改代码。
 
 ## The idea
 
-OPAQUE reads like a well-set technical almanac: high information density delivered in a low voice.
-Editorial minimalism meets wabi-sabi — serif carries the human voice, monospace carries the honest
-numbers, whitespace carries the breathing room. **Restraint itself is the identity: others add
-effects; we don't.**
+OPAQUE reads like a personal dashboard printed as a technical archive: high information density,
+quiet hierarchy, paper texture, instrument-panel precision. Editorial minimalism meets archival
+spec sheets — serif carries the human voice, condensed labels carry the catalog system, monospace
+carries the honest numbers, whitespace carries the breathing room. **Restraint itself is the
+identity: others add effects; we don't.**
 
-Three lineages, one temperament:
+Four lineages, one temperament:
 
 - **Wabi-sabi** — paper-like surfaces, hairline rules, asymmetry tolerated, time made visible
   ("2 days ago" matters more than a spinner).
 - **Editorial minimalism** — Goudy serif titles set like book headings; content reads in columns;
   typography is the layout.
+- **Technical archives** — spec labels, section codes, thin rules, small tables, diagrams, and
+  instrument-like status marks. Every artifact-looking element must encode information.
 - **Quiet brutalism** — sharp 2px corners, honest borders, no decoration that isn't information.
 
 ## Hard rules
@@ -25,10 +28,13 @@ These are enforceable review criteria, not vibes.
 
 - `font-serif` (Sorts Mill Goudy, 400) — **titles only**: welcome line, section titles, panel/module
   titles, group headers. Never for body, buttons, labels, or data.
+- `font-condensed` (IBM Plex Sans Condensed) — catalog labels: section codes, buttons, settings
+  labels, spec chips, small uppercase headers. It gives the interface its archival / instrument
+  tone without turning body copy into a poster.
 - `font-body` (system sans) — everything that is prose or UI copy.
 - `font-mono` — all data: numbers, timestamps, urls, types, meta lines, status words.
 - Numerals never jitter: `font-variant-numeric: tabular-nums` is set globally on `body`.
-- Labels above data use `text-[10px] uppercase tracking-wider text-text-tertiary`.
+- Labels above data use `.opaque-spec-label`; cross-section kickers use `.opaque-kicker`.
 
 ### Color
 
@@ -50,6 +56,8 @@ These are enforceable review criteria, not vibes.
 - `accent-blue` is legacy; do not introduce new uses on the dashboard.
 - Alpha-on-token utilities (e.g. `bg-surface-sunken/50`) are fine — the tokens resolve to full
   colors, so Tailwind composites the alpha normally in both themes.
+- The page canvas uses a subtle CSS-only paper grain and faint horizontal rule. It must remain
+  barely perceptible: if it competes with text, it is too strong.
 
 ### Motion
 
@@ -97,9 +105,8 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
 - **Each glanceable widget is its own top-level section.** weather / calendar / markets are
   independent single-module roots (not bundled under a "Today" section), each freely placeable and
   resizable on the layout grid. media and posts remain multi-module roots.
-- Section title sits flush-left above its content with **no trailing rule**; the title alone opens
-  the section. The page has no decorative hairlines between a title and its body, and no rule above
-  the welcome line.
+- Section headers are small spec strips: a non-persistent section code (`A:01 / weather`), a serif
+  title, and one hairline rule. The code/rule provide location and grouping, not decoration.
 - Depth comes from spacing, not elevation or outlines. Radius is `rounded-sm` (2px) where anything
   is rounded; `rounded-full` only for status dots and pills.
 - A single module root carries its name once — in the section header. The module panel inside it

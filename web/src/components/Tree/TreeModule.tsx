@@ -78,7 +78,7 @@ interface TabDragProps {
 }
 
 const moduleInputClass = 'opaque-input w-full focus:border-ink-700';
-const moduleLabelClass = 'block text-[10px] uppercase tracking-wider text-text-tertiary';
+const moduleLabelClass = 'opaque-spec-label block';
 const moduleGridBaseClass = 'relative grid w-full max-w-[90rem] flex-1 items-start justify-start';
 const moduleGridGapClass = 'gap-x-6 gap-y-8 md:gap-x-10 md:gap-y-10';
 const mediaModuleGridGapClass = 'gap-x-8 gap-y-10 md:gap-x-12 md:gap-y-12';
@@ -948,22 +948,25 @@ function ModulePanel({
           {header ? (
             <div className="min-w-0 flex-1">{header}</div>
           ) : (
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-start gap-2">
               <ModuleIcon moduleType={module.moduleType} className="h-4 w-4 text-text-secondary" />
-              {href ? (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
-                >
-                  {title}
-                </a>
-              ) : (
-                <div className="truncate font-serif text-sm text-text-primary">
-                  {title}
-                </div>
-              )}
+              <div className="min-w-0">
+                <div className="opaque-kicker">{module.moduleType}</div>
+                {href ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-0.5 block truncate font-serif text-sm text-text-primary no-underline hover:text-ink-800"
+                  >
+                    {title}
+                  </a>
+                ) : (
+                  <div className="mt-0.5 truncate font-serif text-sm text-text-primary">
+                    {title}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {statusControl}
@@ -1001,7 +1004,7 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
           <div className="mt-3 grid grid-cols-3 gap-2">
             {data.forecast.map((day) => (
               <div key={day.date} title={day.condition}>
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                <div className="opaque-spec-label">
                   {formatWeekday(day.date)}
                 </div>
                 <div className="mt-1 font-mono text-[11px] text-text-secondary">
@@ -1299,7 +1302,7 @@ function MediaInsightBadges({ items }: { items: MediaInsight[] }) {
                 : 'border-border-light bg-surface-sunken/35'
           }`}
         >
-          <div className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
+          <div className="opaque-spec-label truncate text-text-muted">
             {item.label}
           </div>
           <div className="mt-0.5 truncate font-mono text-[11px] font-medium text-text-primary">
@@ -1326,7 +1329,7 @@ function MediaLibraryChips({
   return (
     <div className="mb-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+        <div className="opaque-spec-label">
           Libraries
         </div>
         <div className="font-mono text-[10px] text-text-muted">
@@ -1337,7 +1340,7 @@ function MediaLibraryChips({
         {visible.map((library) => (
           <span
             key={library.id}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 text-[11px] text-text-secondary"
+            className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 font-condensed text-[11px] font-medium text-text-secondary"
             title={[
               library.name,
               library.type ? formatMediaLibraryType(library.type) : '',
@@ -1347,7 +1350,7 @@ function MediaLibraryChips({
             <span className="min-w-0 max-w-[9rem] truncate text-text-primary">{library.name}</span>
             <span className="font-mono text-[10px] text-text-muted">{formatCompactNumber(library.count)}</span>
             {library.type && (
-              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-text-muted sm:inline">
+              <span className="hidden text-[9px] uppercase tracking-[0.12em] text-text-muted sm:inline">
                 {formatMediaLibraryType(library.type)}
               </span>
             )}
@@ -1410,7 +1413,7 @@ function MediaRecentlyAdded({
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           aria-expanded={!collapsed}
-          className="group/recenthead flex items-center gap-1 text-[10px] uppercase tracking-wider text-text-tertiary transition-colors hover:text-text-secondary"
+          className="group/recenthead flex items-center gap-1 font-condensed text-[10px] font-medium uppercase tracking-[0.14em] text-text-tertiary transition-colors hover:text-text-secondary"
         >
           <IconChevronDown
             className={`h-3 w-3 transition-transform ${collapsed ? '-rotate-90' : ''}`}

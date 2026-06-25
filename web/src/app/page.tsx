@@ -302,7 +302,7 @@ export default function HomePage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="relative flex-1 overflow-x-hidden bg-background">
+        <div className="relative flex-1 overflow-x-hidden">
           <div className="relative z-10 flex min-h-full items-center justify-center">
             <div className="space-y-6 text-center">
               <div className="mx-auto h-0.5 w-12 bg-accent-red"></div>
@@ -333,7 +333,7 @@ export default function HomePage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="relative flex-1 overflow-x-hidden bg-background">
+        <div className="relative flex-1 overflow-x-hidden">
           <div className="relative z-10 flex min-h-full items-center justify-center">
             <div className="space-y-6 text-center">
               <div className="mx-auto h-0.5 w-8 bg-ink-300"></div>
@@ -370,10 +370,13 @@ export default function HomePage() {
         onReset={resetEditing}
         onSave={saveDashboard}
       />
-      <div className="relative flex-1 overflow-x-hidden bg-background">
+      <div className="relative flex-1 overflow-x-hidden">
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
             <div className="mx-6 animate-fade-in sm:mx-8 lg:mx-12 xl:mx-16 2xl:mx-24">
+              <div className="opaque-kicker mb-2">
+                OPAQUE / DAILY INDEX
+              </div>
               <p className="font-serif text-sm leading-none text-text-secondary">
                 {timeGreeting()}{displayName ? `, ${displayName}` : ''}
                 <span className="text-text-muted"> — {todayLabel()}</span>

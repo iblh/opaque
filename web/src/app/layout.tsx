@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Sorts_Mill_Goudy } from "next/font/google";
+import { IBM_Plex_Sans_Condensed, Sorts_Mill_Goudy } from "next/font/google";
 import CookieBanner from "@/components/CookieBanner";
 import ThemeWatcher from "@/components/ThemeWatcher";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -12,6 +12,14 @@ const serif = Sorts_Mill_Goudy({
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-serif",
+});
+
+const condensed = IBM_Plex_Sans_Condensed({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal"],
+  display: "swap",
+  variable: "--font-condensed",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +37,7 @@ export default function RootLayout({
   // React hydrates. This suppresses only the <html> element's own attribute
   // diff, not any child-subtree mismatch.
   return (
-    <html lang="en" className={serif.variable} suppressHydrationWarning>
+    <html lang="en" className={`${serif.variable} ${condensed.variable}`} suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before first paint so there is no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

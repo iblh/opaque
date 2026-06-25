@@ -126,15 +126,15 @@ export default function Header({
     };
 
     return (
-        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/95 px-6 py-3">
+        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/80 px-6 py-3 backdrop-blur-[2px]">
             {pathname === '/login' && (
-                <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
+                <div className="font-condensed text-sm font-semibold uppercase tracking-[0.18em] text-text-primary">OPAQUE</div>
             )}
 
             {pathname === '/' && (
                 <nav className="flex w-full items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
-                        <div className="text-sm font-medium tracking-tight text-text-primary">
+                        <div className="font-condensed text-sm font-semibold uppercase tracking-[0.18em] text-text-primary">
                             OPAQUE
                         </div>
                         <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
@@ -157,7 +157,7 @@ export default function Header({
 
                     <div className="flex items-center gap-2">
                         {isEditing && (
-                            <div className="hidden items-center gap-2 text-xs text-text-tertiary sm:flex">
+                            <div className="hidden items-center gap-2 font-condensed text-[10px] font-medium uppercase tracking-[0.14em] text-text-tertiary sm:flex">
                                 <span className="h-1.5 w-1.5 rounded-full bg-accent-green" />
                                 <span>{isDirty ? 'Editing' : 'No changes'}</span>
                             </div>
