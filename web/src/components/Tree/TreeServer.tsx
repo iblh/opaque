@@ -19,7 +19,7 @@ import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 import { SERVER_ICON_PRESETS } from '@/lib/iconPresets';
 import IconField from '@/components/IconField';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
-import { Sparkline, SpecMetric, SpecRow, SpecRows } from '@/components/Tree/specPrimitives';
+import { Sparkline, SpecMetric, SpecRow, SpecRows, Stamp } from '@/components/Tree/specPrimitives';
 
 interface ServerTree {
   root: string;
@@ -390,34 +390,43 @@ const TreeServer: React.FC<TreeServerProps> = ({
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-3 border-b border-border-light pb-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    {renderDragHandle(server)}
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center text-text-secondary">
-                      <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-[18px] w-[18px]" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-[13px] font-medium leading-tight text-text-primary">
-                        {server.name}
-                      </div>
-                      <div className="mt-0.5 truncate font-mono text-[11px] leading-tight text-text-tertiary">
-                        {removeProtocol(server.url)}
-                      </div>
-                    </div>
+                {/* Archival index line: fixed code + provenance, status stamped
+                    on the right — the same SpecHeader motif as other modules. */}
+                <div className="mb-2.5 flex items-center justify-between gap-3 border-b border-border-light pb-2">
+                  <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
+                    <span className="text-text-secondary">SRV</span>
+                    <span aria-hidden className="text-text-muted">/</span>
+                    <span className="text-text-muted">{isStale ? 'STALE' : 'LIVE'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <ServerStatusBadge online={stats.status === 'online' && !isStale} />
                     {isEditing && (
                       <button
                         type="button"
                         onClick={() => setEditingServerId(server.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-sm text-text-muted hover:bg-surface-sunken hover:text-text-primary"
+                        className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
                         aria-label={`Edit ${server.name}`}
                         title="Edit server"
                       >
                         <IconPencil className="h-3.5 w-3.5" />
                       </button>
                     )}
+                  </div>
+                </div>
+
+                {/* Device label (the "drawer" header): icon + name + endpoint. */}
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {renderDragHandle(server)}
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center text-text-secondary">
+                    <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-[18px] w-[18px]" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-[13px] font-medium leading-tight text-text-primary">
+                      {server.name}
+                    </div>
+                    <div className="mt-0.5 truncate font-mono text-[11px] leading-tight text-text-tertiary">
+                      {removeProtocol(server.url)}
+                    </div>
                   </div>
                 </div>
 
@@ -467,14 +476,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
 
 function ServerStatusBadge({ online }: { online: boolean }) {
   return (
-    <div
-      className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${
-        online ? 'text-accent-green-dark' : 'text-text-muted'
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-accent-green' : 'bg-ink-300'}`} />
-      {online ? 'online' : 'stale'}
-    </div>
+    <Stamp tone={online ? 'live' : 'idle'}>{online ? 'online' : 'stale'}</Stamp>
   );
 }
 

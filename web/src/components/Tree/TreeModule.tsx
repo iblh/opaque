@@ -948,6 +948,7 @@ function ModulePanel({
   href,
   titleOverride,
   header,
+  specHeader,
   children,
 }: {
   module: ModuleBranch;
@@ -956,6 +957,12 @@ function ModulePanel({
   titleOverride?: string;
   /** Replaces the icon + title cluster, e.g. a tab bar acting as the header. */
   header?: React.ReactNode;
+  /**
+   * Archival SpecHeader that becomes the whole panel header. Build it with
+   * `renderModuleStatusControl(state)` in its `right` slot to keep refresh +
+   * status. Replaces the default single-root status line.
+   */
+  specHeader?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const statusClass = state?.error
@@ -991,7 +998,9 @@ function ModulePanel({
   // Borderless: structure comes from spacing, not a card outline (DESIGN_SPEC).
   return (
     <section className="relative">
-      {titleInSectionHeader ? (
+      {specHeader ? (
+        <div className="mb-3">{specHeader}</div>
+      ) : titleInSectionHeader ? (
         statusControl && (
           <div className="mb-2 flex h-5 items-center justify-end">{statusControl}</div>
         )
@@ -1026,27 +1035,74 @@ function ModulePanel({
   );
 }
 
+// Refresh button + status dot, for use in a SpecHeader's `right` slot so the
+// archival header carries the same controls the default panel header would.
+function renderModuleStatusControl(state: ModuleDataState, label: string) {
+  const statusClass = state.error
+    ? 'bg-accent-red'
+    : state.isLoading
+      ? 'bg-ink-300'
+      : 'bg-accent-green';
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={state.refresh}
+        className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+        aria-label={`Refresh ${label}`}
+        title="Refresh"
+      >
+        <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
+      </button>
+      <div
+        className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
+        title={state.error || (state.isLoading ? 'Loading' : 'Online')}
+      />
+    </div>
+  );
+}
+
 function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
   const data = state.data?.kind === 'weather' ? state.data as WeatherModuleData : null;
 
+  const unit = data?.temperatureUnit === 'fahrenheit' ? 'F' : 'C';
+
   return (
-    <ModulePanel module={module} state={state}>
+    <ModulePanel
+      module={module}
+      state={state}
+      specHeader={(
+        <SpecHeader
+          code="WTHR"
+          source="LIVE"
+          serial={`°${unit}`}
+          right={renderModuleStatusControl(state, 'Weather')}
+        />
+      )}
+    >
       {!data ? (
         <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
+          {/* Station reading: a large measurement figure with a unit tick, the
+              condition as a caption, and station metadata aligned right. */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[2.5rem] font-light leading-none tracking-tight text-text-primary">
-                {Math.round(data.temperature)}°
+              <div className="flex items-start gap-0.5 text-text-primary">
+                <span className="text-[2.5rem] font-light leading-none tracking-tight tabular-nums">
+                  {Math.round(data.temperature)}
+                </span>
+                <span className="mt-1 font-mono text-sm text-text-tertiary">°{unit}</span>
               </div>
               <div className="mt-2 truncate text-xs text-text-secondary" title={data.condition}>
                 {data.condition}
               </div>
             </div>
-            <div className="shrink-0 text-right font-mono text-[10px] leading-relaxed text-text-muted">
-              <div className="truncate text-text-secondary" title={data.location}>{data.location}</div>
-              <div className="mt-0.5 tabular-nums">{Math.round(data.humidity)}% RH</div>
+            <div className="shrink-0 text-right font-mono text-[10px] leading-relaxed">
+              <div className="max-w-[9rem] truncate text-text-secondary" title={data.location}>{data.location}</div>
+              <div className="mt-1 tabular-nums text-text-muted">
+                <span className="text-text-tertiary">RH</span> {Math.round(data.humidity)}%
+              </div>
             </div>
           </div>
           <div className="mt-4 border-t border-border-light pt-1">
@@ -1079,22 +1135,33 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   const data = state.data?.kind === 'markets' ? state.data as MarketsModuleData : null;
 
   return (
-    <ModulePanel module={module} state={state}>
+    <ModulePanel
+      module={module}
+      state={state}
+      specHeader={(
+        <SpecHeader
+          code="MKT"
+          source="LIVE"
+          serial={data ? `${data.quotes.length} SYM` : undefined}
+          right={renderModuleStatusControl(state, 'Markets')}
+        />
+      )}
+    >
       {!data ? (
         <ModuleBodyState state={state} skeleton="markets" />
       ) : (
-        <div className="-my-1 divide-y divide-border-light">
+        <div className="-mt-1 divide-y divide-border-light/70">
           {data.quotes.map((quote) => {
-            const change = `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
-            const trendTone = marketTrendTone(quote.changePercent);
+            const up = quote.changePercent >= 0;
+            const change = `${up ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
 
             return (
               <div
                 key={quote.symbol}
-                className="grid grid-cols-[minmax(0,1fr)_56px_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
+                className="grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-tight text-text-primary">
+                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-wide text-text-primary">
                     {quote.symbol}
                   </div>
                   <div className="mt-1 truncate text-[10px] leading-tight text-text-tertiary">
@@ -1105,11 +1172,13 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                   values={quote.sparkline}
                   width={56}
                   height={24}
-                  tone={quote.changePercent >= 0 ? 'up' : 'down'}
+                  tone={up ? 'up' : 'down'}
                   ariaLabel={`${quote.symbol} recent trend`}
                 />
                 <div className="min-w-0 text-right font-mono">
-                  <div className={`text-xs font-medium leading-tight tracking-tight tabular-nums ${trendTone}`}>
+                  {/* Delta as a stamped figure: a tick glyph + signed percent. */}
+                  <div className={`flex items-center justify-end gap-1 text-xs font-medium leading-tight tabular-nums ${up ? 'text-accent-green-dark' : 'text-accent-red-dark'}`}>
+                    <span aria-hidden className="text-[9px]">{up ? '▲' : '▼'}</span>
                     {change}
                   </div>
                   <div className="mt-1 truncate text-[11px] leading-tight tabular-nums text-text-secondary">
@@ -2890,11 +2959,6 @@ function formatMarketPrice(value: number, currency?: string) {
   }
   if (Math.abs(value) >= 10) return value.toFixed(2);
   return value.toFixed(4);
-}
-
-function marketTrendTone(changePercent: number) {
-  if (Math.abs(changePercent) < 0.005) return 'text-text-secondary';
-  return changePercent > 0 ? 'text-accent-green-dark' : 'text-accent-red-dark';
 }
 
 function formatCompactNumber(value: number) {
