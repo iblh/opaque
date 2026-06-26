@@ -39,6 +39,130 @@ export function SpecCaption({
 }
 
 /**
+ * A registration / crop mark: four corner ticks framing a content box, the way a
+ * print sheet marks a registered area. The site's signature "focus/today" frame
+ * — used instead of a filled highlight so a marked cell reads as an instrument
+ * target, not a button. Renders its children centered inside the marked area.
+ */
+export function RegistrationMark({
+  children,
+  active = true,
+  size = 6,
+  className = '',
+}: {
+  children: React.ReactNode;
+  /** When false, ticks are hidden (children render bare) — for hover/idle. */
+  active?: boolean;
+  /** Tick arm length in px. */
+  size?: number;
+  className?: string;
+}) {
+  const arm = `${size}px`;
+  const tick = active ? 'border-text-primary' : 'border-transparent';
+  return (
+    <span className={`relative inline-flex items-center justify-center ${className}`}>
+      <span aria-hidden className={`pointer-events-none absolute left-0 top-0 border-l border-t ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute right-0 top-0 border-r border-t ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute bottom-0 left-0 border-b border-l ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute bottom-0 right-0 border-b border-r ${tick}`} style={{ width: arm, height: arm }} />
+      {children}
+    </span>
+  );
+}
+
+type StampTone = 'live' | 'idle' | 'positive' | 'negative' | 'syncing' | 'warning';
+
+/**
+ * A stamped status label: a tiny mono uppercase code, optionally with a leading
+ * dot, drawn like an inspection stamp rather than a filled pill. One consistent
+ * status language across the dashboard (online/stale/today/±/syncing).
+ */
+export function Stamp({
+  children,
+  tone = 'idle',
+  dot = true,
+  className = '',
+}: {
+  children: React.ReactNode;
+  tone?: StampTone;
+  dot?: boolean;
+  className?: string;
+}) {
+  const text =
+    tone === 'live' || tone === 'positive'
+      ? 'text-accent-green-dark'
+      : tone === 'negative'
+        ? 'text-accent-red-dark'
+        : tone === 'warning'
+          ? 'text-accent-amber-dark'
+          : tone === 'syncing'
+            ? 'text-text-secondary'
+            : 'text-text-muted';
+  const dotColor =
+    tone === 'live' || tone === 'positive'
+      ? 'bg-accent-green'
+      : tone === 'negative'
+        ? 'bg-accent-red'
+        : tone === 'warning'
+          ? 'bg-accent-amber'
+          : 'bg-ink-300';
+
+  return (
+    <span className={`inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] ${text} ${className}`}>
+      {dot && <span className={`h-1 w-1 rounded-full ${dotColor} ${tone === 'syncing' ? 'animate-pulse' : ''}`} />}
+      {children}
+    </span>
+  );
+}
+
+/**
+ * The module's archival index header: a fixed semantic code (e.g. CAL) and a
+ * data-source label (LOCAL / LIVE / CACHED) on the left, an optional serial /
+ * coordinate on the right beside a registration mark — all on one hairline rule.
+ * This is the dashboard's signature "filed record" header.
+ */
+export function SpecHeader({
+  code,
+  source,
+  serial,
+  right,
+  className = '',
+}: {
+  /** Fixed module code, e.g. "CAL", "SRV", "WTHR". */
+  code: string;
+  /** Provenance tag, e.g. "LOCAL", "LIVE", "CACHED". */
+  source?: string;
+  /** Right-aligned serial / coordinate, e.g. "2026·06". */
+  serial?: string;
+  /** Extra right-side controls (nav, refresh) rendered after the serial. */
+  right?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-3 border-b border-border-light pb-2 ${className}`}>
+      <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
+        <span className="text-text-secondary">{code}</span>
+        {source && (
+          <>
+            <span aria-hidden className="text-text-muted">/</span>
+            <span className="text-text-muted">{source}</span>
+          </>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2.5">
+        {serial && (
+          <span className="flex items-center gap-1.5 font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
+            <span aria-hidden className="text-text-tertiary">⌖</span>
+            {serial}
+          </span>
+        )}
+        {right}
+      </div>
+    </div>
+  );
+}
+
+/**
  * One ledger row: a label on the left, a value on the right, baseline-aligned.
  * Inside a {@link SpecRows} group the rows share dotted hairline separators, so
  * a stack of these reads as a single aligned table rather than separate cards.

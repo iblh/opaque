@@ -53,7 +53,13 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
-import { MetaChip, MetaChipGroup, Sparkline } from '@/components/Tree/specPrimitives';
+import {
+  MetaChip,
+  MetaChipGroup,
+  RegistrationMark,
+  Sparkline,
+  SpecHeader,
+} from '@/components/Tree/specPrimitives';
 
 interface ModuleTree {
   root: string;
@@ -743,6 +749,13 @@ function LiveModuleWidget({ module }: { module: ModuleBranch }) {
 function CalendarWidget({ module }: { module: ModuleBranch }) {
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
   const cells = useMemo(() => calendarCells(calendarMonth), [calendarMonth]);
+  // Group the 42-cell grid into 6 week rows so each can carry its ISO week no.
+  const weeks = useMemo(() => {
+    const rows: (typeof cells)[] = [];
+    for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+    return rows;
+  }, [cells]);
+  const isCurrentMonth = startOfMonth(new Date()).getTime() === calendarMonth.getTime();
 
   const moveMonth = (offset: number) => {
     setCalendarMonth((currentMonth) => (
@@ -750,73 +763,99 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
     ));
   };
 
+  // Column template: a narrow week-number gutter + 7 equal day columns. The
+  // gutter is what turns the month into a technical ledger.
+  const gridCols = 'grid grid-cols-[1.75rem_repeat(7,minmax(0,1fr))]';
+
   return (
     <ModulePanel module={module}>
-      <div>
-        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border-light pb-2">
-          <div className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">
-            {formatCalendarMonth(calendarMonth)}
-          </div>
-          <div className="flex items-center gap-1 text-text-muted">
+      <SpecHeader
+        code="CAL"
+        source="LOCAL"
+        serial={formatMonthSerial(calendarMonth)}
+        right={(
+          <div className="flex items-center gap-0.5 text-text-muted">
             <button
               type="button"
               onClick={() => moveMonth(-1)}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className="flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary"
               aria-label="Previous month"
               title="Previous month"
             >
-              &lsaquo;
+              <IconChevronLeft className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setCalendarMonth(startOfMonth(new Date()))}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className={`flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary ${isCurrentMonth ? 'text-text-secondary' : ''}`}
               aria-label="Current month"
-              title="Current month"
+              title="Jump to current month"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <span className={`h-1.5 w-1.5 ${isCurrentMonth ? 'bg-text-primary' : 'border border-current'}`} />
             </button>
             <button
               type="button"
               onClick={() => moveMonth(1)}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className="flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary"
               aria-label="Next month"
               title="Next month"
             >
-              &rsaquo;
+              <IconChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
-        </div>
-        <div className="grid grid-cols-7 text-center">
+        )}
+      />
+
+      <div className="mt-2.5">
+        <div className={`${gridCols} text-center`}>
+          <div aria-hidden className="font-mono text-[8px] uppercase tracking-wider text-text-muted/70">
+            WK
+          </div>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
             <div
               key={`${weekday}-${index}`}
-              className="pb-2 font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-text-muted"
+              className={`pb-2 font-mono text-[9px] font-medium uppercase tracking-[0.12em] ${
+                index === 0 || index === 6 ? 'text-text-muted/60' : 'text-text-muted'
+              }`}
             >
               {weekday}
             </div>
           ))}
-          {cells.map((cell) => (
-            <button
-              key={cell.key}
-              type="button"
-              className="group/day flex h-7 items-center justify-center"
-              title={calendarCellTitle(cell.date)}
-              aria-label={calendarCellTitle(cell.date)}
-              aria-current={cell.isToday ? 'date' : undefined}
-            >
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-[2px] font-mono text-[11px] tabular-nums transition-colors ${
-                  cell.isToday
-                    ? 'bg-text-primary font-medium text-background'
-                    : cell.inMonth
-                      ? 'text-text-secondary group-hover/day:bg-surface-sunken group-hover/day:text-text-primary'
-                      : 'text-text-muted/60 group-hover/day:bg-surface-sunken'
-                }`}
-              >
-                {cell.date.getDate()}
-              </span>
-            </button>
+        </div>
+        <div className="space-y-px">
+          {weeks.map((week) => (
+            <div key={week[0].key} className={`${gridCols} text-center`}>
+              <div className="flex h-7 items-center justify-center font-mono text-[9px] tabular-nums text-text-muted/55">
+                {isoWeekNumber(week[0].date)}
+              </div>
+              {week.map((cell, dayIndex) => {
+                const isWeekend = dayIndex === 0 || dayIndex === 6;
+                return (
+                  <button
+                    key={cell.key}
+                    type="button"
+                    className="group/day flex h-7 items-center justify-center"
+                    title={calendarCellTitle(cell.date)}
+                    aria-label={calendarCellTitle(cell.date)}
+                    aria-current={cell.isToday ? 'date' : undefined}
+                  >
+                    <RegistrationMark active={cell.isToday} size={5} className="h-6 w-6">
+                      <span
+                        className={`font-mono text-[11px] tabular-nums transition-colors ${
+                          cell.isToday
+                            ? 'font-medium text-text-primary'
+                            : cell.inMonth
+                              ? `${isWeekend ? 'text-text-tertiary' : 'text-text-secondary'} group-hover/day:text-text-primary`
+                              : 'text-text-muted/45 group-hover/day:text-text-muted'
+                        }`}
+                      >
+                        {cell.date.getDate()}
+                      </span>
+                    </RegistrationMark>
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </div>
       </div>
@@ -2774,11 +2813,22 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function formatCalendarMonth(date: Date) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
+// Month code for the spec header, e.g. "2026·06" — a filed-record serial, not a
+// prose month name.
+function formatMonthSerial(date: Date) {
+  return `${date.getFullYear()}·${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// ISO-8601 week number (weeks start Monday; week 1 contains the first Thursday).
+function isoWeekNumber(date: Date) {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = (target.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+  target.setUTCDate(target.getUTCDate() - dayNumber + 3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const firstDayNumber = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNumber + 3);
+  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
+  return String(week).padStart(2, '0');
 }
 
 function calendarCells(monthDate: Date) {
