@@ -59,6 +59,7 @@ import {
   RegistrationMark,
   Sparkline,
   SpecHeader,
+  Stamp,
 } from '@/components/Tree/specPrimitives';
 
 interface ModuleTree {
@@ -1221,14 +1222,19 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          <div className="flex items-baseline justify-between gap-3 border-b border-border-light pb-2.5">
-            <div className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${streamCount > 0 ? 'text-accent-green-dark' : 'text-text-tertiary'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
+          {/* Provider index line: MED code + provenance on the left, live
+              session count or status stamped on the right. */}
+          <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
+            <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
+              <span className="text-text-secondary">MED</span>
+              <span aria-hidden className="text-text-muted">/</span>
+              <span className="truncate text-text-muted" title={data.detail || data.service}>
+                {data.service}
+              </span>
+            </div>
+            <Stamp tone={streamCount > 0 ? 'live' : 'idle'}>
               {streamCount > 0 ? `${streamCount} playing` : data.status}
-            </div>
-            <div className="font-mono text-[10px] tabular-nums text-text-muted">
-              {data.detail || data.service}
-            </div>
+            </Stamp>
           </div>
 
           {overview && overview.insights.length > 0 && (
@@ -1850,12 +1856,17 @@ function PostsStackLive({
       module={selectedModule}
       state={state}
       header={(
-        <PostStackTabs
-          modules={modules}
-          selectedId={selectedModule.id}
-          onSelect={onSelect}
-          framed={false}
-        />
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <PostStackTabs
+            modules={modules}
+            selectedId={selectedModule.id}
+            onSelect={onSelect}
+            framed={false}
+          />
+          <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.16em] text-text-muted">
+            IDX
+          </span>
+        </div>
       )}
     >
       <PostsContent data={data} state={state} />
@@ -1909,8 +1920,13 @@ function PostStackTabs({
             }`}
             title={draggable ? 'Drag to reorder · click to select' : undefined}
           >
-            <span className="inline-block max-w-[9rem] truncate">
-              {postModuleTabLabel(source)}
+            <span className="inline-flex max-w-[10rem] items-center gap-1.5">
+              {/* Active tab carries a small filled stamp — the "current divider". */}
+              <span
+                aria-hidden
+                className={`h-1 w-1 shrink-0 transition-colors ${isSelected ? 'bg-text-primary' : 'bg-transparent'}`}
+              />
+              <span className="truncate">{postModuleTabLabel(source)}</span>
             </span>
             {/* Active tab: a solid ink underline that sits over the baseline
                 rule; idle tabs reveal a faint hairline on hover. */}
