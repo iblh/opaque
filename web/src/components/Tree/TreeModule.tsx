@@ -53,6 +53,7 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
+import { MetaChip, MetaChipGroup } from '@/components/Tree/specPrimitives';
 
 interface ModuleTree {
   root: string;
@@ -1123,18 +1124,22 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          <div className="mb-4 flex items-baseline justify-between gap-3 border-b border-border-light pb-3">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
+          <div className="flex items-baseline justify-between gap-3 border-b border-border-light pb-2.5">
+            <div className={`flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${streamCount > 0 ? 'text-accent-green-dark' : 'text-text-tertiary'}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
               {streamCount > 0 ? `${streamCount} playing` : data.status}
             </div>
-            <div className="font-mono text-[10px] text-text-tertiary">
+            <div className="font-mono text-[10px] tabular-nums text-text-muted">
               {data.detail || data.service}
             </div>
           </div>
 
+          {overview && overview.insights.length > 0 && (
+            <MediaStatLedger items={overview.insights} />
+          )}
+
           {nowPlaying.length > 0 && (
-            <div className="mb-5 space-y-3 border-b border-border-light pb-4">
+            <div className="mt-4 space-y-3">
               {nowPlaying.map((item) => (
                 <NowPlayingRow key={item.id} item={item} />
               ))}
@@ -1142,8 +1147,8 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
 
           {queue.length > 0 && (
-            <div className="mb-5 border-b border-border-light pb-4">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+            <div className="mt-4">
+              <div className="mb-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
                 <IconDownload className="h-3 w-3" />
                 Downloading
               </div>
@@ -1153,10 +1158,6 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
                 ))}
               </div>
             </div>
-          )}
-
-          {overview && overview.insights.length > 0 && (
-            <MediaInsightBadges items={overview.insights} />
           )}
 
           {overview && overview.libraries.length > 0 && (
@@ -1285,26 +1286,30 @@ function dedupeMediaInsights(insights: MediaInsight[]) {
   });
 }
 
-function MediaInsightBadges({ items }: { items: MediaInsight[] }) {
+// Provider key stats as a borderless two-column ledger: label left, tabular
+// value right, hairline dividers. Reads like a spec sheet and stays consistent
+// across providers regardless of which stats each one reports.
+function MediaStatLedger({ items }: { items: MediaInsight[] }) {
+  const toneClass = (tone: MediaInsight['tone']) =>
+    tone === 'accent'
+      ? 'text-accent-green-dark'
+      : tone === 'warning'
+        ? 'text-accent-amber-dark'
+        : 'text-text-primary';
+
   return (
-    <div className="mb-4 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+    <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-0">
       {items.map((item) => (
         <div
           key={item.id}
-          className={`rounded-sm border px-2 py-1.5 ${
-            item.tone === 'accent'
-              ? 'border-accent-green/25 bg-accent-green/10'
-              : item.tone === 'warning'
-                ? 'border-accent-amber/25 bg-accent-amber/10'
-                : 'border-border-light bg-surface-sunken/35'
-          }`}
+          className="flex items-baseline justify-between gap-3 border-b border-border-light/70 py-1"
         >
-          <div className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
+          <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             {item.label}
-          </div>
-          <div className="mt-0.5 truncate font-mono text-[11px] font-medium text-text-primary">
+          </span>
+          <span className={`shrink-0 font-mono text-[11px] tabular-nums ${toneClass(item.tone)}`}>
             {item.value || '-'}
-          </div>
+          </span>
         </div>
       ))}
     </div>
@@ -1324,45 +1329,38 @@ function MediaLibraryChips({
   const hidden = sorted.length - visible.length;
 
   return (
-    <div className="mb-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+    <div className="mt-4">
+      <div className="mb-2 flex items-baseline justify-between gap-3 border-b border-border-light pb-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
           Libraries
-        </div>
-        <div className="font-mono text-[10px] text-text-muted">
+        </span>
+        <span className="font-mono text-[10px] tabular-nums text-text-muted">
           {totalItems > 0 ? `${formatCompactNumber(totalItems)} items` : `${libraries.length} total`}
-        </div>
+        </span>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <MetaChipGroup>
         {visible.map((library) => (
-          <span
+          <MetaChip
             key={library.id}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 text-[11px] text-text-secondary"
+            label={library.name}
+            value={formatCompactNumber(library.count)}
             title={[
               library.name,
               library.type ? formatMediaLibraryType(library.type) : '',
               `${formatCompactNumber(library.count)} items`,
             ].filter(Boolean).join(' · ')}
-          >
-            <span className="min-w-0 max-w-[9rem] truncate text-text-primary">{library.name}</span>
-            <span className="font-mono text-[10px] text-text-muted">{formatCompactNumber(library.count)}</span>
-            {library.type && (
-              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-text-muted sm:inline">
-                {formatMediaLibraryType(library.type)}
-              </span>
-            )}
-          </span>
+          />
         ))}
         {(hidden > 0 || expanded) && (
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center rounded-sm border border-border-light px-2 py-1 font-mono text-[10px] text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-secondary"
+            className="inline-flex items-center rounded-[2px] px-1.5 py-0.5 font-mono text-[10px] text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-secondary"
           >
             {expanded ? 'Show less' : `+${hidden} more`}
           </button>
         )}
-      </div>
+      </MetaChipGroup>
     </div>
   );
 }
@@ -1467,7 +1465,7 @@ function MediaRecentCell({
 }) {
   const body = (
     <>
-      <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-[2px] bg-surface-sunken ring-1 ring-border-light/60 transition group-hover/recent:ring-border-medium">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -1479,7 +1477,7 @@ function MediaRecentCell({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
+          <div className="flex h-full w-full items-center justify-center font-serif text-base text-text-muted">
             {item.title.slice(0, 1)}
           </div>
         )}
@@ -1579,7 +1577,7 @@ function NowPlayingRow({ item }: { item: MediaNowPlayingItem }) {
   const meta = [item.user, item.device].filter(Boolean).join(' · ');
   return (
     <div className="flex items-center gap-2.5">
-      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-sm border border-border-light bg-surface-sunken">
+      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-[2px] bg-surface-sunken ring-1 ring-border-light/60">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -1645,9 +1643,9 @@ function MediaProgressBar({
 }) {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
   return (
-    <div className={`h-0.5 w-full overflow-hidden rounded-full bg-border-light ${className}`}>
+    <div className={`h-px w-full overflow-hidden bg-border-light ${className}`}>
       <div
-        className={`h-full rounded-full ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
+        className={`h-full transition-all ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
         style={{ width: `${pct}%` }}
       />
     </div>
