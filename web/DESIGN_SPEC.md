@@ -107,6 +107,27 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
 - WYSIWYG: edit mode must not reshape view mode. Nothing appears in edit mode that occupies layout
   space the view mode doesn't have (edit affordances live in headers, overlays, or handles).
 
+### Spec-sheet primitives (data-dense modules)
+
+Modules that report structured data — media providers, server telemetry — render like a printed
+spec sheet, **not** as a stack of nested cards. The shared primitives in
+`components/Tree/specPrimitives.tsx` encode this; reach for them before inventing per-module markup.
+
+- **No boxes-in-boxes.** A module never wraps sub-groups in their own bordered/`bg-surface` cards.
+  Internal structure comes from hairline rules and a shared alignment grid.
+- **`SpecCaption`** titles a block: a mono `uppercase tracking-[0.14em]` caption on a single
+  bottom hairline, with an optional tabular aside on the right. This is the only internal "header".
+- **`SpecRow` / `SpecRows`** are the ledger: label left (mono, tertiary), value right (mono,
+  `tabular-nums`), baseline-aligned, separated by faint dividers. Two ledgers side by side make a
+  two-column fact sheet.
+- **`SpecMetric`** is a glanceable gauge: tiny label + tabular value over an optional **1px** bar on
+  a hairline track (`bg-border-light`). Tone (ok/warn/crit → moss/amber/rust) appears only under load.
+- **`MetaChip` / `MetaChipGroup`** replace bordered "badges": a borderless `surface-sunken` chip,
+  label and value split by a single hairline. Use for repeated metadata (library counts, facts).
+- **`Sparkline`** is the one trend language: a 1.25px non-scaling polyline with an optional 8%-opacity
+  area fill. `tone` carries meaning (`up`/`down`/`accent`), default `ink` stays quiet. No chart libs.
+- Status reads as a bare mono label + dot (`online` moss, `stale` muted) — not a filled pill.
+
 ## Litmus tests
 
 Before shipping UI, ask:
