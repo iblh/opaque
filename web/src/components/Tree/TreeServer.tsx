@@ -19,6 +19,7 @@ import { DEFAULT_SERVER_ICON } from '@/lib/svg';
 import { SERVER_ICON_PRESETS } from '@/lib/iconPresets';
 import IconField from '@/components/IconField';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
+import { Sparkline, SpecMetric, SpecRow, SpecRows } from '@/components/Tree/specPrimitives';
 
 interface ServerTree {
   root: string;
@@ -389,17 +390,17 @@ const TreeServer: React.FC<TreeServerProps> = ({
               </div>
             ) : (
               <>
-                <div className="mb-3.5 flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
+                <div className="flex items-start justify-between gap-3 border-b border-border-light pb-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     {renderDragHandle(server)}
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-secondary">
-                      <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-5 w-5" />
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center text-text-secondary">
+                      <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-[18px] w-[18px]" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium leading-tight text-text-primary">
+                      <div className="truncate text-[13px] font-medium leading-tight text-text-primary">
                         {server.name}
                       </div>
-                      <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
+                      <div className="mt-0.5 truncate font-mono text-[11px] leading-tight text-text-tertiary">
                         {removeProtocol(server.url)}
                       </div>
                     </div>
@@ -420,17 +421,36 @@ const TreeServer: React.FC<TreeServerProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <ServerUsageCard label="CPU" valueLabel={`${stats.cpu.toFixed(1)}%`} percent={stats.cpu} />
-                  <ServerUsageCard label="Memory" valueLabel={`${memoryPercent}%`} percent={memoryPercent} />
-                  <ServerUsageCard label="Storage" valueLabel={`${diskPercent}%`} percent={diskPercent} />
-                  <ServerLoadCard stats={stats} />
+                {/* Primary load: three hairline-tracked gauges on a shared grid. */}
+                <div className="mt-3 grid grid-cols-3 gap-x-5">
+                  <SpecMetric label="CPU" value={`${stats.cpu.toFixed(0)}%`} bar={stats.cpu} tone={usageTone(stats.cpu)} />
+                  <SpecMetric label="Mem" value={`${memoryPercent}%`} bar={memoryPercent} tone={usageTone(memoryPercent)} />
+                  <SpecMetric label="Disk" value={`${diskPercent}%`} bar={diskPercent} tone={usageTone(diskPercent)} />
                 </div>
 
-                <ServerFactChips stats={stats} />
+                {/* Secondary facts as a two-column ledger — no boxed sub-cards. */}
+                <div className="mt-3.5 grid grid-cols-2 gap-x-6">
+                  <SpecRows>
+                    <SpecRow label="Mem" value={`${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`} valueTone="secondary" />
+                    <SpecRow label="Disk" value={`${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`} valueTone="secondary" />
+                    <SpecRow label="Up" value={stats.uptime || '-'} valueTone="secondary" />
+                  </SpecRows>
+                  <SpecRows>
+                    <SpecRow label="Net ↓" value={formatBandwidth(stats.network.in)} valueTone="secondary" />
+                    <SpecRow label="Net ↑" value={formatBandwidth(stats.network.out)} valueTone="secondary" />
+                    <SpecRow
+                      label={stats.temperature > 0 ? 'Cores / °C' : 'Cores'}
+                      value={stats.temperature > 0
+                        ? `${stats.cores || '-'} / ${Math.round(stats.temperature)}°`
+                        : `${stats.cores || '-'}`}
+                      valueTone="secondary"
+                      title={stats.load?.length ? `Load: ${stats.load.slice(0, 3).map(formatLoadValue).join(' · ')}` : undefined}
+                    />
+                  </SpecRows>
+                </div>
 
                 {!isEditing && (
-                  <ServerTrendPanel
+                  <ServerTrendStrip
                     samples={metricHistories[server.id] || []}
                     stats={stats}
                   />
@@ -448,10 +468,8 @@ const TreeServer: React.FC<TreeServerProps> = ({
 function ServerStatusBadge({ online }: { online: boolean }) {
   return (
     <div
-      className={`inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 font-mono text-[10px] uppercase tracking-wider ${
-        online
-          ? 'border-accent-green/25 bg-accent-green/10 text-accent-green-dark'
-          : 'border-border-light bg-surface-sunken/45 text-text-muted'
+      className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${
+        online ? 'text-accent-green-dark' : 'text-text-muted'
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-accent-green' : 'bg-ink-300'}`} />
@@ -460,97 +478,18 @@ function ServerStatusBadge({ online }: { online: boolean }) {
   );
 }
 
-function ServerUsageCard({
-  label,
-  valueLabel,
-  percent: rawPercent,
-}: {
-  label: string;
-  valueLabel: string;
-  percent: number;
-}) {
-  const normalized = Math.max(0, Math.min(100, rawPercent));
-
-  return (
-    <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{label}</div>
-        <div className="font-mono text-[11px] font-medium text-text-primary">{valueLabel}</div>
-      </div>
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border-light">
-        <div
-          className={`h-full rounded-full transition-all ${normalized < 70 ? 'bg-accent-green' : normalized < 90 ? 'bg-accent-amber' : 'bg-accent-red'}`}
-          style={{ width: `${normalized}%` }}
-        />
-      </div>
-    </div>
-  );
+// Usage thresholds → gauge tone. Quiet until it matters: moss under load,
+// amber as it tightens, rust when critical.
+function usageTone(value: number): 'neutral' | 'ok' | 'warn' | 'crit' {
+  if (value >= 90) return 'crit';
+  if (value >= 70) return 'warn';
+  if (value > 0) return 'ok';
+  return 'neutral';
 }
 
-function ServerLoadCard({ stats }: { stats: ServerStats }) {
-  return (
-    <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Load</div>
-        <div className="font-mono text-[11px] font-medium text-text-primary">
-          {stats.cores || '-'} cores
-        </div>
-      </div>
-      <div className="mt-1.5 truncate font-mono text-[10px] text-text-tertiary">
-        {stats.load?.slice(0, 3).map(formatLoadValue).join(' / ') || '-'}
-      </div>
-    </div>
-  );
-}
-
-function ServerFactChips({ stats }: { stats: ServerStats }) {
-  const facts = [
-    {
-      label: 'Mem',
-      value: `${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`,
-    },
-    {
-      label: 'Disk',
-      value: `${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`,
-    },
-    {
-      label: 'In',
-      value: formatBandwidth(stats.network.in),
-    },
-    {
-      label: 'Out',
-      value: formatBandwidth(stats.network.out),
-    },
-    {
-      label: 'Up',
-      value: stats.uptime || '-',
-    },
-    ...(stats.temperature > 0 ? [{
-      label: 'Temp',
-      value: `${Math.round(stats.temperature)}C`,
-    }] : []),
-  ];
-
-  return (
-    <div className="mt-3 flex flex-wrap gap-1.5">
-      {facts.map((fact) => (
-        <span
-          key={fact.label}
-          className="inline-flex min-w-0 items-center gap-1.5 rounded-sm border border-border-light bg-surface-elevated/60 px-2 py-1 text-[11px]"
-        >
-          <span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
-            {fact.label}
-          </span>
-          <span className="max-w-[8.5rem] truncate font-mono text-[10px] text-text-secondary">
-            {fact.value}
-          </span>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function ServerTrendPanel({
+// A single telemetry strip: three labeled sparklines on a shared grid, titled
+// by a hairline caption with the sample count. Replaces the boxed trend panel.
+function ServerTrendStrip({
   samples,
   stats,
 }: {
@@ -569,24 +508,22 @@ function ServerTrendPanel({
     : 'waiting';
 
   return (
-    <div className="mt-4 rounded-sm border border-border-light bg-surface-sunken/25 p-2.5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+    <div className="mt-4">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border-light pb-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
           24h telemetry
-        </div>
-        <div className="font-mono text-[10px] text-text-muted">
-          {sampleLabel}
-        </div>
+        </span>
+        <span className="font-mono text-[10px] tabular-nums text-text-muted">{sampleLabel}</span>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <TrendMini label="CPU" valueLabel={`${stats.cpu.toFixed(0)}%`} values={cpuValues} />
-        <TrendMini
-          label="Memory"
+      <div className="mt-2.5 grid grid-cols-3 gap-x-5">
+        <TrendColumn label="CPU" valueLabel={`${stats.cpu.toFixed(0)}%`} values={cpuValues} />
+        <TrendColumn
+          label="Mem"
           valueLabel={`${percent(stats.memory.used, stats.memory.total)}%`}
           values={memoryValues}
         />
-        <TrendMini
-          label="Network"
+        <TrendColumn
+          label="Net"
           valueLabel={formatBandwidth(stats.network.in + stats.network.out)}
           values={networkValues}
         />
@@ -595,7 +532,7 @@ function ServerTrendPanel({
   );
 }
 
-function TrendMini({
+function TrendColumn({
   label,
   valueLabel,
   values,
@@ -605,45 +542,16 @@ function TrendMini({
   values: number[];
 }) {
   return (
-    <div className="min-w-0 rounded-sm bg-surface-elevated/60 p-1.5">
-      <div className="mb-1 flex items-center justify-between gap-1">
-        <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
+    <div className="min-w-0">
+      <div className="mb-1 flex items-baseline justify-between gap-1.5">
+        <span className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
           {label}
-        </div>
-        <div className="truncate font-mono text-[10px] text-text-secondary">
+        </span>
+        <span className="shrink-0 font-mono text-[10px] tabular-nums text-text-secondary">
           {valueLabel}
-        </div>
+        </span>
       </div>
-      <TrendSparkline values={values} />
-    </div>
-  );
-}
-
-function TrendSparkline({ values }: { values: number[] }) {
-  const points = sparklinePoints(values);
-
-  if (!points) {
-    return <div className="h-7 rounded-sm bg-surface-sunken/45" />;
-  }
-
-  return (
-    <div className="h-7 overflow-hidden">
-      <svg
-        viewBox="0 0 72 28"
-        preserveAspectRatio="none"
-        className="h-full w-full text-ink-500"
-        aria-label="Server telemetry trend"
-      >
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
+      <Sparkline values={values} width={72} height={24} fill ariaLabel={`${label} 24h trend`} />
     </div>
   );
 }
@@ -693,29 +601,6 @@ function formatBytes(bytes: number, decimals = 1): string {
 
 function formatBandwidth(bytesPerSecond: number): string {
   return `${formatBytes(bytesPerSecond)}/s`;
-}
-
-function sparklinePoints(values: number[], width = 72, height = 28) {
-  const finiteValues = values.map(Number).filter(Number.isFinite);
-  if (finiteValues.length === 0) return '';
-
-  const points = finiteValues.length === 1
-    ? [finiteValues[0], finiteValues[0]]
-    : finiteValues;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const span = max - min || 1;
-  const xStep = width / (points.length - 1);
-
-  return points.map((value, index) => {
-    const x = index * xStep;
-    const y = height - ((value - min) / span) * (height - 4) - 2;
-    return `${roundCoordinate(x)},${roundCoordinate(y)}`;
-  }).join(' ');
-}
-
-function roundCoordinate(value: number) {
-  return Math.round(value * 100) / 100;
 }
 
 function reorder<T>(
