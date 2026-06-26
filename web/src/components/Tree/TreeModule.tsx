@@ -53,7 +53,7 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
-import { MetaChip, MetaChipGroup } from '@/components/Tree/specPrimitives';
+import { MetaChip, MetaChipGroup, Sparkline } from '@/components/Tree/specPrimitives';
 
 interface ModuleTree {
   root: string;
@@ -787,9 +787,12 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-y-1 text-center">
+        <div className="grid grid-cols-7 text-center">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
-            <div key={`${weekday}-${index}`} className="pb-1.5 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+            <div
+              key={`${weekday}-${index}`}
+              className="pb-2 font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-text-muted"
+            >
               {weekday}
             </div>
           ))}
@@ -797,13 +800,22 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
             <button
               key={cell.key}
               type="button"
-              className={`mx-auto flex h-7 w-7 items-center justify-center text-xs transition-colors hover:bg-surface-sunken ${
-                cell.inMonth ? 'text-text-primary' : 'text-text-muted'
-              } ${cell.isToday ? 'border border-ink-500 bg-surface-sunken text-text-primary' : ''}`}
+              className="group/day flex h-7 items-center justify-center"
               title={calendarCellTitle(cell.date)}
               aria-label={calendarCellTitle(cell.date)}
+              aria-current={cell.isToday ? 'date' : undefined}
             >
-              {cell.date.getDate()}
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-[2px] font-mono text-[11px] tabular-nums transition-colors ${
+                  cell.isToday
+                    ? 'bg-text-primary font-medium text-background'
+                    : cell.inMonth
+                      ? 'text-text-secondary group-hover/day:bg-surface-sunken group-hover/day:text-text-primary'
+                      : 'text-text-muted/60 group-hover/day:bg-surface-sunken'
+                }`}
+              >
+                {cell.date.getDate()}
+              </span>
             </button>
           ))}
         </div>
@@ -984,33 +996,37 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
-          <div>
-            <div>
-              <div className="text-3xl font-light leading-none tracking-tight text-text-primary">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[2.5rem] font-light leading-none tracking-tight text-text-primary">
                 {Math.round(data.temperature)}°
               </div>
-              <div className="mt-2 text-xs text-text-tertiary">
+              <div className="mt-2 truncate text-xs text-text-secondary" title={data.condition}>
                 {data.condition}
               </div>
             </div>
-            <div className="mt-4 border-t border-border-light pt-3 font-mono text-[10px] leading-relaxed text-text-tertiary">
-              <span className="text-text-secondary">{data.location}</span>
-              <span className="mx-1.5 text-text-muted">·</span>
-              <span>{Math.round(data.humidity)}% humidity</span>
+            <div className="shrink-0 text-right font-mono text-[10px] leading-relaxed text-text-muted">
+              <div className="truncate text-text-secondary" title={data.location}>{data.location}</div>
+              <div className="mt-0.5 tabular-nums">{Math.round(data.humidity)}% RH</div>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-4 border-t border-border-light pt-1">
             {data.forecast.map((day) => (
-              <div key={day.date} title={day.condition}>
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+              <div
+                key={day.date}
+                className="flex items-baseline gap-3 border-b border-border-light/70 py-1.5 last:border-0"
+                title={day.condition}
+              >
+                <span className="w-8 shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
                   {formatWeekday(day.date)}
-                </div>
-                <div className="mt-1 font-mono text-[11px] text-text-secondary">
-                  {Math.round(day.high)}/{Math.round(day.low)}
-                </div>
-                <div className="mt-0.5 truncate text-[10px] leading-tight text-text-muted">
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-text-tertiary">
                   {day.condition}
-                </div>
+                </span>
+                <span className="shrink-0 font-mono text-[11px] tabular-nums text-text-secondary">
+                  {Math.round(day.high)}°
+                  <span className="ml-1 text-text-muted">{Math.round(day.low)}°</span>
+                </span>
               </div>
             ))}
           </div>
@@ -1046,12 +1062,18 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                     {quote.name}
                   </div>
                 </div>
-                <MarketSparkline values={quote.sparkline} />
+                <Sparkline
+                  values={quote.sparkline}
+                  width={56}
+                  height={24}
+                  tone={quote.changePercent >= 0 ? 'up' : 'down'}
+                  ariaLabel={`${quote.symbol} recent trend`}
+                />
                 <div className="min-w-0 text-right font-mono">
-                  <div className={`text-xs font-medium leading-tight tracking-tight ${trendTone}`}>
+                  <div className={`text-xs font-medium leading-tight tracking-tight tabular-nums ${trendTone}`}>
                     {change}
                   </div>
-                  <div className="mt-1 truncate text-[11px] leading-tight text-text-secondary">
+                  <div className="mt-1 truncate text-[11px] leading-tight tabular-nums text-text-secondary">
                     {formatMarketPrice(quote.price, quote.currency)}
                   </div>
                 </div>
@@ -1061,39 +1083,6 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         </div>
       )}
     </ModulePanel>
-  );
-}
-
-function MarketSparkline({
-  values,
-}: {
-  values: number[];
-}) {
-  const points = sparklinePoints(values, 56, 24);
-
-  if (!points) {
-    return <div className="h-[24px]" />;
-  }
-
-  return (
-    <div className="h-[24px] w-full overflow-hidden">
-      <svg
-        viewBox="0 0 56 24"
-        preserveAspectRatio="none"
-        className="h-full w-full text-ink-400"
-        aria-label="Recent price trend"
-      >
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
   );
 }
 
@@ -2852,26 +2841,6 @@ function formatMarketPrice(value: number, currency?: string) {
 function marketTrendTone(changePercent: number) {
   if (Math.abs(changePercent) < 0.005) return 'text-text-secondary';
   return changePercent > 0 ? 'text-accent-green-dark' : 'text-accent-red-dark';
-}
-
-function sparklinePoints(values: number[], width = 120, height = 28) {
-  const points = values.filter((value) => Number.isFinite(value));
-  if (points.length < 2) return '';
-
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const span = max - min || 1;
-  const xStep = width / (points.length - 1);
-
-  return points.map((value, index) => {
-    const x = index * xStep;
-    const y = height - ((value - min) / span) * height;
-    return `${roundSvgNumber(x)},${roundSvgNumber(y)}`;
-  }).join(' ');
-}
-
-function roundSvgNumber(value: number) {
-  return Math.round(value * 10) / 10;
 }
 
 function formatCompactNumber(value: number) {
