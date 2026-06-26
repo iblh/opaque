@@ -840,7 +840,12 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
                     aria-label={calendarCellTitle(cell.date)}
                     aria-current={cell.isToday ? 'date' : undefined}
                   >
-                    <RegistrationMark active={cell.isToday} size={5} className="h-6 w-6">
+                    <RegistrationMark
+                      active={cell.isToday}
+                      hoverTickClass="group-hover/day:border-text-muted"
+                      size={5}
+                      className="h-6 w-6"
+                    >
                       <span
                         className={`font-mono text-[11px] tabular-nums transition-colors ${
                           cell.isToday
@@ -1159,9 +1164,15 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
             return (
               <div
                 key={quote.symbol}
-                className="grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5"
+                className="group/inst relative grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5"
               >
-                <div className="min-w-0">
+                {/* Mechanical hover: a left guide-rule slides in like a ruler
+                    cursor, and the symbol nudges off it. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -left-2 top-1/2 h-0 w-px -translate-y-1/2 bg-text-primary transition-all duration-200 group-hover/inst:h-[calc(100%-10px)]"
+                />
+                <div className="min-w-0 transition-transform duration-200 group-hover/inst:translate-x-1">
                   <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-wide text-text-primary">
                     {quote.symbol}
                   </div>

@@ -47,24 +47,34 @@ export function SpecCaption({
 export function RegistrationMark({
   children,
   active = true,
+  hoverTickClass = '',
   size = 6,
   className = '',
 }: {
   children: React.ReactNode;
   /** When false, ticks are hidden (children render bare) — for hover/idle. */
   active?: boolean;
+  /**
+   * Static Tailwind class(es) revealing faint ticks on a parent hover group when
+   * not already active, e.g. "group-hover/day:border-text-muted". Must be a
+   * literal so the JIT can see it — never build it dynamically.
+   */
+  hoverTickClass?: string;
   /** Tick arm length in px. */
   size?: number;
   className?: string;
 }) {
   const arm = `${size}px`;
-  const tick = active ? 'border-text-primary' : 'border-transparent';
+  // Active = solid ink ticks. Otherwise, optionally a faint tick on parent hover.
+  const tick = active
+    ? 'border-text-primary'
+    : `border-transparent ${hoverTickClass}`;
   return (
     <span className={`relative inline-flex items-center justify-center ${className}`}>
-      <span aria-hidden className={`pointer-events-none absolute left-0 top-0 border-l border-t ${tick}`} style={{ width: arm, height: arm }} />
-      <span aria-hidden className={`pointer-events-none absolute right-0 top-0 border-r border-t ${tick}`} style={{ width: arm, height: arm }} />
-      <span aria-hidden className={`pointer-events-none absolute bottom-0 left-0 border-b border-l ${tick}`} style={{ width: arm, height: arm }} />
-      <span aria-hidden className={`pointer-events-none absolute bottom-0 right-0 border-b border-r ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute left-0 top-0 border-l border-t transition-colors ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute right-0 top-0 border-r border-t transition-colors ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute bottom-0 left-0 border-b border-l transition-colors ${tick}`} style={{ width: arm, height: arm }} />
+      <span aria-hidden className={`pointer-events-none absolute bottom-0 right-0 border-b border-r transition-colors ${tick}`} style={{ width: arm, height: arm }} />
       {children}
     </span>
   );
