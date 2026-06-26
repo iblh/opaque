@@ -216,6 +216,25 @@ input:-webkit-autofill:active {
     animation: subtleFloat 6s ease-in-out infinite;
 }
 
+/* Loading: a blank archive record filling. A slow, low-contrast sweep across
+   the empty value slots — quieter and more "ink filling paper" than a pulse. */
+@keyframes recordSweep {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+.animate-record-sweep {
+    animation: recordSweep 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-record-sweep {
+        animation: none;
+        opacity: 0.7;
+    }
+}
+
 @keyframes dragClonePickUp {
     from {
         transform: scale(1);

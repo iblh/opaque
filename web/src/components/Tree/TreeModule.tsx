@@ -2082,33 +2082,65 @@ function ModuleBodyState({
   skeleton?: ModuleSkeletonKind;
 }) {
   if (state.error) {
-    return (
-      <div className="min-h-16 text-[11px] leading-relaxed text-accent-red-dark">
-        {state.error}
-      </div>
-    );
+    return <InspectionNote>{state.error}</InspectionNote>;
   }
 
   return <ModuleSkeleton kind={skeleton} />;
 }
 
-const skeletonBar = 'rounded-sm bg-surface-sunken';
-const skeletonBarSoft = 'rounded-sm bg-border-light';
+// An error rendered as a stamped inspection note rather than a red alert: a mono
+// "NO READING" stamp over a hairline, with the terse message beneath.
+function InspectionNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-16">
+      <div className="flex items-center gap-1.5 border-b border-accent-red/25 pb-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-accent-red-dark">
+        <span aria-hidden>✕</span>
+        No reading
+      </div>
+      <div className="mt-2 font-mono text-[11px] leading-relaxed text-text-tertiary">
+        {children}
+      </div>
+    </div>
+  );
+}
 
-// Loading placeholders that echo each module's real content structure, so the
-// panel doesn't reshape when live data arrives.
+// An empty value slot in a loading record: a faint baseline that reads as a
+// ruled blank waiting to be filled (not a solid grey bar).
+function Slot({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
+  return <span className={`inline-block h-px bg-border-medium align-middle ${className}`} style={style} />;
+}
+
+// One ledger row in a loading record: a faint label tick on the left, an empty
+// value slot on the right — the blank-form look.
+function SkeletonRow({ labelW = 'w-10', valueW = 'w-12' }: { labelW?: string; valueW?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1">
+      <Slot className={labelW} />
+      <Slot className={valueW} />
+    </div>
+  );
+}
+
+// Loading placeholders that echo each module's real spec-sheet structure, so the
+// panel doesn't reshape when live data arrives — a blank archive record filling
+// in, not a generic shimmer.
 function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   if (kind === 'weather') {
     return (
-      <div className="animate-pulse" aria-hidden>
-        <div className={`h-8 w-20 ${skeletonBar}`} />
-        <div className={`mt-2 h-2.5 w-24 ${skeletonBarSoft}`} />
-        <div className={`mt-4 h-2 w-36 ${skeletonBarSoft}`} />
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+      <div className="animate-record-sweep" aria-hidden>
+        <div className="flex items-start justify-between">
+          <span className="inline-block h-7 w-16 bg-surface-sunken" />
+          <div className="flex flex-col items-end gap-1.5 pt-1">
+            <Slot className="w-24" />
+            <Slot className="w-12" />
+          </div>
+        </div>
+        <div className="mt-4 space-y-px border-t border-border-light pt-2">
           {[0, 1, 2].map((index) => (
-            <div key={index}>
-              <div className={`h-2 w-8 ${skeletonBarSoft}`} />
-              <div className={`mt-1.5 h-2.5 w-12 ${skeletonBar}`} />
+            <div key={index} className="flex items-baseline gap-3 py-1.5">
+              <Slot className="w-8" />
+              <Slot className="flex-1" />
+              <Slot className="w-12" />
             </div>
           ))}
         </div>
@@ -2118,17 +2150,17 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'markets') {
     return (
-      <div className="-my-1 animate-pulse divide-y divide-border-light" aria-hidden>
+      <div className="-mt-1 animate-record-sweep divide-y divide-border-light/70" aria-hidden>
         {[0, 1, 2, 3].map((index) => (
-          <div key={index} className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5">
-            <div>
-              <div className={`h-2.5 w-12 ${skeletonBar}`} />
-              <div className={`mt-1.5 h-2 w-16 ${skeletonBarSoft}`} />
+          <div key={index} className="grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5">
+            <div className="space-y-1.5">
+              <Slot className="w-12" />
+              <Slot className="w-16" />
             </div>
-            <div className={`h-[26px] w-full ${skeletonBarSoft}`} />
-            <div className="justify-self-end">
-              <div className={`h-2.5 w-12 ${skeletonBar}`} />
-              <div className={`mt-1.5 h-2 w-14 ${skeletonBarSoft}`} />
+            <Slot className="w-full" />
+            <div className="justify-self-end space-y-1.5 text-right">
+              <Slot className="ml-auto w-12" />
+              <Slot className="ml-auto w-14" />
             </div>
           </div>
         ))}
@@ -2138,34 +2170,25 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'media') {
     return (
-      <div className="animate-pulse" aria-hidden>
-        <div className="mb-4 flex items-baseline justify-between border-b border-border-light pb-3">
-          <div className={`h-2 w-12 ${skeletonBar}`} />
-          <div className={`h-2 w-16 ${skeletonBarSoft}`} />
+      <div className="animate-record-sweep" aria-hidden>
+        <div className="flex items-center justify-between border-b border-border-light pb-2">
+          <Slot className="w-16" />
+          <Slot className="w-12" />
         </div>
-        <div className="mb-4 grid grid-cols-4 gap-1.5">
-          {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
-              <div className={`h-2 w-10 ${skeletonBarSoft}`} />
-              <div className={`mt-1.5 h-2.5 w-8 ${skeletonBar}`} />
-            </div>
-          ))}
-        </div>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {[0, 1, 2, 3, 4].map((index) => (
-            <div key={index} className={`h-5 rounded-sm border border-border-light bg-surface-sunken/45 ${index % 2 === 0 ? 'w-20' : 'w-24'}`} />
-          ))}
-        </div>
-        <div className="mt-5 border-t border-border-light pt-4">
-          <div className={`h-2 w-24 ${skeletonBarSoft}`} />
-          <div className="mt-3 grid grid-cols-4 gap-2.5">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index}>
-                <div className={`aspect-[2/3] ${skeletonBar}`} />
-                <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />
-              </div>
-            ))}
+        <div className="mt-3 grid grid-cols-2 gap-x-6">
+          <div className="space-y-0">
+            <SkeletonRow />
+            <SkeletonRow />
           </div>
+          <div className="space-y-0">
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-1">
+          {[0, 1, 2, 3].map((index) => (
+            <span key={index} className={`h-4 bg-surface-sunken/60 ${index % 2 === 0 ? 'w-16' : 'w-20'}`} />
+          ))}
         </div>
       </div>
     );
@@ -2173,11 +2196,11 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'posts') {
     return (
-      <div className="animate-pulse space-y-3.5" aria-hidden>
+      <div className="-mx-2 animate-record-sweep space-y-3.5 px-2" aria-hidden>
         {[0, 1, 2, 3, 4].map((index) => (
-          <div key={index}>
-            <div className={`h-2.5 ${skeletonBar}`} style={{ width: `${82 - (index % 3) * 14}%` }} />
-            <div className={`mt-1.5 h-2 w-2/5 ${skeletonBarSoft}`} />
+          <div key={index} className="space-y-1.5">
+            <Slot style={{ width: `${82 - (index % 3) * 14}%` }} />
+            <Slot className="w-2/5" />
           </div>
         ))}
       </div>
@@ -2185,18 +2208,26 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   }
 
   return (
-    <div className="min-h-16 animate-pulse space-y-2.5" aria-hidden>
-      <div className={`h-2.5 w-3/4 ${skeletonBar}`} />
-      <div className={`h-2.5 w-1/2 ${skeletonBarSoft}`} />
-      <div className={`h-2.5 w-2/3 ${skeletonBarSoft}`} />
+    <div className="min-h-16 animate-record-sweep space-y-2.5" aria-hidden>
+      <Slot className="w-3/4" />
+      <Slot className="w-1/2" />
+      <Slot className="w-2/3" />
     </div>
   );
 }
 
+// Empty = a blank catalog card: a faint dashed-ruled record area with a "NIL"
+// stamp and a one-line note. Quiet, not an illustration.
 function EmptyModuleState({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-16 text-[11px] leading-relaxed text-text-tertiary">
-      {children}
+    <div className="min-h-16">
+      <div className="flex items-center gap-1.5 border-b border-border-light pb-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-text-muted">
+        <span aria-hidden className="h-1 w-1 bg-ink-300" />
+        Nil
+      </div>
+      <div className="mt-2 text-[11px] leading-relaxed text-text-tertiary">
+        {children}
+      </div>
     </div>
   );
 }
