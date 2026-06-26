@@ -128,6 +128,36 @@ spec sheet, **not** as a stack of nested cards. The shared primitives in
   area fill. `tone` carries meaning (`up`/`down`/`accent`), default `ink` stays quiet. No chart libs.
 - Status reads as a bare mono label + dot (`online` moss, `stale` muted) — not a filled pill.
 
+### Signature archival elements (the memory points)
+
+OPAQUE should read as a *private archive instrument*, not a generic dashboard. Three signature
+devices (and only these — resist adding more) carry that identity. They come from object-ness —
+codes, registration marks, stamps — never from paper grain or scan textures (we add none).
+
+- **`SpecHeader`** — every data module opens with a filed-record index line: a fixed module code +
+  provenance on the left (`CAL / LOCAL`, `WTHR / LIVE`, `MKT / LIVE`, `MED / <PROVIDER>`, `SRV / LIVE`,
+  `IDX`), and an optional serial beside a `⌖` registration mark on the right (`2026·06`, `4 SYM`,
+  `°F`). Codes are stable semantic labels, not derived coordinates. This repeating line is *the*
+  memory point — keep it on every module.
+- **`RegistrationMark`** — four corner crop-ticks framing a value. The site's "current / active"
+  marker: calendar *today*, and (faintly, on hover via `hoverTickClass`) the cell the cursor is on.
+  Reserved for genuinely singular current items — never a general highlight. Solid ink when active.
+- **`Stamp`** — the one status language, drawn like an inspection stamp (mono uppercase + small dot),
+  never a filled pill: `online`/`stale`, media `N playing`, market `▲/▼` deltas, `syncing` (pulsing).
+
+Each module also takes a distinct-but-related *archival form*: Calendar = month **ledger** (a `WK`
+week-number gutter, registration today); Weather = station **bulletin** (measurement figure + unit
+tick + station metadata); Markets = ticker **instrument list** (oscilloscope traces, stamped deltas);
+Media = catalog **drawer** per provider; Server = telemetry **instrument**; Posts = **index** with
+folder-divider tabs.
+
+State pages stay in-character: **loading** is a blank record filling (hairline value `Slot`s + a calm
+`recordSweep`, never a generic pulse); **empty** is a blank catalog card (`NIL` stamp + one terse
+line); **error** is an inspection note (`NO READING ✕` over a faint rust rule), never a red alert.
+
+Interaction is mechanical, not web-app: hover slides a guide-rule / reveals registration ticks like a
+ruler cursor — not a flat background tint.
+
 ## Litmus tests
 
 Before shipping UI, ask:

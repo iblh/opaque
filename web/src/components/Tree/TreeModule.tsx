@@ -1093,7 +1093,7 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
           {/* Station reading: a large measurement figure with a unit tick, the
               condition as a caption, and station metadata aligned right. */}
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="shrink-0">
               <div className="flex items-start gap-0.5 text-text-primary">
                 <span className="text-[2.5rem] font-light leading-none tracking-tight tabular-nums">
                   {Math.round(data.temperature)}
@@ -1104,8 +1104,8 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                 {data.condition}
               </div>
             </div>
-            <div className="shrink-0 text-right font-mono text-[10px] leading-relaxed">
-              <div className="max-w-[9rem] truncate text-text-secondary" title={data.location}>{data.location}</div>
+            <div className="min-w-0 flex-1 text-right font-mono text-[10px] leading-relaxed">
+              <div className="truncate text-text-secondary" title={data.location}>{data.location}</div>
               <div className="mt-1 tabular-nums text-text-muted">
                 <span className="text-text-tertiary">RH</span> {Math.round(data.humidity)}%
               </div>
