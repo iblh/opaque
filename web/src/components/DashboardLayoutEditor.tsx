@@ -41,16 +41,6 @@ const SWITCH_BUFFER = 10;
 const MAX_CLONE_WIDTH = 360;
 // How many skeleton blocks the clone draws at most (one per branch, capped).
 const MAX_CLONE_SKELETON_BLOCKS = 4;
-const SECTION_CODES: Record<string, string> = {
-  weather: 'A:01',
-  calendar: 'A:02',
-  markets: 'A:03',
-  media: 'B:01',
-  posts: 'B:02',
-  bookmarks: 'C:01',
-  applications: 'C:02',
-  servers: 'D:01',
-};
 
 interface GeomCell {
   root: string;
@@ -644,32 +634,21 @@ interface SectionHeaderProps {
 
 function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: SectionHeaderProps) {
   const label = getRootLabel(tree.root);
-  const code = SECTION_CODES[tree.root] || 'X:00';
   return (
-    <div className={`mb-5 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
-      <div className="flex items-end justify-between gap-4 border-b border-border-light pb-2">
-        <div className="flex min-w-0 items-end gap-3">
-          {isEditing && (
-            <button
-              type="button"
-              onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
-              className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors hover:text-text-primary active:cursor-grabbing"
-              aria-label={`Drag ${label} section`}
-              title="Drag to rearrange"
-            >
-              <IconGripVertical className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <div className="min-w-0">
-            <div className="opaque-kicker">{code} / {tree.root}</div>
-            <div className="mt-1 truncate font-serif text-base leading-none text-text-secondary">
-              {label}
-            </div>
-          </div>
-        </div>
-        <div className="hidden flex-shrink-0 font-condensed text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted sm:block">
-          {isEditing ? 'layout unlocked' : 'field notes'}
-        </div>
+    <div className={`mb-6 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
+      {isEditing && (
+        <button
+          type="button"
+          onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
+          className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors hover:text-text-primary active:cursor-grabbing"
+          aria-label={`Drag ${label} section`}
+          title="Drag to rearrange"
+        >
+          <IconGripVertical className="h-3.5 w-3.5" />
+        </button>
+      )}
+      <div className="font-serif text-base leading-none text-text-secondary">
+        {label}
       </div>
     </div>
   );
@@ -687,7 +666,7 @@ function PlaceholderBody({ label, height }: { label: string; height: number | nu
       style={style}
       className="flex items-center justify-center rounded-sm border border-dashed border-border-strong bg-surface-sunken/40"
     >
-      <span className="opaque-kicker">
+      <span className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
         {label}
       </span>
     </div>
@@ -717,10 +696,10 @@ function DragClone({ drag }: { drag: DragState }) {
     // data-overlay: a drag is in progress and owns Escape (cancels the drag);
     // the global Escape shortcut must not also discard the whole draft.
     <div style={style} data-overlay className="opaque-drag-clone">
-      <div className="flex h-full w-full flex-col overflow-hidden rounded-sm border border-border-medium bg-surface-elevated shadow-floating">
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border-medium bg-surface-elevated shadow-floating">
         <div className="flex items-center gap-2 border-b border-border-light px-3 py-2">
           <IconGripVertical className="h-3.5 w-3.5 text-text-muted" />
-          <span className="truncate font-condensed text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
+          <span className="truncate text-xs font-medium uppercase tracking-wider text-text-secondary">
             {drag.label}
           </span>
         </div>

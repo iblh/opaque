@@ -448,7 +448,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
 function ServerStatusBadge({ online }: { online: boolean }) {
   return (
     <div
-      className={`inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 font-condensed text-[10px] font-medium uppercase tracking-[0.14em] ${
+      className={`inline-flex h-5 items-center gap-1.5 rounded-sm border px-1.5 font-mono text-[10px] uppercase tracking-wider ${
         online
           ? 'border-accent-green/25 bg-accent-green/10 text-accent-green-dark'
           : 'border-border-light bg-surface-sunken/45 text-text-muted'
@@ -474,7 +474,7 @@ function ServerUsageCard({
   return (
     <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
       <div className="flex items-center justify-between">
-        <div className="opaque-spec-label">{label}</div>
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">{label}</div>
         <div className="font-mono text-[11px] font-medium text-text-primary">{valueLabel}</div>
       </div>
       <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border-light">
@@ -491,7 +491,7 @@ function ServerLoadCard({ stats }: { stats: ServerStats }) {
   return (
     <div className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="opaque-spec-label">Load</div>
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Load</div>
         <div className="font-mono text-[11px] font-medium text-text-primary">
           {stats.cores || '-'} cores
         </div>
@@ -538,7 +538,7 @@ function ServerFactChips({ stats }: { stats: ServerStats }) {
           key={fact.label}
           className="inline-flex min-w-0 items-center gap-1.5 rounded-sm border border-border-light bg-surface-elevated/60 px-2 py-1 text-[11px]"
         >
-          <span className="font-condensed text-[9px] font-medium uppercase tracking-[0.14em] text-text-muted">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-text-muted">
             {fact.label}
           </span>
           <span className="max-w-[8.5rem] truncate font-mono text-[10px] text-text-secondary">
@@ -571,7 +571,7 @@ function ServerTrendPanel({
   return (
     <div className="mt-4 rounded-sm border border-border-light bg-surface-sunken/25 p-2.5">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="opaque-spec-label">
+        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
           24h telemetry
         </div>
         <div className="font-mono text-[10px] text-text-muted">
@@ -607,7 +607,7 @@ function TrendMini({
   return (
     <div className="min-w-0 rounded-sm bg-surface-elevated/60 p-1.5">
       <div className="mb-1 flex items-center justify-between gap-1">
-        <div className="opaque-spec-label truncate">
+        <div className="truncate text-[10px] uppercase tracking-wider text-text-tertiary">
           {label}
         </div>
         <div className="truncate font-mono text-[10px] text-text-secondary">
