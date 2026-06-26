@@ -1790,7 +1790,7 @@ function PostStackTabs({
             type="button"
             onClick={() => onSelect(source.id)}
             {...dragProps}
-            className={`group relative text-[10px] uppercase tracking-wider transition-colors ${
+            className={`group relative font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
               framed ? '-mb-px pb-2' : 'pb-1'
             } ${
               draggable ? 'cursor-grab active:cursor-grabbing' : ''
@@ -1804,10 +1804,14 @@ function PostStackTabs({
             <span className="inline-block max-w-[9rem] truncate">
               {postModuleTabLabel(source)}
             </span>
+            {/* Active tab: a solid ink underline that sits over the baseline
+                rule; idle tabs reveal a faint hairline on hover. */}
             <span
               aria-hidden
-              className={`absolute bottom-0 left-0 h-px w-full transition-colors ${
-                isSelected ? 'bg-ink-700' : 'bg-transparent group-hover:bg-border-medium'
+              className={`absolute -bottom-px left-0 h-[1.5px] w-full transition-all duration-200 ${
+                isSelected
+                  ? 'bg-text-primary opacity-100'
+                  : 'bg-border-medium opacity-0 group-hover:opacity-100'
               }`}
             />
           </button>
@@ -1932,10 +1936,10 @@ function PostsContent({
                 read ? 'text-text-muted' : 'text-text-tertiary group-hover:text-text-secondary'
               }`}
             >
-              <span>{post.source}</span>
-              {(post.meta || post.publishedAt) && <span>·</span>}
-              {post.meta && <span className="truncate">{post.meta}</span>}
-              {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+              <span className="uppercase tracking-wider text-text-muted">{post.source}</span>
+              {(post.meta || post.publishedAt) && <span className="text-text-muted">·</span>}
+              {post.meta && <span className="truncate tabular-nums">{post.meta}</span>}
+              {post.publishedAt && <span className="flex-shrink-0 tabular-nums">{formatRelativeTime(post.publishedAt)}</span>}
             </div>
           </a>
         );
