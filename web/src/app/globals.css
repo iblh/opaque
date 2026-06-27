@@ -228,6 +228,21 @@ input:-webkit-autofill:active {
     animation: recordSweep 1.8s ease-in-out infinite;
 }
 
+/* Edit mode "drafting surface": while a section is being dragged, a very faint
+   drafting grid fades in behind the layout — like laying work out on a cutting
+   mat. Off at rest; never affects view mode. */
+.drafting-surface {
+    background-image: none;
+    background-size: 24px 24px;
+    transition: background-color 180ms ease;
+}
+
+.drafting-surface[data-drafting] {
+    background-image:
+        linear-gradient(to right, rgb(var(--border-light) / 0.5) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(var(--border-light) / 0.5) 1px, transparent 1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .animate-record-sweep {
         animation: none;
