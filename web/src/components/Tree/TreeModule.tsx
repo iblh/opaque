@@ -57,6 +57,7 @@ import {
   MetaChip,
   MetaChipGroup,
   RegistrationMark,
+  RollingNumber,
   Sparkline,
   SpecHeader,
   Stamp,
@@ -1095,9 +1096,11 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
           <div className="flex items-start justify-between gap-3">
             <div className="shrink-0">
               <div className="flex items-start gap-0.5 text-text-primary">
-                <span className="text-[2.5rem] font-light leading-none tracking-tight tabular-nums">
-                  {Math.round(data.temperature)}
-                </span>
+                <RollingNumber
+                  value={String(Math.round(data.temperature))}
+                  className="text-[2.5rem] font-light leading-none tracking-tight"
+                  ariaLabel={`${Math.round(data.temperature)} degrees ${unit}`}
+                />
                 <span className="mt-1 font-mono text-sm text-text-tertiary">°{unit}</span>
               </div>
               <div className="mt-2 truncate text-xs text-text-secondary" title={data.condition}>
@@ -1189,12 +1192,16 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
                 />
                 <div className="min-w-0 text-right font-mono">
                   {/* Delta as a stamped figure: a tick glyph + signed percent. */}
-                  <div className={`flex items-center justify-end gap-1 text-xs font-medium leading-tight tabular-nums ${up ? 'text-accent-green-dark' : 'text-accent-red-dark'}`}>
+                  <div className={`flex items-center justify-end gap-1 text-xs font-medium leading-tight ${up ? 'text-accent-green-dark' : 'text-accent-red-dark'}`}>
                     <span aria-hidden className="text-[9px]">{up ? '▲' : '▼'}</span>
-                    {change}
+                    <RollingNumber value={change} ariaLabel={`${quote.symbol} change ${change}`} />
                   </div>
-                  <div className="mt-1 truncate text-[11px] leading-tight tabular-nums text-text-secondary">
-                    {formatMarketPrice(quote.price, quote.currency)}
+                  <div className="mt-1 flex justify-end">
+                    <RollingNumber
+                      value={formatMarketPrice(quote.price, quote.currency)}
+                      className="text-[11px] leading-tight text-text-secondary"
+                      ariaLabel={`${quote.symbol} price ${formatMarketPrice(quote.price, quote.currency)}`}
+                    />
                   </div>
                 </div>
               </div>

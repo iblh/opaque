@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Archival Technical Minimalism — shared visual primitives.
@@ -246,9 +246,10 @@ export function SpecMetric({
         <span className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
           {label}
         </span>
-        <span className="shrink-0 font-mono text-[11px] tabular-nums font-medium text-text-primary">
-          {value}
-        </span>
+        <RollingNumber
+          value={value}
+          className="shrink-0 font-mono text-[11px] font-medium text-text-primary"
+        />
       </div>
       {bar != null && (
         <div className="mt-1.5 h-px w-full bg-border-light">
@@ -401,4 +402,73 @@ function sparklineCoords(values: number[], width: number, height: number): Spark
 
 function round(value: number) {
   return Math.round(value * 10) / 10;
+}
+
+// ---------------------------------------------------------------------------
+// Mechanical readout — an odometer/flip number for live values.
+//
+// Renders a pre-formatted numeric string where each *digit* is a vertical reel
+// of 0–9 that rolls to the current digit when the value changes, like a
+// mechanical counter or instrument. Non-digit glyphs (., ,, $, %, -, space)
+// stay fixed. Animates only on change; honors prefers-reduced-motion. Keep the
+// string monospaced + tabular at the call site so columns don't shift.
+// ---------------------------------------------------------------------------
+
+const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+export function RollingNumber({
+  value,
+  className = '',
+  ariaLabel,
+}: {
+  /** Already-formatted display string, e.g. "$728.96", "58", "-2.88%". */
+  value: string;
+  className?: string;
+  ariaLabel?: string;
+}) {
+  const [animate, setAnimate] = useState(false);
+  const prev = useRef(value);
+
+  useEffect(() => {
+    if (prev.current !== value) {
+      setAnimate(true);
+      prev.current = value;
+    }
+  }, [value]);
+
+  return (
+    <span
+      className={`inline-flex items-center tabular-nums ${className}`}
+      aria-label={ariaLabel ?? value}
+      role={ariaLabel ? undefined : 'text'}
+    >
+      {value.split('').map((char, index) =>
+        DIGITS.includes(char) ? (
+          <Reel key={index} digit={Number(char)} animate={animate} />
+        ) : (
+          <span key={index} aria-hidden className="inline-block">
+            {char === ' ' ? ' ' : char}
+          </span>
+        ),
+      )}
+    </span>
+  );
+}
+
+// A single digit reel: a 10-row column translated so the active digit sits in
+// view. The transition runs only after the first change (animate=true), so the
+// initial paint doesn't roll from 0.
+function Reel({ digit, animate }: { digit: number; animate: boolean }) {
+  return (
+    <span aria-hidden className="relative inline-block h-[1em] overflow-hidden align-bottom" style={{ width: '0.62em' }}>
+      <span
+        className={`flex flex-col ${animate ? 'motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.2,0.8,0.2,1)]' : ''}`}
+        style={{ transform: `translateY(-${digit}em)` }}
+      >
+        {DIGITS.map((d) => (
+          <span key={d} className="h-[1em] leading-[1em]">{d}</span>
+        ))}
+      </span>
+    </span>
+  );
 }
