@@ -25,8 +25,10 @@ These are enforceable review criteria, not vibes.
 
 - `font-serif` (Sorts Mill Goudy, 400) — **titles only**: welcome line, section titles, panel/module
   titles, group headers. Never for body, buttons, labels, or data.
-- `font-body` (system sans) — everything that is prose or UI copy.
-- `font-mono` — all data: numbers, timestamps, urls, types, meta lines, status words.
+- `font-body` (Geist) — everything that is prose or UI copy. A technical grotesk, not the system
+  sans — the dashboard must read with a consistent typographic voice across platforms.
+- `font-mono` (Geist Mono) — all data: numbers, timestamps, urls, types, meta lines, status words.
+  This is the workhorse of the archival motif; nearly every SpecHeader / ledger / stamp uses it.
 - Numerals never jitter: `font-variant-numeric: tabular-nums` is set globally on `body`.
 - Labels above data use `text-[10px] uppercase tracking-wider text-text-tertiary`.
 
@@ -157,6 +159,22 @@ line); **error** is an inspection note (`NO READING ✕` over a faint rust rule)
 
 Interaction is mechanical, not web-app: hover slides a guide-rule / reveals registration ticks like a
 ruler cursor — not a flat background tint.
+
+**The page is a filed sheet.** The dashboard is wrapped in a document shell so the whole thing reads
+as one archived record, not floating modules:
+- A **masthead** above the greeting — `OPAQUE` wordmark + `personal archive` on the left, mono
+  datestamp fields on the right (`SHEET 01/01 · DATE <ISO> · TZ <offset>`), on a hairline rule.
+  Date/TZ are computed client-side (avoid SSR locale mismatch).
+- Faint **registration / crop corners** on the content frame (`DocumentFrame`) — the page edges.
+- A **footer colophon** mirroring the masthead: `DOC · SCALE 1:1 · PAGE 01/01 · © OPAQUE`, on the
+  same page margins.
+
+**Live numbers are mechanical readouts.** Values that change on poll use `RollingNumber` — each digit
+is a 0–9 reel that rolls to the new value like a counter/instrument (markets price + delta, weather
+temperature, server CPU/mem/disk). Animate only after the first change (no roll-from-zero on load),
+honor `prefers-reduced-motion`, keep the string monospaced + tabular so columns never shift. This is
+the one place motion is *expressive* rather than purely functional — use it only for genuinely live
+figures, never for static labels.
 
 ## Litmus tests
 
