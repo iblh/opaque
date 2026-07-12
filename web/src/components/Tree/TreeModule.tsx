@@ -1423,7 +1423,8 @@ function MediaStatLedger({ items }: { items: MediaInsight[] }) {
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-baseline justify-between gap-3 border-b border-border-light/70 py-1"
+          className="flex items-center justify-between gap-3 border-b border-border-light/70"
+          style={{ height: 'calc(var(--unit) * 6)' }}
         >
           <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             {item.label}

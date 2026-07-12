@@ -10,6 +10,11 @@
         --opaque-menu-icon-size: 14px;
         --opaque-menu-avatar-size: 28px;
 
+        /* Base grid unit (SearchSystem mechanic). Mono data rows and spec-sheet
+           rhythm quantize to multiples of this so text sits on one invisible
+           grid. Serif titles are exempt. */
+        --unit: 4px;
+
         /* --- Light palette (the paper default). --- Solid tokens are bare
            "R G B" channels so Tailwind can synthesize `/NN` opacity modifiers
            (tailwind.config wraps them in rgb(var(--x) / <alpha-value>)).

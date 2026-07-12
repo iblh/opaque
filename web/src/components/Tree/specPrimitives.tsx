@@ -200,7 +200,13 @@ export function SpecRow({
             : 'text-text-primary';
 
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1" title={title}>
+    // Fixed 6-unit (24px) row so a stack of rows sits on the grid — every ledger
+    // line is exactly the same height, SearchSystem-style.
+    <div
+      className="flex items-center justify-between gap-3"
+      style={{ height: 'calc(var(--unit) * 6)' }}
+      title={title}
+    >
       <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
         {label}
       </span>
