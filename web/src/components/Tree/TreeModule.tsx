@@ -841,19 +841,17 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
                     aria-label={calendarCellTitle(cell.date)}
                     aria-current={cell.isToday ? 'date' : undefined}
                   >
-                    <RegistrationMark
-                      active={cell.isToday}
-                      hoverTickClass="group-hover/day:border-text-muted"
-                      size={5}
-                      className="h-6 w-6"
-                    >
+                    <RegistrationMark active={cell.isToday} size={5} className="h-6 w-6">
+                      {/* Hover inverts the cell like a stamp (SearchSystem
+                          mechanic): ink fill, flipped number. `today` keeps its
+                          registration ticks as the persistent current marker. */}
                       <span
-                        className={`font-mono text-[11px] tabular-nums transition-colors ${
+                        className={`flex h-6 w-6 items-center justify-center rounded-[1px] font-mono text-[11px] tabular-nums transition-colors group-hover/day:bg-text-primary group-hover/day:text-background ${
                           cell.isToday
                             ? 'font-medium text-text-primary'
                             : cell.inMonth
-                              ? `${isWeekend ? 'text-text-tertiary' : 'text-text-secondary'} group-hover/day:text-text-primary`
-                              : 'text-text-muted/45 group-hover/day:text-text-muted'
+                              ? isWeekend ? 'text-text-tertiary' : 'text-text-secondary'
+                              : 'text-text-muted/45'
                         }`}
                       >
                         {cell.date.getDate()}
@@ -1477,7 +1475,7 @@ function MediaLibraryChips({
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center rounded-[2px] px-1.5 py-0.5 font-mono text-[10px] text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-secondary"
+            className="inline-flex items-center rounded-[2px] px-1.5 py-0.5 font-mono text-[10px] text-text-muted transition-colors hover:bg-text-primary hover:text-background"
           >
             {expanded ? 'Show less' : `+${hidden} more`}
           </button>

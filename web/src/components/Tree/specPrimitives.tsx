@@ -47,28 +47,18 @@ export function SpecCaption({
 export function RegistrationMark({
   children,
   active = true,
-  hoverTickClass = '',
   size = 6,
   className = '',
 }: {
   children: React.ReactNode;
   /** When false, ticks are hidden (children render bare) — for hover/idle. */
   active?: boolean;
-  /**
-   * Static Tailwind class(es) revealing faint ticks on a parent hover group when
-   * not already active, e.g. "group-hover/day:border-text-muted". Must be a
-   * literal so the JIT can see it — never build it dynamically.
-   */
-  hoverTickClass?: string;
   /** Tick arm length in px. */
   size?: number;
   className?: string;
 }) {
   const arm = `${size}px`;
-  // Active = solid ink ticks. Otherwise, optionally a faint tick on parent hover.
-  const tick = active
-    ? 'border-text-primary'
-    : `border-transparent ${hoverTickClass}`;
+  const tick = active ? 'border-text-primary' : 'border-transparent';
   return (
     <span className={`relative inline-flex items-center justify-center ${className}`}>
       <span aria-hidden className={`pointer-events-none absolute left-0 top-0 border-l border-t transition-colors ${tick}`} style={{ width: arm, height: arm }} />
