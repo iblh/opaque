@@ -31,6 +31,16 @@ These are enforceable review criteria, not vibes.
   This is the workhorse of the archival motif; nearly every SpecHeader / ledger / stamp uses it.
 - Numerals never jitter: `font-variant-numeric: tabular-nums` is set globally on `body`.
 - Labels above data use `text-[10px] uppercase tracking-wider text-text-tertiary`.
+- **Mono data is tightened**: a base `-0.02em` letter-spacing on `.font-mono` gives numbers/values a
+  dense, technical set (borrowed from searchsystem.co). Elements with an explicit `tracking-*` (the
+  wide uppercase SpecHeader / stamp labels) override it, so only untracked data tightens.
+
+### Grid unit
+
+- A base `--unit` (4px) is the invisible grid the data sits on (searchsystem.co uses type-size ==
+  grid-unit; OPAQUE adapts it). Spec-sheet ledger rows (`SpecRow`, media stat ledger) are a fixed
+  **6-unit (24px)** height so a stack of rows aligns exactly rather than drifting on the baseline.
+  Quantize new dense mono rows to unit multiples; **serif titles are exempt** — they breathe freely.
 
 ### Color
 
@@ -75,6 +85,10 @@ Hover exists **only on interactive elements**, and means exactly one of four thi
 3. **Icon / utility button** — `text-text-muted → text-text-primary` plus `hover:bg-surface-sunken`
    (`.opaque-icon-button` pattern). Destructive variants darken to `accent-red-dark`.
 4. **Text link / tab** — color darkens toward ink; hairline underline appears or strengthens.
+5. **Stamped invert** (discrete mono cells/toggles: calendar days, `+N more`) — foreground and
+   background swap on hover (`hover:bg-text-primary hover:text-background`), like a stamp, transition
+   only color/background (borrowed from searchsystem.co). Use only on small discrete clickable mono
+   elements; never on rows (they use #1) or non-interactive chips.
 
 Non-interactive things (section titles, labels, data rows that aren't links) never react to hover.
 
