@@ -772,9 +772,7 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
   return (
     <ModulePanel module={module}>
       <SpecHeader
-        code="CAL"
-        source="LOCAL"
-        serial={formatMonthSerial(calendarMonth)}
+        label={formatCalendarMonthLabel(calendarMonth)}
         right={(
           <div className="flex items-center gap-0.5 text-text-muted">
             <button
@@ -1078,9 +1076,6 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
       state={state}
       specHeader={(
         <SpecHeader
-          code="WTHR"
-          source="LIVE"
-          serial={`°${unit}`}
           right={renderModuleStatusControl(state, 'Weather')}
         />
       )}
@@ -1147,9 +1142,6 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
       state={state}
       specHeader={(
         <SpecHeader
-          code="MKT"
-          source="LIVE"
-          serial={data ? `${data.quotes.length} SYM` : undefined}
           right={renderModuleStatusControl(state, 'Markets')}
         />
       )}
@@ -1238,15 +1230,18 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          {/* Provider index line: MED code + provenance on the left, live
-              session count or status stamped on the right. */}
+          {/* Provider header: the provider name (real — a Media root holds
+              several) + its version, with live session count / status stamped. */}
           <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
-            <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
-              <span className="text-text-secondary">MED</span>
-              <span aria-hidden className="text-text-muted">/</span>
-              <span className="truncate text-text-muted" title={data.detail || data.service}>
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
                 {data.service}
               </span>
+              {data.detail && (
+                <span className="shrink-0 font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
+                  {data.detail}
+                </span>
+              )}
             </div>
             <Stamp tone={streamCount > 0 ? 'live' : 'idle'}>
               {streamCount > 0 ? `${streamCount} playing` : data.status}
@@ -1873,17 +1868,12 @@ function PostsStackLive({
       module={selectedModule}
       state={state}
       header={(
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <PostStackTabs
-            modules={modules}
-            selectedId={selectedModule.id}
-            onSelect={onSelect}
-            framed={false}
-          />
-          <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.16em] text-text-muted">
-            IDX
-          </span>
-        </div>
+        <PostStackTabs
+          modules={modules}
+          selectedId={selectedModule.id}
+          onSelect={onSelect}
+          framed={false}
+        />
       )}
     >
       <PostsContent data={data} state={state} />
@@ -2946,10 +2936,11 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-// Month code for the spec header, e.g. "2026·06" — a filed-record serial, not a
-// prose month name.
-function formatMonthSerial(date: Date) {
-  return `${date.getFullYear()}·${String(date.getMonth() + 1).padStart(2, '0')}`;
+// Readable month label for the calendar header, e.g. "JUL 2026" — the real
+// navigation context (which month you're viewing), not a decorative serial.
+function formatCalendarMonthLabel(date: Date) {
+  const month = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date).toUpperCase();
+  return `${month} ${date.getFullYear()}`;
 }
 
 // ISO-8601 week number (weeks start Monday; week 1 contains the first Thursday).

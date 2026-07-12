@@ -116,44 +116,35 @@ export function Stamp({
 }
 
 /**
- * The module's archival index header: a fixed semantic code (e.g. CAL) and a
- * data-source label (LOCAL / LIVE / CACHED) on the left, an optional serial /
- * coordinate on the right beside a registration mark — all on one hairline rule.
- * This is the dashboard's signature "filed record" header.
+ * A module sub-header on one hairline rule: a real label on the left (e.g. a
+ * provider name), an optional real datum on the right (a version, a month, a
+ * last-sync time), and controls after it. No decorative codes/provenance tags —
+ * everything shown must carry information.
  */
 export function SpecHeader({
-  code,
-  source,
-  serial,
+  label,
+  meta,
   right,
   className = '',
 }: {
-  /** Fixed module code, e.g. "CAL", "SRV", "WTHR". */
-  code: string;
-  /** Provenance tag, e.g. "LOCAL", "LIVE", "CACHED". */
-  source?: string;
-  /** Right-aligned serial / coordinate, e.g. "2026·06". */
-  serial?: string;
-  /** Extra right-side controls (nav, refresh) rendered after the serial. */
+  /** Real left-side label, e.g. a provider name. Omit if redundant with the
+   *  section title (then this is just a controls/meta bar). */
+  label?: React.ReactNode;
+  /** Real right-side datum, e.g. "6.0.4", "2026-07", "synced 2h ago". */
+  meta?: React.ReactNode;
+  /** Right-side controls (refresh, nav, status) rendered after `meta`. */
   right?: React.ReactNode;
   className?: string;
 }) {
   return (
     <div className={`flex items-center justify-between gap-3 border-b border-border-light pb-2 ${className}`}>
-      <div className="flex min-w-0 items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
-        <span className="text-text-secondary">{code}</span>
-        {source && (
-          <>
-            <span aria-hidden className="text-text-muted">/</span>
-            <span className="text-text-muted">{source}</span>
-          </>
-        )}
+      <div className="min-w-0 font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+        {label}
       </div>
-      <div className="flex shrink-0 items-center gap-2.5">
-        {serial && (
-          <span className="flex items-center gap-1.5 font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
-            <span aria-hidden className="text-text-tertiary">⌖</span>
-            {serial}
+      <div className="flex shrink-0 items-center gap-3">
+        {meta != null && (
+          <span className="font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
+            {meta}
           </span>
         )}
         {right}
