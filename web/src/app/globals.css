@@ -98,6 +98,15 @@
         font-variant-numeric: tabular-nums;
     }
 
+    /* Mechanism (SearchSystem): a subtle negative tracking on mono *data* so
+       numbers/urls/values read dense and technical rather than typewriter-loose.
+       Gentler than SearchSystem's -0.05em since Geist Mono is already narrow.
+       Elements that set an explicit `tracking-*` (the wide uppercase SpecHeader
+       and stamp labels) override this, so only untracked data tightens. */
+    .font-mono {
+        letter-spacing: -0.02em;
+    }
+
     /* Quiet focus: a thin ink outline, visible everywhere, never a glow.
        Reference the channel var directly — theme('colors.ink.700') would expand
        to rgb(var(--ink-700) / <alpha-value>), and <alpha-value> is only resolved
