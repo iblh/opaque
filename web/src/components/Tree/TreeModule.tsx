@@ -1649,7 +1649,6 @@ function MediaPosterZoom({
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-label={item.title}
       data-overlay
       onClick={onClose}
