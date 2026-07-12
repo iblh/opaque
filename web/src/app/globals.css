@@ -10,6 +10,11 @@
         --opaque-menu-icon-size: 14px;
         --opaque-menu-avatar-size: 28px;
 
+        /* Base grid unit (SearchSystem mechanic). Mono data rows and spec-sheet
+           rhythm quantize to multiples of this so text sits on one invisible
+           grid. Serif titles are exempt. */
+        --unit: 4px;
+
         /* --- Light palette (the paper default). --- Solid tokens are bare
            "R G B" channels so Tailwind can synthesize `/NN` opacity modifiers
            (tailwind.config wraps them in rgb(var(--x) / <alpha-value>)).
@@ -31,6 +36,7 @@
         --text-secondary: rgba(26, 29, 31, 0.75);
         --text-tertiary: rgba(26, 29, 31, 0.55);
         --text-muted: rgba(26, 29, 31, 0.4);
+        --text-faint: rgba(26, 29, 31, 0.28);
         --background: 255 255 255;
         --surface: rgba(250, 250, 250, 0.8);
         --surface-elevated: 255 255 255;
@@ -73,6 +79,7 @@
         --text-secondary: rgba(232, 230, 226, 0.74);
         --text-tertiary: rgba(232, 230, 226, 0.52);
         --text-muted: rgba(232, 230, 226, 0.38);
+        --text-faint: rgba(232, 230, 226, 0.26);
         --background: 27 28 30;
         --surface: rgba(34, 35, 38, 0.8);
         --surface-elevated: 36 37 40;
@@ -96,6 +103,15 @@
         @apply min-h-screen bg-[var(--page-bg)] font-body text-text-primary;
         /* Numerals never jitter (see DESIGN_SPEC.md — Type). */
         font-variant-numeric: tabular-nums;
+    }
+
+    /* Mechanism (SearchSystem): a subtle negative tracking on mono *data* so
+       numbers/urls/values read dense and technical rather than typewriter-loose.
+       Gentler than SearchSystem's -0.05em since Geist Mono is already narrow.
+       Elements that set an explicit `tracking-*` (the wide uppercase SpecHeader
+       and stamp labels) override this, so only untracked data tightens. */
+    .font-mono {
+        letter-spacing: -0.02em;
     }
 
     /* Quiet focus: a thin ink outline, visible everywhere, never a glow.
@@ -216,6 +232,40 @@ input:-webkit-autofill:active {
     animation: subtleFloat 6s ease-in-out infinite;
 }
 
+/* Loading: a blank archive record filling. A slow, low-contrast sweep across
+   the empty value slots — quieter and more "ink filling paper" than a pulse. */
+@keyframes recordSweep {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+.animate-record-sweep {
+    animation: recordSweep 1.8s ease-in-out infinite;
+}
+
+/* Edit mode "drafting surface": while a section is being dragged, a very faint
+   drafting grid fades in behind the layout — like laying work out on a cutting
+   mat. Off at rest; never affects view mode. */
+.drafting-surface {
+    background-image: none;
+    background-size: 24px 24px;
+    transition: background-color 180ms ease;
+}
+
+.drafting-surface[data-drafting] {
+    background-image:
+        linear-gradient(to right, rgb(var(--border-light) / 0.5) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(var(--border-light) / 0.5) 1px, transparent 1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-record-sweep {
+        animation: none;
+        opacity: 0.7;
+    }
+}
+
 @keyframes dragClonePickUp {
     from {
         transform: scale(1);
@@ -250,6 +300,12 @@ input:-webkit-autofill:active {
 /* In-module poster lightbox enter; matches the 180ms motion budget. */
 .animate-poster-zoom {
     animation: posterZoomIn 180ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-poster-zoom {
+        animation: none;
+    }
 }
 
 .login-shell {

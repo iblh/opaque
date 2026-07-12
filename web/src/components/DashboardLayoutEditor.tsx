@@ -477,12 +477,14 @@ export default function DashboardLayoutEditor({
     <div
       ref={containerRef}
       data-layout-editor
-      className="mx-6 flex flex-col gap-10 sm:mx-8 md:gap-12 lg:mx-12 xl:mx-16 xl:gap-14 2xl:mx-24"
+      data-drafting={isDragActive ? 'true' : undefined}
+      className="drafting-surface mx-6 flex flex-col gap-10 sm:mx-8 md:gap-12 lg:mx-12 xl:mx-16 xl:gap-14 2xl:mx-24"
     >
-      {rows.map((row) => (
+      {rows.map((row, rowIndex) => (
         <LayoutRow
           key={row.rowId}
           row={row}
+          rowIndex={rowIndex}
           isEditing={isEditing}
           renderSection={renderSection}
           draggingRoot={drag?.root ?? null}
@@ -536,6 +538,7 @@ function NewRowIndicator({ edge }: { edge: RowDropEdge }) {
 
 interface LayoutRowProps {
   row: DashboardLayoutRow;
+  rowIndex: number;
   isEditing: boolean;
   renderSection: (tree: Tree) => ReactNode;
   draggingRoot: string | null;
@@ -549,6 +552,7 @@ interface LayoutRowProps {
 
 function LayoutRow({
   row,
+  rowIndex,
   isEditing,
   renderSection,
   draggingRoot,
@@ -589,6 +593,7 @@ function LayoutRow({
                 tree={cell.tree}
                 isEditing={isEditing}
                 isPlaceholder={isPlaceholder}
+                coordinate={`${String.fromCharCode(65 + colIndex)}:${rowIndex + 1}`}
                 onGripPointerDown={onGripPointerDown}
               />
 
@@ -629,23 +634,34 @@ interface SectionHeaderProps {
   tree: Tree;
   isEditing: boolean;
   isPlaceholder: boolean;
+  /** Drafting coordinate (e.g. "A:2") shown by the grip in edit mode. */
+  coordinate?: string;
   onGripPointerDown: (event: ReactPointerEvent<HTMLElement>, root: string, label: string) => void;
 }
 
-function SectionHeader({ tree, isEditing, isPlaceholder, onGripPointerDown }: SectionHeaderProps) {
+function SectionHeader({ tree, isEditing, isPlaceholder, coordinate, onGripPointerDown }: SectionHeaderProps) {
   const label = getRootLabel(tree.root);
   return (
-    <div className={`mb-6 flex items-center gap-3 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
+    <div className={`mb-6 flex items-center gap-2.5 transition-opacity ${isPlaceholder ? 'opacity-30' : ''}`}>
       {isEditing && (
-        <button
-          type="button"
-          onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
-          className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors hover:text-text-primary active:cursor-grabbing"
-          aria-label={`Drag ${label} section`}
-          title="Drag to rearrange"
-        >
-          <IconGripVertical className="h-3.5 w-3.5" />
-        </button>
+        <>
+          {/* Drafting coordinate — a small mono grid reference, like a plate
+              number on a technical sheet. */}
+          {coordinate && (
+            <span className="select-none font-mono text-[9px] tabular-nums tracking-wider text-text-muted">
+              {coordinate}
+            </span>
+          )}
+          <button
+            type="button"
+            onPointerDown={(event) => onGripPointerDown(event, tree.root, label)}
+            className="inline-flex h-5 w-5 cursor-grab touch-none items-center justify-center text-text-muted transition-colors hover:text-text-primary active:cursor-grabbing"
+            aria-label={`Drag ${label} section`}
+            title="Drag to rearrange"
+          >
+            <IconGripVertical className="h-3.5 w-3.5" />
+          </button>
+        </>
       )}
       <div className="font-serif text-base leading-none text-text-secondary">
         {label}

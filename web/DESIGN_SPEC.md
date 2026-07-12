@@ -25,10 +25,22 @@ These are enforceable review criteria, not vibes.
 
 - `font-serif` (Sorts Mill Goudy, 400) — **titles only**: welcome line, section titles, panel/module
   titles, group headers. Never for body, buttons, labels, or data.
-- `font-body` (system sans) — everything that is prose or UI copy.
-- `font-mono` — all data: numbers, timestamps, urls, types, meta lines, status words.
+- `font-body` (Geist) — everything that is prose or UI copy. A technical grotesk, not the system
+  sans — the dashboard must read with a consistent typographic voice across platforms.
+- `font-mono` (Geist Mono) — all data: numbers, timestamps, urls, types, meta lines, status words.
+  This is the workhorse of the archival motif; nearly every SpecHeader / ledger / stamp uses it.
 - Numerals never jitter: `font-variant-numeric: tabular-nums` is set globally on `body`.
 - Labels above data use `text-[10px] uppercase tracking-wider text-text-tertiary`.
+- **Mono data is tightened**: a base `-0.02em` letter-spacing on `.font-mono` gives numbers/values a
+  dense, technical set (borrowed from searchsystem.co). Elements with an explicit `tracking-*` (the
+  wide uppercase SpecHeader / stamp labels) override it, so only untracked data tightens.
+
+### Grid unit
+
+- A base `--unit` (4px) is the invisible grid the data sits on (searchsystem.co uses type-size ==
+  grid-unit; OPAQUE adapts it). Spec-sheet ledger rows (`SpecRow`, media stat ledger) are a fixed
+  **6-unit (24px)** height so a stack of rows aligns exactly rather than drifting on the baseline.
+  Quantize new dense mono rows to unit multiples; **serif titles are exempt** — they breathe freely.
 
 ### Color
 
@@ -73,6 +85,10 @@ Hover exists **only on interactive elements**, and means exactly one of four thi
 3. **Icon / utility button** — `text-text-muted → text-text-primary` plus `hover:bg-surface-sunken`
    (`.opaque-icon-button` pattern). Destructive variants darken to `accent-red-dark`.
 4. **Text link / tab** — color darkens toward ink; hairline underline appears or strengthens.
+5. **Stamped invert** (discrete mono cells/toggles: calendar days, `+N more`) — foreground and
+   background swap on hover (`hover:bg-text-primary hover:text-background`), like a stamp, transition
+   only color/background (borrowed from searchsystem.co). Use only on small discrete clickable mono
+   elements; never on rows (they use #1) or non-interactive chips.
 
 Non-interactive things (section titles, labels, data rows that aren't links) never react to hover.
 
@@ -106,6 +122,73 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
   omits its own redundant title row (it keeps only the status/refresh control).
 - WYSIWYG: edit mode must not reshape view mode. Nothing appears in edit mode that occupies layout
   space the view mode doesn't have (edit affordances live in headers, overlays, or handles).
+
+### Spec-sheet primitives (data-dense modules)
+
+Modules that report structured data — media providers, server telemetry — render like a printed
+spec sheet, **not** as a stack of nested cards. The shared primitives in
+`components/Tree/specPrimitives.tsx` encode this; reach for them before inventing per-module markup.
+
+- **No boxes-in-boxes.** A module never wraps sub-groups in their own bordered/`bg-surface` cards.
+  Internal structure comes from hairline rules and a shared alignment grid.
+- **`SpecCaption`** titles a block: a mono `uppercase tracking-[0.14em]` caption on a single
+  bottom hairline, with an optional tabular aside on the right. This is the only internal "header".
+- **`SpecRow` / `SpecRows`** are the ledger: label left (mono, tertiary), value right (mono,
+  `tabular-nums`), baseline-aligned, separated by faint dividers. Two ledgers side by side make a
+  two-column fact sheet.
+- **`SpecMetric`** is a glanceable gauge: tiny label + tabular value over an optional **1px** bar on
+  a hairline track (`bg-border-light`). Tone (ok/warn/crit → moss/amber/rust) appears only under load.
+- **`MetaChip` / `MetaChipGroup`** replace bordered "badges": a borderless `surface-sunken` chip,
+  label and value split by a single hairline. Use for repeated metadata (library counts, facts).
+- **`Sparkline`** is the one trend language: a 1.25px non-scaling polyline with an optional 8%-opacity
+  area fill. `tone` carries meaning (`up`/`down`/`accent`), default `ink` stays quiet. No chart libs.
+- Status reads as a bare mono label + dot (`online` moss, `stale` muted) — not a filled pill.
+
+### Signature archival elements (the memory points)
+
+OPAQUE should read as a *private archive instrument*, not a generic dashboard. Three signature
+devices (and only these — resist adding more) carry that identity. They come from object-ness —
+codes, registration marks, stamps — never from paper grain or scan textures (we add none).
+
+- **`SpecHeader`** — every data module opens with a filed-record index line: a fixed module code +
+  provenance on the left (`CAL / LOCAL`, `WTHR / LIVE`, `MKT / LIVE`, `MED / <PROVIDER>`, `SRV / LIVE`,
+  `IDX`), and an optional serial beside a `⌖` registration mark on the right (`2026·06`, `4 SYM`,
+  `°F`). Codes are stable semantic labels, not derived coordinates. This repeating line is *the*
+  memory point — keep it on every module.
+- **`RegistrationMark`** — four corner crop-ticks framing a value. The site's "current / active"
+  marker: calendar *today*, and (faintly, on hover via `hoverTickClass`) the cell the cursor is on.
+  Reserved for genuinely singular current items — never a general highlight. Solid ink when active.
+- **`Stamp`** — the one status language, drawn like an inspection stamp (mono uppercase + small dot),
+  never a filled pill: `online`/`stale`, media `N playing`, market `▲/▼` deltas, `syncing` (pulsing).
+
+Each module also takes a distinct-but-related *archival form*: Calendar = month **ledger** (a `WK`
+week-number gutter, registration today); Weather = station **bulletin** (measurement figure + unit
+tick + station metadata); Markets = ticker **instrument list** (oscilloscope traces, stamped deltas);
+Media = catalog **drawer** per provider; Server = telemetry **instrument**; Posts = **index** with
+folder-divider tabs.
+
+State pages stay in-character: **loading** is a blank record filling (hairline value `Slot`s + a calm
+`recordSweep`, never a generic pulse); **empty** is a blank catalog card (`NIL` stamp + one terse
+line); **error** is an inspection note (`NO READING ✕` over a faint rust rule), never a red alert.
+
+Interaction is mechanical, not web-app: hover slides a guide-rule / reveals registration ticks like a
+ruler cursor — not a flat background tint.
+
+**The page is a filed sheet.** The dashboard is wrapped in a document shell so the whole thing reads
+as one archived record, not floating modules:
+- A **masthead** above the greeting — `OPAQUE` wordmark + `personal archive` on the left, mono
+  datestamp fields on the right (`SHEET 01/01 · DATE <ISO> · TZ <offset>`), on a hairline rule.
+  Date/TZ are computed client-side (avoid SSR locale mismatch).
+- Faint **registration / crop corners** on the content frame (`DocumentFrame`) — the page edges.
+- A **footer colophon** mirroring the masthead: `DOC · SCALE 1:1 · PAGE 01/01 · © OPAQUE`, on the
+  same page margins.
+
+**Live numbers are mechanical readouts.** Values that change on poll use `RollingNumber` — each digit
+is a 0–9 reel that rolls to the new value like a counter/instrument (markets price + delta, weather
+temperature, server CPU/mem/disk). Animate only after the first change (no roll-from-zero on load),
+honor `prefers-reduced-motion`, keep the string monospaced + tabular so columns never shift. This is
+the one place motion is *expressive* rather than purely functional — use it only for genuinely live
+figures, never for static labels.
 
 ## Litmus tests
 

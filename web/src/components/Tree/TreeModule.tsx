@@ -53,6 +53,15 @@ import {
   type DropPlacement,
 } from '@/lib/drag';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
+import {
+  MetaChip,
+  MetaChipGroup,
+  RegistrationMark,
+  RollingNumber,
+  Sparkline,
+  SpecHeader,
+  Stamp,
+} from '@/components/Tree/specPrimitives';
 
 interface ModuleTree {
   root: string;
@@ -742,6 +751,13 @@ function LiveModuleWidget({ module }: { module: ModuleBranch }) {
 function CalendarWidget({ module }: { module: ModuleBranch }) {
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
   const cells = useMemo(() => calendarCells(calendarMonth), [calendarMonth]);
+  // Group the 42-cell grid into 6 week rows so each can carry its ISO week no.
+  const weeks = useMemo(() => {
+    const rows: (typeof cells)[] = [];
+    for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+    return rows;
+  }, [cells]);
+  const isCurrentMonth = startOfMonth(new Date()).getTime() === calendarMonth.getTime();
 
   const moveMonth = (offset: number) => {
     setCalendarMonth((currentMonth) => (
@@ -749,61 +765,100 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
     ));
   };
 
+  // Column template: a narrow week-number gutter + 7 equal day columns. The
+  // gutter is what turns the month into a technical ledger.
+  const gridCols = 'grid grid-cols-[1.75rem_repeat(7,minmax(0,1fr))]';
+
   return (
     <ModulePanel module={module}>
-      <div>
-        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border-light pb-2">
-          <div className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">
-            {formatCalendarMonth(calendarMonth)}
-          </div>
-          <div className="flex items-center gap-1 text-text-muted">
+      <SpecHeader
+        label={formatCalendarMonthLabel(calendarMonth)}
+        right={(
+          <div className="flex items-center gap-0.5 text-text-muted">
             <button
               type="button"
               onClick={() => moveMonth(-1)}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className="flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary"
               aria-label="Previous month"
               title="Previous month"
             >
-              &lsaquo;
+              <IconChevronLeft className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={() => setCalendarMonth(startOfMonth(new Date()))}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className={`flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary ${isCurrentMonth ? 'text-text-secondary' : ''}`}
               aria-label="Current month"
-              title="Current month"
+              title="Jump to current month"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <span className={`h-1.5 w-1.5 ${isCurrentMonth ? 'bg-text-primary' : 'border border-current'}`} />
             </button>
             <button
               type="button"
               onClick={() => moveMonth(1)}
-              className="flex h-5 w-5 items-center justify-center hover:bg-surface-sunken hover:text-text-primary"
+              className="flex h-5 w-5 items-center justify-center transition-colors hover:text-text-primary"
               aria-label="Next month"
               title="Next month"
             >
-              &rsaquo;
+              <IconChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
-        </div>
-        <div className="grid grid-cols-7 gap-y-1 text-center">
+        )}
+      />
+
+      <div className="mt-2.5">
+        <div className={`${gridCols} text-center`}>
+          <div aria-hidden className="font-mono text-[8px] uppercase tracking-wider text-text-muted">
+            WK
+          </div>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
-            <div key={`${weekday}-${index}`} className="pb-1.5 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+            <div
+              key={`${weekday}-${index}`}
+              className={`pb-2 font-mono text-[9px] font-medium uppercase tracking-[0.12em] ${
+                index === 0 || index === 6 ? 'text-text-muted' : 'text-text-muted'
+              }`}
+            >
               {weekday}
             </div>
           ))}
-          {cells.map((cell) => (
-            <button
-              key={cell.key}
-              type="button"
-              className={`mx-auto flex h-7 w-7 items-center justify-center text-xs transition-colors hover:bg-surface-sunken ${
-                cell.inMonth ? 'text-text-primary' : 'text-text-muted'
-              } ${cell.isToday ? 'border border-ink-500 bg-surface-sunken text-text-primary' : ''}`}
-              title={calendarCellTitle(cell.date)}
-              aria-label={calendarCellTitle(cell.date)}
-            >
-              {cell.date.getDate()}
-            </button>
+        </div>
+        <div className="space-y-px">
+          {weeks.map((week) => (
+            <div key={week[0].key} className={`${gridCols} text-center`}>
+              <div className="flex h-7 items-center justify-center font-mono text-[9px] tabular-nums text-text-muted">
+                {isoWeekNumber(week[0].date)}
+              </div>
+              {week.map((cell, dayIndex) => {
+                const isWeekend = dayIndex === 0 || dayIndex === 6;
+                return (
+                  <button
+                    key={cell.key}
+                    type="button"
+                    className="group/day flex h-7 items-center justify-center"
+                    title={calendarCellTitle(cell.date)}
+                    aria-label={calendarCellTitle(cell.date)}
+                    aria-current={cell.isToday ? 'date' : undefined}
+                  >
+                    <RegistrationMark active={cell.isToday} size={5} className="h-6 w-6">
+                      {/* Hover inverts the cell like a stamp (SearchSystem
+                          mechanic): ink fill, flipped number. `today` keeps its
+                          registration ticks as the persistent current marker. */}
+                      <span
+                        className={`flex h-6 w-6 items-center justify-center rounded-[1px] font-mono text-[11px] tabular-nums transition-colors group-hover/day:bg-text-primary group-hover/day:text-background ${
+                          cell.isToday
+                            ? 'font-medium text-text-primary'
+                            : cell.inMonth
+                              ? isWeekend ? 'text-text-tertiary' : 'text-text-secondary'
+                              : 'text-text-faint'
+                        }`}
+                      >
+                        {cell.date.getDate()}
+                      </span>
+                    </RegistrationMark>
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </div>
       </div>
@@ -896,6 +951,7 @@ function ModulePanel({
   href,
   titleOverride,
   header,
+  specHeader,
   children,
 }: {
   module: ModuleBranch;
@@ -904,6 +960,12 @@ function ModulePanel({
   titleOverride?: string;
   /** Replaces the icon + title cluster, e.g. a tab bar acting as the header. */
   header?: React.ReactNode;
+  /**
+   * Archival SpecHeader that becomes the whole panel header. Build it with
+   * `renderModuleStatusControl(state)` in its `right` slot to keep refresh +
+   * status. Replaces the default single-root status line.
+   */
+  specHeader?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const statusClass = state?.error
@@ -939,7 +1001,9 @@ function ModulePanel({
   // Borderless: structure comes from spacing, not a card outline (DESIGN_SPEC).
   return (
     <section className="relative">
-      {titleInSectionHeader ? (
+      {specHeader ? (
+        <div className="mb-3">{specHeader}</div>
+      ) : titleInSectionHeader ? (
         statusControl && (
           <div className="mb-2 flex h-5 items-center justify-end">{statusControl}</div>
         )
@@ -974,42 +1038,92 @@ function ModulePanel({
   );
 }
 
+// Refresh button + status dot, for use in a SpecHeader's `right` slot so the
+// archival header carries the same controls the default panel header would.
+function renderModuleStatusControl(state: ModuleDataState, label: string) {
+  const statusClass = state.error
+    ? 'bg-accent-red'
+    : state.isLoading
+      ? 'bg-ink-300'
+      : 'bg-accent-green';
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={state.refresh}
+        className="flex h-5 w-5 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+        aria-label={`Refresh ${label}`}
+        title="Refresh"
+      >
+        <IconRefresh className={`h-3 w-3 ${state.isLoading ? 'animate-spin' : ''}`} />
+      </button>
+      <div
+        className={`h-1.5 w-1.5 rounded-full ${statusClass}`}
+        title={state.error || (state.isLoading ? 'Loading' : 'Online')}
+      />
+    </div>
+  );
+}
+
 function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleDataState }) {
   const data = state.data?.kind === 'weather' ? state.data as WeatherModuleData : null;
 
+  const unit = data?.temperatureUnit === 'fahrenheit' ? 'F' : 'C';
+
   return (
-    <ModulePanel module={module} state={state}>
+    <ModulePanel
+      module={module}
+      state={state}
+      specHeader={(
+        <SpecHeader
+          right={renderModuleStatusControl(state, 'Weather')}
+        />
+      )}
+    >
       {!data ? (
         <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
-          <div>
-            <div>
-              <div className="text-3xl font-light leading-none tracking-tight text-text-primary">
-                {Math.round(data.temperature)}°
+          {/* Station reading: a large measurement figure with a unit tick, the
+              condition as a caption, and station metadata aligned right. */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="shrink-0">
+              <div className="flex items-start gap-0.5 text-text-primary">
+                <RollingNumber
+                  value={String(Math.round(data.temperature))}
+                  className="text-[2.5rem] font-light leading-none tracking-tight"
+                  ariaLabel={`${Math.round(data.temperature)} degrees ${unit}`}
+                />
+                <span className="mt-1 font-mono text-sm text-text-tertiary">°{unit}</span>
               </div>
-              <div className="mt-2 text-xs text-text-tertiary">
+              <div className="mt-2 truncate text-xs text-text-secondary" title={data.condition}>
                 {data.condition}
               </div>
             </div>
-            <div className="mt-4 border-t border-border-light pt-3 font-mono text-[10px] leading-relaxed text-text-tertiary">
-              <span className="text-text-secondary">{data.location}</span>
-              <span className="mx-1.5 text-text-muted">·</span>
-              <span>{Math.round(data.humidity)}% humidity</span>
+            <div className="min-w-0 flex-1 text-right font-mono text-[10px] leading-relaxed">
+              <div className="truncate text-text-secondary" title={data.location}>{data.location}</div>
+              <div className="mt-1 tabular-nums text-text-muted">
+                <span className="text-text-tertiary">RH</span> {Math.round(data.humidity)}%
+              </div>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-4 border-t border-border-light pt-1">
             {data.forecast.map((day) => (
-              <div key={day.date} title={day.condition}>
-                <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+              <div
+                key={day.date}
+                className="flex items-baseline gap-3 border-b border-border-light/70 py-1.5 last:border-0"
+                title={day.condition}
+              >
+                <span className="w-8 shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
                   {formatWeekday(day.date)}
-                </div>
-                <div className="mt-1 font-mono text-[11px] text-text-secondary">
-                  {Math.round(day.high)}/{Math.round(day.low)}
-                </div>
-                <div className="mt-0.5 truncate text-[10px] leading-tight text-text-muted">
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-text-tertiary">
                   {day.condition}
-                </div>
+                </span>
+                <span className="shrink-0 font-mono text-[11px] tabular-nums text-text-secondary">
+                  {Math.round(day.high)}°
+                  <span className="ml-1 text-text-muted">{Math.round(day.low)}°</span>
+                </span>
               </div>
             ))}
           </div>
@@ -1023,35 +1137,61 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
   const data = state.data?.kind === 'markets' ? state.data as MarketsModuleData : null;
 
   return (
-    <ModulePanel module={module} state={state}>
+    <ModulePanel
+      module={module}
+      state={state}
+      specHeader={(
+        <SpecHeader
+          right={renderModuleStatusControl(state, 'Markets')}
+        />
+      )}
+    >
       {!data ? (
         <ModuleBodyState state={state} skeleton="markets" />
       ) : (
-        <div className="-my-1 divide-y divide-border-light">
+        <div className="-mt-1 divide-y divide-border-light/70">
           {data.quotes.map((quote) => {
-            const change = `${quote.changePercent >= 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
-            const trendTone = marketTrendTone(quote.changePercent);
+            const up = quote.changePercent >= 0;
+            const change = `${up ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
 
             return (
               <div
                 key={quote.symbol}
-                className="grid grid-cols-[minmax(0,1fr)_56px_minmax(4.5rem,auto)] items-center gap-3 py-2.5"
+                className="group/inst relative grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5"
               >
-                <div className="min-w-0">
-                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-tight text-text-primary">
+                {/* Mechanical hover: a left guide-rule slides in like a ruler
+                    cursor, and the symbol nudges off it. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -left-2 top-1/2 h-0 w-px -translate-y-1/2 bg-text-primary transition-all duration-200 group-hover/inst:h-[calc(100%-10px)]"
+                />
+                <div className="min-w-0 transition-transform duration-200 group-hover/inst:translate-x-1">
+                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-wide text-text-primary">
                     {quote.symbol}
                   </div>
                   <div className="mt-1 truncate text-[10px] leading-tight text-text-tertiary">
                     {quote.name}
                   </div>
                 </div>
-                <MarketSparkline values={quote.sparkline} />
+                <Sparkline
+                  values={quote.sparkline}
+                  width={56}
+                  height={24}
+                  tone={up ? 'up' : 'down'}
+                  ariaLabel={`${quote.symbol} recent trend`}
+                />
                 <div className="min-w-0 text-right font-mono">
-                  <div className={`text-xs font-medium leading-tight tracking-tight ${trendTone}`}>
-                    {change}
+                  {/* Delta as a stamped figure: a tick glyph + signed percent. */}
+                  <div className={`flex items-center justify-end gap-1 text-xs font-medium leading-tight ${up ? 'text-accent-green-dark' : 'text-accent-red-dark'}`}>
+                    <span aria-hidden className="text-[9px]">{up ? '▲' : '▼'}</span>
+                    <RollingNumber value={change} ariaLabel={`${quote.symbol} change ${change}`} />
                   </div>
-                  <div className="mt-1 truncate text-[11px] leading-tight text-text-secondary">
-                    {formatMarketPrice(quote.price, quote.currency)}
+                  <div className="mt-1 flex justify-end">
+                    <RollingNumber
+                      value={formatMarketPrice(quote.price, quote.currency)}
+                      className="text-[11px] leading-tight text-text-secondary"
+                      ariaLabel={`${quote.symbol} price ${formatMarketPrice(quote.price, quote.currency)}`}
+                    />
                   </div>
                 </div>
               </div>
@@ -1060,39 +1200,6 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         </div>
       )}
     </ModulePanel>
-  );
-}
-
-function MarketSparkline({
-  values,
-}: {
-  values: number[];
-}) {
-  const points = sparklinePoints(values, 56, 24);
-
-  if (!points) {
-    return <div className="h-[24px]" />;
-  }
-
-  return (
-    <div className="h-[24px] w-full overflow-hidden">
-      <svg
-        viewBox="0 0 56 24"
-        preserveAspectRatio="none"
-        className="h-full w-full text-ink-400"
-        aria-label="Recent price trend"
-      >
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
   );
 }
 
@@ -1123,18 +1230,30 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          <div className="mb-4 flex items-baseline justify-between gap-3 border-b border-border-light pb-3">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-green">
-              <span className={`h-1.5 w-1.5 rounded-full ${streamCount > 0 ? 'bg-accent-green' : 'bg-ink-300'}`} />
+          {/* Provider header: the provider name (real — a Media root holds
+              several) + its version, with live session count / status stamped. */}
+          <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
+                {data.service}
+              </span>
+              {data.detail && (
+                <span className="shrink-0 font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
+                  {data.detail}
+                </span>
+              )}
+            </div>
+            <Stamp tone={streamCount > 0 ? 'live' : 'idle'}>
               {streamCount > 0 ? `${streamCount} playing` : data.status}
-            </div>
-            <div className="font-mono text-[10px] text-text-tertiary">
-              {data.detail || data.service}
-            </div>
+            </Stamp>
           </div>
 
+          {overview && overview.insights.length > 0 && (
+            <MediaStatLedger items={overview.insights} />
+          )}
+
           {nowPlaying.length > 0 && (
-            <div className="mb-5 space-y-3 border-b border-border-light pb-4">
+            <div className="mt-4 space-y-3">
               {nowPlaying.map((item) => (
                 <NowPlayingRow key={item.id} item={item} />
               ))}
@@ -1142,8 +1261,8 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
           )}
 
           {queue.length > 0 && (
-            <div className="mb-5 border-b border-border-light pb-4">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+            <div className="mt-4">
+              <div className="mb-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
                 <IconDownload className="h-3 w-3" />
                 Downloading
               </div>
@@ -1153,10 +1272,6 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
                 ))}
               </div>
             </div>
-          )}
-
-          {overview && overview.insights.length > 0 && (
-            <MediaInsightBadges items={overview.insights} />
           )}
 
           {overview && overview.libraries.length > 0 && (
@@ -1285,26 +1400,31 @@ function dedupeMediaInsights(insights: MediaInsight[]) {
   });
 }
 
-function MediaInsightBadges({ items }: { items: MediaInsight[] }) {
+// Provider key stats as a borderless two-column ledger: label left, tabular
+// value right, hairline dividers. Reads like a spec sheet and stays consistent
+// across providers regardless of which stats each one reports.
+function MediaStatLedger({ items }: { items: MediaInsight[] }) {
+  const toneClass = (tone: MediaInsight['tone']) =>
+    tone === 'accent'
+      ? 'text-accent-green-dark'
+      : tone === 'warning'
+        ? 'text-accent-amber-dark'
+        : 'text-text-primary';
+
   return (
-    <div className="mb-4 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+    <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-0">
       {items.map((item) => (
         <div
           key={item.id}
-          className={`rounded-sm border px-2 py-1.5 ${
-            item.tone === 'accent'
-              ? 'border-accent-green/25 bg-accent-green/10'
-              : item.tone === 'warning'
-                ? 'border-accent-amber/25 bg-accent-amber/10'
-                : 'border-border-light bg-surface-sunken/35'
-          }`}
+          className="flex items-center justify-between gap-3 border-b border-border-light/70"
+          style={{ height: 'calc(var(--unit) * 6)' }}
         >
-          <div className="truncate font-mono text-[9px] uppercase tracking-wider text-text-muted">
+          <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-wider text-text-tertiary">
             {item.label}
-          </div>
-          <div className="mt-0.5 truncate font-mono text-[11px] font-medium text-text-primary">
+          </span>
+          <span className={`shrink-0 font-mono text-[11px] tabular-nums ${toneClass(item.tone)}`}>
             {item.value || '-'}
-          </div>
+          </span>
         </div>
       ))}
     </div>
@@ -1324,45 +1444,38 @@ function MediaLibraryChips({
   const hidden = sorted.length - visible.length;
 
   return (
-    <div className="mb-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-wider text-text-tertiary">
+    <div className="mt-4">
+      <div className="mb-2 flex items-baseline justify-between gap-3 border-b border-border-light pb-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
           Libraries
-        </div>
-        <div className="font-mono text-[10px] text-text-muted">
+        </span>
+        <span className="font-mono text-[10px] tabular-nums text-text-muted">
           {totalItems > 0 ? `${formatCompactNumber(totalItems)} items` : `${libraries.length} total`}
-        </div>
+        </span>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <MetaChipGroup>
         {visible.map((library) => (
-          <span
+          <MetaChip
             key={library.id}
-            className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border-light bg-surface-sunken/45 px-2 py-1 text-[11px] text-text-secondary"
+            label={library.name}
+            value={formatCompactNumber(library.count)}
             title={[
               library.name,
               library.type ? formatMediaLibraryType(library.type) : '',
               `${formatCompactNumber(library.count)} items`,
             ].filter(Boolean).join(' · ')}
-          >
-            <span className="min-w-0 max-w-[9rem] truncate text-text-primary">{library.name}</span>
-            <span className="font-mono text-[10px] text-text-muted">{formatCompactNumber(library.count)}</span>
-            {library.type && (
-              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-text-muted sm:inline">
-                {formatMediaLibraryType(library.type)}
-              </span>
-            )}
-          </span>
+          />
         ))}
         {(hidden > 0 || expanded) && (
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center rounded-sm border border-border-light px-2 py-1 font-mono text-[10px] text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-secondary"
+            className="inline-flex items-center rounded-[2px] px-1.5 py-0.5 font-mono text-[10px] text-text-muted transition-colors hover:bg-text-primary hover:text-background"
           >
             {expanded ? 'Show less' : `+${hidden} more`}
           </button>
         )}
-      </div>
+      </MetaChipGroup>
     </div>
   );
 }
@@ -1467,7 +1580,7 @@ function MediaRecentCell({
 }) {
   const body = (
     <>
-      <div className="relative aspect-[2/3] overflow-hidden rounded-sm border border-border-light bg-surface-sunken transition-colors group-hover/recent:border-border-medium">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-[2px] bg-surface-sunken ring-1 ring-border-light/60 transition group-hover/recent:ring-border-medium">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -1479,7 +1592,7 @@ function MediaRecentCell({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-text-muted">
+          <div className="flex h-full w-full items-center justify-center font-serif text-base text-text-muted">
             {item.title.slice(0, 1)}
           </div>
         )}
@@ -1536,7 +1649,6 @@ function MediaPosterZoom({
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-label={item.title}
       data-overlay
       onClick={onClose}
@@ -1579,7 +1691,7 @@ function NowPlayingRow({ item }: { item: MediaNowPlayingItem }) {
   const meta = [item.user, item.device].filter(Boolean).join(' · ');
   return (
     <div className="flex items-center gap-2.5">
-      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-sm border border-border-light bg-surface-sunken">
+      <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-[2px] bg-surface-sunken ring-1 ring-border-light/60">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -1645,9 +1757,9 @@ function MediaProgressBar({
 }) {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
   return (
-    <div className={`h-0.5 w-full overflow-hidden rounded-full bg-border-light ${className}`}>
+    <div className={`h-px w-full overflow-hidden bg-border-light ${className}`}>
       <div
-        className={`h-full rounded-full ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
+        className={`h-full transition-all ${tone === 'accent' ? 'bg-accent-green' : 'bg-ink-500'}`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -1803,7 +1915,7 @@ function PostStackTabs({
             type="button"
             onClick={() => onSelect(source.id)}
             {...dragProps}
-            className={`group relative text-[10px] uppercase tracking-wider transition-colors ${
+            className={`group relative font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
               framed ? '-mb-px pb-2' : 'pb-1'
             } ${
               draggable ? 'cursor-grab active:cursor-grabbing' : ''
@@ -1814,13 +1926,22 @@ function PostStackTabs({
             }`}
             title={draggable ? 'Drag to reorder · click to select' : undefined}
           >
-            <span className="inline-block max-w-[9rem] truncate">
-              {postModuleTabLabel(source)}
+            <span className="inline-flex max-w-[10rem] items-center gap-1.5">
+              {/* Active tab carries a small filled stamp — the "current divider". */}
+              <span
+                aria-hidden
+                className={`h-1 w-1 shrink-0 transition-colors ${isSelected ? 'bg-text-primary' : 'bg-transparent'}`}
+              />
+              <span className="truncate">{postModuleTabLabel(source)}</span>
             </span>
+            {/* Active tab: a solid ink underline that sits over the baseline
+                rule; idle tabs reveal a faint hairline on hover. */}
             <span
               aria-hidden
-              className={`absolute bottom-0 left-0 h-px w-full transition-colors ${
-                isSelected ? 'bg-ink-700' : 'bg-transparent group-hover:bg-border-medium'
+              className={`absolute -bottom-px left-0 h-[1.5px] w-full transition-all duration-200 ${
+                isSelected
+                  ? 'bg-text-primary opacity-100'
+                  : 'bg-border-medium opacity-0 group-hover:opacity-100'
               }`}
             />
           </button>
@@ -1945,10 +2066,10 @@ function PostsContent({
                 read ? 'text-text-muted' : 'text-text-tertiary group-hover:text-text-secondary'
               }`}
             >
-              <span>{post.source}</span>
-              {(post.meta || post.publishedAt) && <span>·</span>}
-              {post.meta && <span className="truncate">{post.meta}</span>}
-              {post.publishedAt && <span className="flex-shrink-0">{formatRelativeTime(post.publishedAt)}</span>}
+              <span className="uppercase tracking-wider text-text-muted">{post.source}</span>
+              {(post.meta || post.publishedAt) && <span className="text-text-muted">·</span>}
+              {post.meta && <span className="truncate tabular-nums">{post.meta}</span>}
+              {post.publishedAt && <span className="flex-shrink-0 tabular-nums">{formatRelativeTime(post.publishedAt)}</span>}
             </div>
           </a>
         );
@@ -1967,33 +2088,65 @@ function ModuleBodyState({
   skeleton?: ModuleSkeletonKind;
 }) {
   if (state.error) {
-    return (
-      <div className="min-h-16 text-[11px] leading-relaxed text-accent-red-dark">
-        {state.error}
-      </div>
-    );
+    return <InspectionNote>{state.error}</InspectionNote>;
   }
 
   return <ModuleSkeleton kind={skeleton} />;
 }
 
-const skeletonBar = 'rounded-sm bg-surface-sunken';
-const skeletonBarSoft = 'rounded-sm bg-border-light';
+// An error rendered as a stamped inspection note rather than a red alert: a mono
+// "NO READING" stamp over a hairline, with the terse message beneath.
+function InspectionNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-16">
+      <div className="flex items-center gap-1.5 border-b border-accent-red/25 pb-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-accent-red-dark">
+        <span aria-hidden>✕</span>
+        No reading
+      </div>
+      <div className="mt-2 font-mono text-[11px] leading-relaxed text-text-tertiary">
+        {children}
+      </div>
+    </div>
+  );
+}
 
-// Loading placeholders that echo each module's real content structure, so the
-// panel doesn't reshape when live data arrives.
+// An empty value slot in a loading record: a faint baseline that reads as a
+// ruled blank waiting to be filled (not a solid grey bar).
+function Slot({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
+  return <span className={`inline-block h-px bg-border-medium align-middle ${className}`} style={style} />;
+}
+
+// One ledger row in a loading record: a faint label tick on the left, an empty
+// value slot on the right — the blank-form look.
+function SkeletonRow({ labelW = 'w-10', valueW = 'w-12' }: { labelW?: string; valueW?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1">
+      <Slot className={labelW} />
+      <Slot className={valueW} />
+    </div>
+  );
+}
+
+// Loading placeholders that echo each module's real spec-sheet structure, so the
+// panel doesn't reshape when live data arrives — a blank archive record filling
+// in, not a generic shimmer.
 function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   if (kind === 'weather') {
     return (
-      <div className="animate-pulse" aria-hidden>
-        <div className={`h-8 w-20 ${skeletonBar}`} />
-        <div className={`mt-2 h-2.5 w-24 ${skeletonBarSoft}`} />
-        <div className={`mt-4 h-2 w-36 ${skeletonBarSoft}`} />
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-light pt-3">
+      <div className="animate-record-sweep" aria-hidden>
+        <div className="flex items-start justify-between">
+          <span className="inline-block h-7 w-16 bg-surface-sunken" />
+          <div className="flex flex-col items-end gap-1.5 pt-1">
+            <Slot className="w-24" />
+            <Slot className="w-12" />
+          </div>
+        </div>
+        <div className="mt-4 space-y-px border-t border-border-light pt-2">
           {[0, 1, 2].map((index) => (
-            <div key={index}>
-              <div className={`h-2 w-8 ${skeletonBarSoft}`} />
-              <div className={`mt-1.5 h-2.5 w-12 ${skeletonBar}`} />
+            <div key={index} className="flex items-baseline gap-3 py-1.5">
+              <Slot className="w-8" />
+              <Slot className="flex-1" />
+              <Slot className="w-12" />
             </div>
           ))}
         </div>
@@ -2003,17 +2156,17 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'markets') {
     return (
-      <div className="-my-1 animate-pulse divide-y divide-border-light" aria-hidden>
+      <div className="-mt-1 animate-record-sweep divide-y divide-border-light/70" aria-hidden>
         {[0, 1, 2, 3].map((index) => (
-          <div key={index} className="grid grid-cols-[minmax(4.75rem,0.9fr)_minmax(4.25rem,1fr)_minmax(4.5rem,auto)] items-center gap-3 py-2.5">
-            <div>
-              <div className={`h-2.5 w-12 ${skeletonBar}`} />
-              <div className={`mt-1.5 h-2 w-16 ${skeletonBarSoft}`} />
+          <div key={index} className="grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5">
+            <div className="space-y-1.5">
+              <Slot className="w-12" />
+              <Slot className="w-16" />
             </div>
-            <div className={`h-[26px] w-full ${skeletonBarSoft}`} />
-            <div className="justify-self-end">
-              <div className={`h-2.5 w-12 ${skeletonBar}`} />
-              <div className={`mt-1.5 h-2 w-14 ${skeletonBarSoft}`} />
+            <Slot className="w-full" />
+            <div className="justify-self-end space-y-1.5 text-right">
+              <Slot className="ml-auto w-12" />
+              <Slot className="ml-auto w-14" />
             </div>
           </div>
         ))}
@@ -2023,34 +2176,25 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'media') {
     return (
-      <div className="animate-pulse" aria-hidden>
-        <div className="mb-4 flex items-baseline justify-between border-b border-border-light pb-3">
-          <div className={`h-2 w-12 ${skeletonBar}`} />
-          <div className={`h-2 w-16 ${skeletonBarSoft}`} />
+      <div className="animate-record-sweep" aria-hidden>
+        <div className="flex items-center justify-between border-b border-border-light pb-2">
+          <Slot className="w-16" />
+          <Slot className="w-12" />
         </div>
-        <div className="mb-4 grid grid-cols-4 gap-1.5">
-          {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="rounded-sm border border-border-light bg-surface-sunken/35 p-2">
-              <div className={`h-2 w-10 ${skeletonBarSoft}`} />
-              <div className={`mt-1.5 h-2.5 w-8 ${skeletonBar}`} />
-            </div>
-          ))}
-        </div>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {[0, 1, 2, 3, 4].map((index) => (
-            <div key={index} className={`h-5 rounded-sm border border-border-light bg-surface-sunken/45 ${index % 2 === 0 ? 'w-20' : 'w-24'}`} />
-          ))}
-        </div>
-        <div className="mt-5 border-t border-border-light pt-4">
-          <div className={`h-2 w-24 ${skeletonBarSoft}`} />
-          <div className="mt-3 grid grid-cols-4 gap-2.5">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index}>
-                <div className={`aspect-[2/3] ${skeletonBar}`} />
-                <div className={`mt-1.5 h-2 w-full ${skeletonBarSoft}`} />
-              </div>
-            ))}
+        <div className="mt-3 grid grid-cols-2 gap-x-6">
+          <div className="space-y-0">
+            <SkeletonRow />
+            <SkeletonRow />
           </div>
+          <div className="space-y-0">
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-1">
+          {[0, 1, 2, 3].map((index) => (
+            <span key={index} className={`h-4 bg-surface-sunken/60 ${index % 2 === 0 ? 'w-16' : 'w-20'}`} />
+          ))}
         </div>
       </div>
     );
@@ -2058,11 +2202,11 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
 
   if (kind === 'posts') {
     return (
-      <div className="animate-pulse space-y-3.5" aria-hidden>
+      <div className="-mx-2 animate-record-sweep space-y-3.5 px-2" aria-hidden>
         {[0, 1, 2, 3, 4].map((index) => (
-          <div key={index}>
-            <div className={`h-2.5 ${skeletonBar}`} style={{ width: `${82 - (index % 3) * 14}%` }} />
-            <div className={`mt-1.5 h-2 w-2/5 ${skeletonBarSoft}`} />
+          <div key={index} className="space-y-1.5">
+            <Slot style={{ width: `${82 - (index % 3) * 14}%` }} />
+            <Slot className="w-2/5" />
           </div>
         ))}
       </div>
@@ -2070,18 +2214,26 @@ function ModuleSkeleton({ kind }: { kind: ModuleSkeletonKind }) {
   }
 
   return (
-    <div className="min-h-16 animate-pulse space-y-2.5" aria-hidden>
-      <div className={`h-2.5 w-3/4 ${skeletonBar}`} />
-      <div className={`h-2.5 w-1/2 ${skeletonBarSoft}`} />
-      <div className={`h-2.5 w-2/3 ${skeletonBarSoft}`} />
+    <div className="min-h-16 animate-record-sweep space-y-2.5" aria-hidden>
+      <Slot className="w-3/4" />
+      <Slot className="w-1/2" />
+      <Slot className="w-2/3" />
     </div>
   );
 }
 
+// Empty = a blank catalog card: a faint dashed-ruled record area with a "NIL"
+// stamp and a one-line note. Quiet, not an illustration.
 function EmptyModuleState({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-16 text-[11px] leading-relaxed text-text-tertiary">
-      {children}
+    <div className="min-h-16">
+      <div className="flex items-center gap-1.5 border-b border-border-light pb-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-text-muted">
+        <span aria-hidden className="h-1 w-1 bg-ink-300" />
+        Nil
+      </div>
+      <div className="mt-2 text-[11px] leading-relaxed text-text-tertiary">
+        {children}
+      </div>
     </div>
   );
 }
@@ -2783,11 +2935,23 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function formatCalendarMonth(date: Date) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
+// Readable month label for the calendar header, e.g. "JUL 2026" — the real
+// navigation context (which month you're viewing), not a decorative serial.
+function formatCalendarMonthLabel(date: Date) {
+  const month = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date).toUpperCase();
+  return `${month} ${date.getFullYear()}`;
+}
+
+// ISO-8601 week number (weeks start Monday; week 1 contains the first Thursday).
+function isoWeekNumber(date: Date) {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = (target.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+  target.setUTCDate(target.getUTCDate() - dayNumber + 3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  const firstDayNumber = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNumber + 3);
+  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
+  return String(week).padStart(2, '0');
 }
 
 function calendarCells(monthDate: Date) {
@@ -2849,31 +3013,6 @@ function formatMarketPrice(value: number, currency?: string) {
   }
   if (Math.abs(value) >= 10) return value.toFixed(2);
   return value.toFixed(4);
-}
-
-function marketTrendTone(changePercent: number) {
-  if (Math.abs(changePercent) < 0.005) return 'text-text-secondary';
-  return changePercent > 0 ? 'text-accent-green-dark' : 'text-accent-red-dark';
-}
-
-function sparklinePoints(values: number[], width = 120, height = 28) {
-  const points = values.filter((value) => Number.isFinite(value));
-  if (points.length < 2) return '';
-
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const span = max - min || 1;
-  const xStep = width / (points.length - 1);
-
-  return points.map((value, index) => {
-    const x = index * xStep;
-    const y = height - ((value - min) / span) * height;
-    return `${roundSvgNumber(x)},${roundSvgNumber(y)}`;
-  }).join(' ');
-}
-
-function roundSvgNumber(value: number) {
-  return Math.round(value * 10) / 10;
 }
 
 function formatCompactNumber(value: number) {
