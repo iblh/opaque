@@ -373,10 +373,8 @@ export default function HomePage() {
       <div className="relative flex-1 overflow-x-hidden bg-background">
         <div className="relative z-10">
           <div id="dashboard" className="relative flex min-h-full flex-col py-16">
-            <DocumentFrame />
             <div className="mx-6 animate-fade-in sm:mx-8 lg:mx-12 xl:mx-16 2xl:mx-24">
-              <DocumentMasthead />
-              <p className="mt-5 font-serif text-sm leading-none text-text-secondary">
+              <p className="font-serif text-sm leading-none text-text-secondary">
                 {timeGreeting()}{displayName ? `, ${displayName}` : ''}
                 <span className="text-text-muted"> — {todayLabel()}</span>
               </p>
@@ -581,73 +579,6 @@ function todayLabel() {
     month: 'long',
     day: 'numeric',
   }).format(new Date())
-}
-
-// ISO-8601 date (YYYY-MM-DD) for the masthead — a filed-record datestamp.
-function isoDateStamp(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-function localTimeZoneCode() {
-  try {
-    // e.g. "GMT-7" — a terse station/zone marker, not a long name.
-    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'shortOffset' }).formatToParts(new Date())
-    return parts.find((part) => part.type === 'timeZoneName')?.value?.replace(/\s/g, '') || 'LOCAL'
-  } catch {
-    return 'LOCAL'
-  }
-}
-
-// The filed-document masthead: a wordmark + provenance on the left and mono
-// datestamp / zone fields on the right, on one hairline rule. Makes the whole
-// dashboard read as a single archived sheet rather than floating modules.
-function DocumentMasthead() {
-  const [stamp, setStamp] = useState({ date: '', tz: '' })
-  // Compute client-side only — avoids an SSR/client locale + tz mismatch.
-  useEffect(() => {
-    setStamp({ date: isoDateStamp(), tz: localTimeZoneCode() })
-  }, [])
-
-  return (
-    <div className="flex items-end justify-between gap-4 border-b border-border-medium pb-2">
-      <div className="flex items-baseline gap-3">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.3em] text-text-primary">
-          OPAQUE
-        </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-text-muted">
-          Personal archive
-        </span>
-      </div>
-      <div className="flex items-center gap-4 font-mono text-[9px] uppercase tracking-[0.14em] text-text-muted tabular-nums">
-        <MastheadField label="Sheet" value="01 / 01" />
-        <MastheadField label="Date" value={stamp.date || '—'} />
-        <MastheadField label="TZ" value={stamp.tz || '—'} />
-      </div>
-    </div>
-  )
-}
-
-function MastheadField({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="text-text-muted/70">{label}</span>
-      <span className="text-text-secondary">{value}</span>
-    </span>
-  )
-}
-
-// Faint registration / crop corners on the content frame — the page edges of a
-// printed sheet. Decorative but cheap and consistent with the archival motif.
-function DocumentFrame() {
-  const corner = 'pointer-events-none absolute h-3 w-3 border-border-medium'
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-3 inset-y-6 sm:inset-x-5 lg:inset-x-9 xl:inset-x-[3.25rem] 2xl:inset-x-20">
-      <span className={`${corner} left-0 top-0 border-l border-t`} />
-      <span className={`${corner} right-0 top-0 border-r border-t`} />
-      <span className={`${corner} bottom-0 left-0 border-b border-l`} />
-      <span className={`${corner} bottom-0 right-0 border-b border-r`} />
-    </div>
-  )
 }
 
 function newId() {
