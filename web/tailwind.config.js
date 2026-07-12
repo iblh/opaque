@@ -30,6 +30,7 @@ module.exports = {
         'text-secondary': 'var(--text-secondary)',
         'text-tertiary': 'var(--text-tertiary)',
         'text-muted': 'var(--text-muted)',
+        'text-faint': 'var(--text-faint)',
         'background': 'rgb(var(--background) / <alpha-value>)',
         'surface': 'var(--surface)',
         'surface-elevated': 'rgb(var(--surface-elevated) / <alpha-value>)',

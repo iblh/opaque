@@ -648,7 +648,7 @@ function SectionHeader({ tree, isEditing, isPlaceholder, coordinate, onGripPoint
           {/* Drafting coordinate — a small mono grid reference, like a plate
               number on a technical sheet. */}
           {coordinate && (
-            <span className="select-none font-mono text-[9px] tabular-nums tracking-wider text-text-muted/70">
+            <span className="select-none font-mono text-[9px] tabular-nums tracking-wider text-text-muted">
               {coordinate}
             </span>
           )}

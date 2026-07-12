@@ -808,14 +808,14 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
 
       <div className="mt-2.5">
         <div className={`${gridCols} text-center`}>
-          <div aria-hidden className="font-mono text-[8px] uppercase tracking-wider text-text-muted/70">
+          <div aria-hidden className="font-mono text-[8px] uppercase tracking-wider text-text-muted">
             WK
           </div>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((weekday, index) => (
             <div
               key={`${weekday}-${index}`}
               className={`pb-2 font-mono text-[9px] font-medium uppercase tracking-[0.12em] ${
-                index === 0 || index === 6 ? 'text-text-muted/60' : 'text-text-muted'
+                index === 0 || index === 6 ? 'text-text-muted' : 'text-text-muted'
               }`}
             >
               {weekday}
@@ -825,7 +825,7 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
         <div className="space-y-px">
           {weeks.map((week) => (
             <div key={week[0].key} className={`${gridCols} text-center`}>
-              <div className="flex h-7 items-center justify-center font-mono text-[9px] tabular-nums text-text-muted/55">
+              <div className="flex h-7 items-center justify-center font-mono text-[9px] tabular-nums text-text-muted">
                 {isoWeekNumber(week[0].date)}
               </div>
               {week.map((cell, dayIndex) => {
@@ -849,7 +849,7 @@ function CalendarWidget({ module }: { module: ModuleBranch }) {
                             ? 'font-medium text-text-primary'
                             : cell.inMonth
                               ? isWeekend ? 'text-text-tertiary' : 'text-text-secondary'
-                              : 'text-text-muted/45'
+                              : 'text-text-faint'
                         }`}
                       >
                         {cell.date.getDate()}
