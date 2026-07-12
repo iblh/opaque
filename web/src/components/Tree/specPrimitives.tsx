@@ -424,20 +424,20 @@ export function RollingNumber({
   }, [value]);
 
   return (
-    <span
-      className={`inline-flex items-center tabular-nums ${className}`}
-      aria-label={ariaLabel ?? value}
-      role={ariaLabel ? undefined : 'text'}
-    >
+    <span className={`inline-flex items-center tabular-nums ${className}`}>
+      {/* Screen readers get the plain value; the animated reels are decorative. */}
+      <span className="sr-only">{ariaLabel ?? value}</span>
+      <span aria-hidden="true" className="inline-flex items-center">
       {value.split('').map((char, index) =>
         DIGITS.includes(char) ? (
           <Reel key={index} digit={Number(char)} animate={animate} />
         ) : (
-          <span key={index} aria-hidden className="inline-block">
+          <span key={index} className="inline-block">
             {char === ' ' ? ' ' : char}
           </span>
         ),
       )}
+      </span>
     </span>
   );
 }
