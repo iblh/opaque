@@ -904,7 +904,7 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
           cache: 'no-store',
           signal: controller.signal,
         });
-        const payload = await response.json();
+        const payload = await readModuleDataResponse(response);
 
         if (!response.ok) {
           throw new Error(payload.error || 'Failed to load module data.');
@@ -936,6 +936,35 @@ function useModuleData(module: ModuleBranch): ModuleDataState {
   }, [cacheKey, module.id, module.moduleType, requestVersion]);
 
   return { data, error, isLoading, refresh };
+}
+
+async function readModuleDataResponse(response: Response): Promise<ModuleDataResponse & { error?: string }> {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.toLowerCase().includes('application/json')) {
+    try {
+      return await response.json();
+    } catch {
+      throw new Error(`Module data returned malformed JSON${formatHttpStatus(response)}.`);
+    }
+  }
+
+  const body = await response.text().catch(() => '');
+  const isHtml = /^\s*(?:<!doctype|<html[\s>])/i.test(body);
+  if (isHtml) {
+    throw new Error(
+      response.status === 401
+        ? 'Session expired. Sign in again to load module data.'
+        : `Module data returned HTML instead of JSON${formatHttpStatus(response)}. Check the app URL, auth proxy, or server logs.`,
+    );
+  }
+
+  throw new Error(
+    `Module data returned ${contentType || 'a non-JSON response'}${formatHttpStatus(response)}.`,
+  );
+}
+
+function formatHttpStatus(response: Response) {
+  return response.status ? ` (HTTP ${response.status})` : '';
 }
 
 // Mounts the data hook for a module without rendering anything — used to warm
