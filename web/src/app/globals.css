@@ -43,9 +43,11 @@
         --surface: rgba(250, 250, 250, 0.8);
         --surface-elevated: 249 248 246;
         --surface-sunken: 234 233 228;
-        --border-light: 237 237 237;
-        --border-medium: 222 222 222;
-        --border-strong: 208 208 208;
+        /* Warm-neutral rules that read against the paper ground. Kept dark
+           enough that a 1px hairline is legible without becoming a box. */
+        --border-light: 219 216 208;
+        --border-medium: 198 194 183;
+        --border-strong: 172 167 155;
         --ink-100: 247 247 247;
         --ink-200: 232 232 232;
         --ink-300: 218 218 218;
