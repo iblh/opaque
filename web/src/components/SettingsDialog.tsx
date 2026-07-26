@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -63,7 +64,10 @@ export default function SettingsDialog({
   returnFocusRef,
 }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>('appearance');
+  const [mounted, setMounted] = useState(false);
   const panelRef = useFocusTrap<HTMLDivElement>(true, { returnFocusRef });
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -76,7 +80,13 @@ export default function SettingsDialog({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  // Portalled to the body: the dialog is rendered from inside the sticky header,
+  // whose backdrop-blur establishes a containing block for fixed positioning —
+  // so `inset-0` would resolve against the header's ~100px box instead of the
+  // viewport, and the centred panel would sit half off the top of the screen.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -138,7 +148,8 @@ export default function SettingsDialog({
           {tab === 'shortcuts' && <ShortcutsSection />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

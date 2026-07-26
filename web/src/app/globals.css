@@ -884,6 +884,42 @@ input:-webkit-autofill:active {
         color: rgb(var(--text-primary));
     }
 
+    /* ---- Masthead -------------------------------------------------------
+       Each prototype opens with a different masthead: A rules off with a heavy
+       3px line under vertical page edges, C thickens it to 4px, K uses a lighter
+       2px with no side rules, M drops the rule entirely (the tile grid does the
+       dividing) and X goes large, light and italic over a faint hairline. */
+    .proto-masthead {
+        @apply border-x border-b-[3px] border-x-border-light border-b-text-primary;
+    }
+
+    [data-layout='ledger'] .proto-masthead {
+        @apply border-x-0 border-b-4;
+    }
+
+    [data-layout='journal'] .proto-masthead {
+        @apply border-x-0 border-b-2;
+    }
+
+    [data-layout='bento'] .proto-masthead {
+        @apply border-x-0 border-b-0;
+    }
+
+    [data-layout='catalog'] .proto-masthead {
+        @apply items-end border-x-0 border-b pb-8 pt-16;
+        border-bottom-color: rgb(var(--text-primary) / 0.2);
+    }
+
+    /* X sets the wordmark much larger, light and italic — it is the one layout
+       whose masthead is a statement rather than a label. */
+    [data-layout='catalog'] .proto-wordmark {
+        @apply text-5xl font-light italic md:text-7xl;
+    }
+
+    [data-layout='catalog'] .proto-colophon {
+        @apply text-[9px];
+    }
+
     /* The application directory changes register per layout. K and M set it as a
        dense mono index (name left, port right, no icon); X promotes each entry to
        a large serif catalogue entry. Sheet keeps the icon-led registry of A. */

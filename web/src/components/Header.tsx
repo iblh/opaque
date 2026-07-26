@@ -136,12 +136,12 @@ export default function Header({
             )}
 
             {pathname === '/' && (
-                <nav className="mx-auto flex w-full max-w-[var(--shell-width)] items-end justify-between gap-8 border-x border-b-[3px] border-x-border-light border-b-text-primary px-8 py-6">
+                <nav className="proto-masthead mx-auto flex w-full max-w-[var(--shell-width)] items-end justify-between gap-8 px-8 py-6">
                     <div className="min-w-0 space-y-1">
-                        <div className="font-serif text-4xl leading-none tracking-tight text-text-primary">
+                        <div className="proto-wordmark font-serif text-4xl leading-none tracking-tight text-text-primary">
                             OPAQUE
                         </div>
-                        <div className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+                        <div className="proto-colophon font-mono text-[10px] uppercase tracking-widest text-text-muted">
                             Personal Archive Instrument · Vol. 01
                         </div>
                     </div>
