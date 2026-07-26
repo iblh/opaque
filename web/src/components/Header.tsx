@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     IconCheck,
     IconDeviceFloppy,
-    IconEdit,
     IconLoader2,
     IconLogout,
     IconMessageCircle,
@@ -74,6 +73,11 @@ export default function Header({
     const avatarInitial = displayName.charAt(0).toUpperCase();
     const serverSummary = getServerSummary(dashboard);
     const searchProvider = getSearchProvider(searchProviderId);
+    const dashboardDate = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date()).replace(/\//g, '.');
 
     useEffect(() => {
         if (!showAvatarDropdown) return;
@@ -126,36 +130,53 @@ export default function Header({
     };
 
     return (
-        <header className="flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/95 px-6 py-3">
+        <header className={pathname === '/' ? 'sticky top-0 z-40 bg-background/95 backdrop-blur' : 'flex min-h-14 items-center justify-between border-b border-border-light bg-surface-elevated/95 px-6 py-3'}>
             {pathname === '/login' && (
                 <div className="text-sm font-medium tracking-tight text-text-primary">OPAQUE</div>
             )}
 
             {pathname === '/' && (
-                <nav className="flex w-full items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-4">
-                        <div className="text-sm font-medium tracking-tight text-text-primary">
+                <nav className="mx-auto flex w-full max-w-[var(--shell-width)] items-end justify-between gap-8 border-x border-b-[3px] border-x-border-light border-b-text-primary px-8 py-6">
+                    <div className="min-w-0 space-y-1">
+                        <div className="font-serif text-4xl leading-none tracking-tight text-text-primary">
                             OPAQUE
                         </div>
-                        <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
+                        <div className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+                            Personal Archive Instrument · Vol. 01
+                        </div>
+                    </div>
+
+                    <div className="flex min-w-0 flex-1 items-end justify-end gap-6 font-mono text-[10px] uppercase tracking-widest">
+                        <form onSubmit={handleSearchSubmit} className="relative hidden border-b border-border-medium pb-1 lg:block">
+                            <IconSearch className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
                             <input
                                 id="search"
                                 type="text"
                                 value={searchQuery}
                                 onChange={(event) => setSearchQuery(event.target.value)}
-                                placeholder={searchProvider.placeholder}
+                                placeholder={searchProvider.placeholder.replace('Search ', 'Search index via ')}
                                 autoComplete="off"
-                                className="peer opaque-input w-[min(22rem,34vw)] pr-8"
+                                className="peer h-6 w-40 bg-transparent pl-5 text-[10px] text-text-primary outline-none placeholder:text-text-faint"
                             />
-                            <IconSearch className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary peer-focus:opacity-0" />
                             {/* '/' focuses search (see useKeyboardShortcuts); hint hides once focused. */}
-                            <kbd className="pointer-events-none absolute right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 items-center justify-center rounded-sm border border-border-medium bg-surface-sunken font-mono text-[10px] text-text-tertiary peer-placeholder-shown:flex peer-focus:hidden">
+                            <kbd className="pointer-events-none absolute right-0 top-1/2 hidden h-4 w-4 -translate-y-1/2 items-center justify-center border border-border-medium bg-surface-sunken font-mono text-[10px] text-text-tertiary peer-placeholder-shown:flex peer-focus:hidden">
                                 /
                             </kbd>
                         </form>
-                    </div>
 
-                    <div className="flex items-center gap-2">
+                        <div className="hidden text-right md:block">
+                            <div className="text-text-muted">Date Issued</div>
+                            <div className="mt-1 text-text-primary">{dashboardDate}</div>
+                        </div>
+
+                        <div className="hidden text-right md:block">
+                            <div className="text-text-muted">Sys Status</div>
+                            <div className={serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'mt-1 text-accent-green-dark' : 'mt-1 text-accent-red-dark'}>
+                                {serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'Nominal' : 'Degraded'}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 tracking-normal">
                         {isEditing && (
                             <div className="hidden items-center gap-2 text-xs text-text-tertiary sm:flex">
                                 <span className="h-1.5 w-1.5 rounded-full bg-accent-green" />
@@ -172,11 +193,11 @@ export default function Header({
                             <button
                                 onClick={onEdit}
                                 disabled={!canEdit}
-                                className="opaque-toolbar-icon"
+                                className="opaque-button font-mono uppercase tracking-widest"
                                 aria-label="Edit dashboard"
                                 title={canEdit ? 'Edit dashboard' : 'Loading…'}
                             >
-                                {canEdit ? <IconEdit /> : <IconLoader2 className="animate-spin" />}
+                                {canEdit ? '[ edit ]' : <IconLoader2 className="animate-spin" />}
                             </button>
                         )}
 
@@ -306,6 +327,7 @@ export default function Header({
                                 </div>
                             )}
                         </div>
+                    </div>
                     </div>
                 </nav>
             )}

@@ -13,34 +13,36 @@
         /* Base grid unit (SearchSystem mechanic). Mono data rows and spec-sheet
            rhythm quantize to multiples of this so text sits on one invisible
            grid. Serif titles are exempt. */
+        /* Base grid unit. Every layout quantizes spacing to multiples of this,
+           so the density preference rescales the whole page from one value. */
         --unit: 4px;
 
         /* --- Light palette (the paper default). --- Solid tokens are bare
            "R G B" channels so Tailwind can synthesize `/NN` opacity modifiers
            (tailwind.config wraps them in rgb(var(--x) / <alpha-value>)).
            Alpha-baked tokens stay full rgba() and are referenced directly. */
-        --accent-green: 126 132 107;
-        --accent-green-light: 157 160 133;
-        --accent-green-dark: 107 113 89;
-        --accent-green-subtle: rgba(126, 132, 107, 0.08);
-        --accent-green-hover: rgba(126, 132, 107, 0.15);
-        --accent-red: 167 103 103;
-        --accent-red-dark: 142 85 85;
-        --accent-red-subtle: rgba(167, 103, 103, 0.08);
+        --accent-green: 126 140 115;
+        --accent-green-light: 154 166 145;
+        --accent-green-dark: 106 119 97;
+        --accent-green-subtle: rgba(126, 140, 115, 0.08);
+        --accent-green-hover: rgba(126, 140, 115, 0.15);
+        --accent-red: 176 125 98;
+        --accent-red-dark: 150 105 82;
+        --accent-red-subtle: rgba(176, 125, 98, 0.08);
         --accent-amber: 176 141 87;
         --accent-amber-dark: 151 120 74;
         --accent-blue: 94 106 210;
         --accent-blue-subtle: rgba(94, 106, 210, 0.08);
         --accent-blue-hover: rgba(94, 106, 210, 0.15);
-        --text-primary: 26 29 31;
-        --text-secondary: rgba(26, 29, 31, 0.75);
-        --text-tertiary: rgba(26, 29, 31, 0.55);
-        --text-muted: rgba(26, 29, 31, 0.4);
-        --text-faint: rgba(26, 29, 31, 0.28);
-        --background: 255 255 255;
+        --text-primary: 26 26 26;
+        --text-secondary: rgba(26, 26, 26, 0.75);
+        --text-tertiary: rgba(26, 26, 26, 0.55);
+        --text-muted: rgba(26, 26, 26, 0.40);
+        --text-faint: rgba(26, 26, 26, 0.28);
+        --background: 244 243 238;
         --surface: rgba(250, 250, 250, 0.8);
-        --surface-elevated: 255 255 255;
-        --surface-sunken: 247 247 247;
+        --surface-elevated: 249 248 246;
+        --surface-sunken: 234 233 228;
         --border-light: 237 237 237;
         --border-medium: 222 222 222;
         --border-strong: 208 208 208;
@@ -54,7 +56,7 @@
         --ink-800: 51 51 51;
         --ink-900: 17 17 17;
         /* The page canvas (one notch off pure white, like aged paper). */
-        --page-bg: #FAFAFA;
+        --page-bg: #F4F3EE;
     }
 
     /* --- Dark palette: ink canvas, paper-light text. Quiet Instrumentality
@@ -62,27 +64,27 @@
        enough to read on dark without turning loud. The ink-* ramp inverts so
        existing `ink-700` (a mid-tone) still reads as a mid-tone. --- */
     .dark {
-        --accent-green: 154 160 131;
+        --accent-green: 126 140 115;
         --accent-green-light: 176 180 152;
-        --accent-green-dark: 130 136 112;
+        --accent-green-dark: 154 166 145;
         --accent-green-subtle: rgba(154, 160, 131, 0.12);
         --accent-green-hover: rgba(154, 160, 131, 0.20);
-        --accent-red: 192 138 138;
-        --accent-red-dark: 210 158 158;
+        --accent-red: 176 125 98;
+        --accent-red-dark: 196 150 125;
         --accent-red-subtle: rgba(192, 138, 138, 0.14);
         --accent-amber: 201 162 108;
         --accent-amber-dark: 215 181 137;
         --accent-blue: 139 149 230;
         --accent-blue-subtle: rgba(139, 149, 230, 0.14);
         --accent-blue-hover: rgba(139, 149, 230, 0.22);
-        --text-primary: 232 230 226;
-        --text-secondary: rgba(232, 230, 226, 0.74);
-        --text-tertiary: rgba(232, 230, 226, 0.52);
-        --text-muted: rgba(232, 230, 226, 0.38);
-        --text-faint: rgba(232, 230, 226, 0.26);
+        --text-primary: 232 230 225;
+        --text-secondary: rgba(232, 230, 225, 0.74);
+        --text-tertiary: rgba(232, 230, 225, 0.52);
+        --text-muted: rgba(232, 230, 225, 0.38);
+        --text-faint: rgba(232, 230, 225, 0.26);
         --background: 27 28 30;
         --surface: rgba(34, 35, 38, 0.8);
-        --surface-elevated: 36 37 40;
+        --surface-elevated: 17 17 17;
         --surface-sunken: 35 36 39;
         --border-light: 44 45 48;
         --border-medium: 58 59 63;
@@ -96,7 +98,42 @@
         --ink-700: 188 190 198;
         --ink-800: 214 215 220;
         --ink-900: 236 237 240;
-        --page-bg: #161719;
+        --page-bg: #1B1C1E;
+    }
+
+    /* Density rescales the grid unit, so every layout's spacing (which is
+       expressed in multiples of --unit) tightens or opens as one system. */
+    [data-density='compact'] {
+        --unit: 3px;
+    }
+
+    [data-density='airy'] {
+        --unit: 5px;
+    }
+
+    /* Each preset skeleton declares its canvas width once. Header, content and
+       footer all read --shell-width, so the page chrome always tracks the
+       layout instead of every component hardcoding its own max-width. */
+    :root,
+    [data-layout='sheet'] {
+        --shell-width: 64rem;
+    }
+
+    [data-layout='ledger'] {
+        --shell-width: 64rem;
+    }
+
+    [data-layout='journal'],
+    [data-layout='split'] {
+        --shell-width: 72rem;
+    }
+
+    [data-layout='bento'] {
+        --shell-width: 80rem;
+    }
+
+    [data-layout='catalog'] {
+        --shell-width: 1400px;
     }
 
     body {

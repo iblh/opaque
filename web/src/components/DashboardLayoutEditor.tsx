@@ -478,7 +478,7 @@ export default function DashboardLayoutEditor({
       ref={containerRef}
       data-layout-editor
       data-drafting={isDragActive ? 'true' : undefined}
-      className="drafting-surface mx-6 flex flex-col gap-10 sm:mx-8 md:gap-12 lg:mx-12 xl:mx-16 xl:gap-14 2xl:mx-24"
+      className="drafting-surface flex flex-col gap-10 md:gap-12"
     >
       {rows.map((row, rowIndex) => (
         <LayoutRow
@@ -572,7 +572,7 @@ function LayoutRow({
     <div
       data-layout-row
       data-row-id={row.rowId}
-      className="relative [--row-gap:1.25rem] md:[--row-gap:1.5rem] xl:[--row-gap:2rem]"
+      className="relative [--row-gap:1.5rem] md:[--row-gap:2rem]"
     >
       {newRowEdge && <NewRowIndicator edge={newRowEdge} />}
       <div
