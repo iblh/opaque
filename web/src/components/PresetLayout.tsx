@@ -1,8 +1,9 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { LAYOUTS, regionFor, type LayoutId, type RegionId } from '@/lib/layouts';
+import { regionFor, type LayoutId, type RegionId } from '@/lib/layouts';
 import { getRootLabel } from '@/lib/modules';
+import { ProtoHeading } from '@/components/Tree/protoPrimitives';
 import { Tree } from '@/lib/types';
 
 interface PresetLayoutProps {
@@ -60,15 +61,13 @@ interface SkeletonProps {
 function Section({
   tree,
   renderSection,
-  titleClassName = 'font-serif text-base leading-none text-text-secondary',
 }: {
   tree: Tree;
   renderSection: (tree: Tree) => ReactNode;
-  titleClassName?: string;
 }) {
   return (
     <section data-section-root={tree.root} className="min-w-0">
-      <h2 className={`mb-[calc(var(--unit)*4)] ${titleClassName}`}>{getRootLabel(tree.root)}</h2>
+      <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
       {renderSection(tree)}
     </section>
   );
@@ -78,23 +77,16 @@ function Stack({
   trees,
   renderSection,
   className = 'space-y-[calc(var(--unit)*12)]',
-  titleClassName,
 }: {
   trees: Tree[];
   renderSection: (tree: Tree) => ReactNode;
   className?: string;
-  titleClassName?: string;
 }) {
   if (trees.length === 0) return null;
   return (
     <div className={className}>
       {trees.map((tree) => (
-        <Section
-          key={tree.root}
-          tree={tree}
-          renderSection={renderSection}
-          titleClassName={titleClassName}
-        />
+        <Section key={tree.root} tree={tree} renderSection={renderSection} />
       ))}
     </div>
   );
@@ -185,9 +177,7 @@ function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
             data-section-root={tree.root}
             className={`min-w-0 bg-background p-[calc(var(--unit)*6)] ${bentoSpan(index)}`}
           >
-            <h2 className="mb-[calc(var(--unit)*4)] font-serif text-base leading-none text-text-secondary">
-              {getRootLabel(tree.root)}
-            </h2>
+            <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
             {renderSection(tree)}
           </div>
         ))}
