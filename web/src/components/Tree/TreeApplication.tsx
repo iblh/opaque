@@ -212,7 +212,7 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
     // revealed as mono microtype on the right. Hover character comes from the
     // active layout (underline / italic / row tint) via .proto-link.
     return (
-      <div className="relative w-full space-y-1.5">
+      <div className="proto-directory relative w-full space-y-1.5">
         {applications.map(({ branch, leaf }) => (
           <a
             key={leaf.id}
@@ -225,16 +225,18 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
               <SvgIcon
                 svg={leaf.icon}
                 fallback={DEFAULT_APPLICATION_ICON}
-                className="h-4 w-4 flex-shrink-0 text-text-tertiary"
+                className="proto-directory-icon h-4 w-4 flex-shrink-0 text-text-tertiary"
               />
-              <span className="truncate text-sm text-text-primary">{leaf.name}</span>
+              <span className="proto-directory-name truncate text-sm text-text-primary">
+                {leaf.name}
+              </span>
               {tree.branches.length > 1 && (
                 <span className="shrink-0 font-mono text-[9px] uppercase tracking-widest text-text-muted">
                   {branch.name}
                 </span>
               )}
             </span>
-            <span className="shrink-0 font-mono text-[9px] uppercase tracking-widest text-text-muted transition-colors group-hover:text-text-secondary">
+            <span className="proto-directory-endpoint shrink-0 font-mono text-[9px] uppercase tracking-widest text-text-muted transition-all group-hover:text-text-secondary">
               {formatApplicationUrl(leaf.url)}
             </span>
           </a>

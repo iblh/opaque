@@ -88,7 +88,7 @@ export default function SettingsDialog({
       <div
         ref={panelRef}
         onClick={(event) => event.stopPropagation()}
-        className="relative flex h-[26rem] w-full max-w-2xl overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-floating"
+        className="relative flex h-[min(34rem,calc(100vh-4rem))] w-full max-w-3xl overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-floating"
       >
         <button
           type="button"

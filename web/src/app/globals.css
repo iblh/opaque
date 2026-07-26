@@ -125,8 +125,7 @@
         --shell-width: 64rem;
     }
 
-    [data-layout='journal'],
-    [data-layout='split'] {
+    [data-layout='journal'] {
         --shell-width: 72rem;
     }
 
@@ -807,7 +806,7 @@ input:-webkit-autofill:active {
    and hover character, so the layout — not the component — decides how headings,
    links and rows look. Components emit stable hooks (.proto-heading,
    .proto-link, .proto-row) and these rules dress them per data-layout, which
-   keeps the six treatments out of the React tree entirely.
+   keeps the per-layout treatments out of the React tree entirely.
    --------------------------------------------------------------------------- */
 @layer components {
     /* Baseline shared by every layout; individual layouts override below. */
@@ -854,37 +853,65 @@ input:-webkit-autofill:active {
         background-color: rgb(var(--text-primary) / 0.05);
     }
 
-    /* AB — Split Category: italic heads; links go italic and lift in opacity. */
-    [data-layout='split'] .proto-heading {
-        @apply text-xl italic;
-    }
-
-    [data-layout='split'] .proto-link {
-        @apply opacity-80;
-    }
-
-    [data-layout='split'] .proto-link:hover {
-        @apply italic opacity-100;
-    }
-
-    /* M — Bento: upright heads, no rule (the tile edge is the separator). */
+    /* M — Bento: upright heads over a hairline; the tile edge does the dividing,
+       so the head keeps only a light rule to separate it from its own content. */
     [data-layout='bento'] .proto-heading {
-        @apply border-b-0 pb-0 text-xl not-italic;
+        @apply mb-6 text-xl not-italic;
+        border-color: rgb(var(--border-light));
     }
 
     [data-layout='bento'] .proto-link:hover {
         @apply underline decoration-1 underline-offset-2;
     }
 
-    /* X — Catalog: large airy heads; links are serif and go italic on hover. */
+    /* X — Catalog: large airy heads, no rule, generous space beneath. Links are
+       set in serif and lean into italic on hover rather than underlining. */
     [data-layout='catalog'] .proto-heading {
-        @apply mb-6 border-b-0 pb-0 text-2xl not-italic;
+        @apply mb-12 border-b-0 pb-0 text-2xl not-italic;
         color: rgb(var(--text-primary) / 0.8);
+    }
+
+    /* The narrow instrument rail drops to mono microtype — in prototype X the
+       rail is labelled like an instrument panel, not titled like a catalogue. */
+    [data-layout='catalog'] aside .proto-heading {
+        @apply mb-4 border-b pb-2 font-mono text-[9px] uppercase tracking-widest;
+        border-color: rgb(var(--text-primary) / 0.1);
+        color: rgb(var(--text-primary) / 0.4);
     }
 
     [data-layout='catalog'] .proto-link:hover {
         @apply italic;
         color: rgb(var(--text-primary));
+    }
+
+    /* The application directory changes register per layout. K and M set it as a
+       dense mono index (name left, port right, no icon); X promotes each entry to
+       a large serif catalogue entry. Sheet keeps the icon-led registry of A. */
+    [data-layout='journal'] .proto-directory-icon,
+    [data-layout='bento'] .proto-directory-icon,
+    [data-layout='catalog'] .proto-directory-icon {
+        @apply hidden;
+    }
+
+    [data-layout='journal'] .proto-directory-name,
+    [data-layout='bento'] .proto-directory-name,
+    [data-layout='ledger'] .proto-directory-name {
+        @apply font-mono text-[10px];
+    }
+
+    [data-layout='catalog'] .proto-directory-name {
+        @apply font-serif text-2xl font-light;
+    }
+
+    /* X reveals an entry's endpoint only on hover, keeping the column quiet.
+       Focus reveals it too, so the detail is reachable from the keyboard. */
+    [data-layout='catalog'] .proto-directory-endpoint {
+        @apply opacity-0;
+    }
+
+    [data-layout='catalog'] .proto-link:hover .proto-directory-endpoint,
+    [data-layout='catalog'] .proto-link:focus-visible .proto-directory-endpoint {
+        @apply opacity-100;
     }
 }
 

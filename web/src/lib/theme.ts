@@ -1,5 +1,6 @@
 import {
   LAYOUTS,
+  LAYOUT_IDS,
   isDensityId,
   isLayoutId,
   type DensityId,
@@ -41,7 +42,9 @@ if(raw){try{a=JSON.parse(raw);}catch(e){}}
 var legacy=localStorage.getItem('${THEME_STORAGE_KEY}');
 var theme=(a&&a.theme)||legacy||'system';
 var layout=(a&&a.layout)||'sheet';
+if(${JSON.stringify(LAYOUT_IDS)}.indexOf(layout)<0){layout='sheet';}
 var density=(a&&a.density)||'normal';
+if(['compact','normal','airy'].indexOf(density)<0){density='normal';}
 var sys=window.matchMedia('(prefers-color-scheme: dark)').matches;
 var dark=theme==='dark'||((theme==='system'||!theme)&&sys);
 d.classList.toggle('dark',dark);

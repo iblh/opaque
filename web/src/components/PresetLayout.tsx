@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { regionFor, type LayoutId, type RegionId } from '@/lib/layouts';
+import { orderRoots, regionFor, spanFor, type LayoutId, type RegionId } from '@/lib/layouts';
 import { getRootLabel } from '@/lib/modules';
 import { ProtoHeading } from '@/components/Tree/protoPrimitives';
 import { Tree } from '@/lib/types';
@@ -31,8 +31,6 @@ export default function PresetLayout({ layout, forest, renderSection }: PresetLa
       return <LedgerSkeleton buckets={buckets} renderSection={renderSection} />;
     case 'journal':
       return <JournalSkeleton buckets={buckets} renderSection={renderSection} />;
-    case 'split':
-      return <SplitSkeleton buckets={buckets} renderSection={renderSection} />;
     case 'bento':
       return <BentoSkeleton buckets={buckets} renderSection={renderSection} />;
     case 'catalog':
@@ -46,7 +44,10 @@ type RegionBuckets = Record<RegionId, Tree[]>;
 
 function groupByRegion(layout: LayoutId, forest: Tree[]): RegionBuckets {
   const buckets: RegionBuckets = { lead: [], main: [], aside: [], rail: [], full: [] };
-  forest.forEach((tree) => {
+  // The preset owns composition, so sort into the layout's authored reading order
+  // before bucketing — otherwise a region's order would follow whatever sequence
+  // the stored dashboard happens to hold.
+  orderRoots(layout, forest).forEach((tree) => {
     buckets[regionFor(layout, tree.root)].push(tree);
   });
   return buckets;
@@ -93,17 +94,21 @@ function Stack({
 }
 
 // A — Filed Sheet: a centred document page, main column with a slim side rail.
+// The vertical rules and faint drop shadow are the point: the content should read
+// as a physical sheet laid on the desk, not as a full-bleed web page.
 function SheetSkeleton({ buckets, renderSection }: SkeletonProps) {
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <Stack trees={buckets.lead} renderSection={renderSection} className="mb-[calc(var(--unit)*12)]" />
-      <div className="grid grid-cols-1 gap-[calc(var(--unit)*12)] lg:grid-cols-12">
-        <div className="lg:col-span-8">
-          <Stack trees={[...buckets.main, ...buckets.full]} renderSection={renderSection} />
+    <div className="mx-auto w-full max-w-5xl border-x border-border-light shadow-[0_0_40px_rgba(0,0,0,0.03)]">
+      <div className="p-[calc(var(--unit)*8)]">
+        <Stack trees={buckets.lead} renderSection={renderSection} className="mb-[calc(var(--unit)*12)]" />
+        <div className="grid grid-cols-1 gap-x-[calc(var(--unit)*8)] gap-y-[calc(var(--unit)*12)] lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <Stack trees={[...buckets.main, ...buckets.full]} renderSection={renderSection} />
+          </div>
+          <aside className="lg:col-span-4">
+            <Stack trees={[...buckets.aside, ...buckets.rail]} renderSection={renderSection} />
+          </aside>
         </div>
-        <aside className="lg:col-span-4">
-          <Stack trees={[...buckets.aside, ...buckets.rail]} renderSection={renderSection} />
-        </aside>
       </div>
     </div>
   );
@@ -140,42 +145,25 @@ function JournalSkeleton({ buckets, renderSection }: SkeletonProps) {
   );
 }
 
-// AB — Split Category: sticky aside with a category-grouped directory grid.
-function SplitSkeleton({ buckets, renderSection }: SkeletonProps) {
-  return (
-    <div className="mx-auto w-full max-w-6xl">
-      <div className="grid grid-cols-1 gap-[calc(var(--unit)*14)] lg:grid-cols-12">
-        <aside className="lg:col-span-4">
-          <div className="lg:sticky lg:top-[calc(var(--unit)*6)]">
-            <Stack trees={[...buckets.lead, ...buckets.aside, ...buckets.rail]} renderSection={renderSection} />
-          </div>
-        </aside>
-        <div className="lg:col-span-8">
-          {/* The directory splits into two category columns at width. */}
-          <div className="grid grid-cols-1 gap-x-[calc(var(--unit)*10)] gap-y-[calc(var(--unit)*12)] xl:grid-cols-2">
-            {[...buckets.main, ...buckets.full].map((tree) => (
-              <Section key={tree.root} tree={tree} renderSection={renderSection} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// M — Bento Grid: hairline-separated tiles on an even four-column grid.
+// M — Bento Grid: hairline-separated tiles on a four-column grid.
+//
+// Footprints are authored per module (see LAYOUTS.bento.spans) rather than
+// derived from position: the weather tile is tall, the reading log takes the big
+// block, telemetry and the directory stay small. Deriving spans from the index
+// made the grid re-compose whenever a module was added or reordered, which is
+// what made it feel arbitrary.
 function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
   const tiles = [...buckets.lead, ...buckets.main, ...buckets.aside, ...buckets.rail, ...buckets.full];
   return (
     <div className="mx-auto w-full max-w-7xl">
       {/* A 1px gap over a hairline background makes the cells read as tiles
           separated by rules rather than as bordered cards. */}
-      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:grid-cols-2 xl:grid-cols-4">
-        {tiles.map((tree, index) => (
+      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:grid-cols-4">
+        {tiles.map((tree) => (
           <div
             key={tree.root}
             data-section-root={tree.root}
-            className={`min-w-0 bg-background p-[calc(var(--unit)*6)] ${bentoSpan(index)}`}
+            className={`flex min-w-0 flex-col bg-background p-[calc(var(--unit)*6)] ${spanFor('bento', tree.root)}`}
           >
             <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
             {renderSection(tree)}
@@ -186,28 +174,35 @@ function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
   );
 }
 
-// Give the first tile extra presence and let wide content breathe, so the grid
-// reads as a composed bento rather than uniform boxes.
-function bentoSpan(index: number): string {
-  if (index === 0) return 'xl:col-span-2 xl:row-span-2';
-  if (index === 3) return 'xl:col-span-2';
-  return '';
-}
-
-// X — Catalog: three columns on a wide canvas.
+// X — Catalog: a narrow instrument rail beside two wide catalogue columns.
+// Prototype X gives the rail only 2 of 12 columns and splits the rest evenly,
+// so the two reading columns carry equal weight.
 function CatalogSkeleton({ buckets, renderSection }: SkeletonProps) {
+  const gap = 'gap-[calc(var(--unit)*16)]';
   return (
     <div className="mx-auto w-full max-w-[1400px]">
-      <Stack trees={buckets.lead} renderSection={renderSection} className="mb-[calc(var(--unit)*12)]" />
-      <div className="grid grid-cols-1 gap-[calc(var(--unit)*12)] lg:grid-cols-12">
-        <div className="lg:col-span-3">
-          <Stack trees={buckets.rail} renderSection={renderSection} />
+      <Stack trees={buckets.lead} renderSection={renderSection} className="mb-[calc(var(--unit)*16)]" />
+      <div className={`grid grid-cols-1 lg:grid-cols-12 ${gap}`}>
+        <aside className="space-y-[calc(var(--unit)*16)] lg:col-span-2">
+          <Stack
+            trees={buckets.rail}
+            renderSection={renderSection}
+            className="space-y-[calc(var(--unit)*16)]"
+          />
+        </aside>
+        <div className="lg:col-span-5">
+          <Stack
+            trees={[...buckets.main, ...buckets.full]}
+            renderSection={renderSection}
+            className="space-y-[calc(var(--unit)*16)]"
+          />
         </div>
         <div className="lg:col-span-5">
-          <Stack trees={[...buckets.main, ...buckets.full]} renderSection={renderSection} />
-        </div>
-        <div className="lg:col-span-4">
-          <Stack trees={buckets.aside} renderSection={renderSection} />
+          <Stack
+            trees={buckets.aside}
+            renderSection={renderSection}
+            className="space-y-[calc(var(--unit)*16)]"
+          />
         </div>
       </div>
     </div>
