@@ -800,6 +800,94 @@ input:-webkit-autofill:active {
 /* ===============================================
    CUSTOM COMPONENTS
    =============================================== */
+/* ---------------------------------------------------------------------------
+   Per-layout element styling.
+
+   Each preset skeleton came from a distinct prototype with its own typographic
+   and hover character, so the layout — not the component — decides how headings,
+   links and rows look. Components emit stable hooks (.proto-heading,
+   .proto-link, .proto-row) and these rules dress them per data-layout, which
+   keeps the six treatments out of the React tree entirely.
+   --------------------------------------------------------------------------- */
+@layer components {
+    /* Baseline shared by every layout; individual layouts override below. */
+    .proto-heading {
+        @apply mb-3 flex items-baseline justify-between gap-3 border-b pb-1 font-serif text-base text-text-primary;
+        border-color: rgb(var(--text-primary));
+    }
+
+    .proto-link {
+        @apply transition-all;
+    }
+
+    .proto-row {
+        @apply border-b border-border-light transition-colors;
+    }
+
+    /* A — Filed Sheet: larger italic heads, understated underline links. */
+    [data-layout='sheet'] .proto-heading {
+        @apply text-xl italic;
+        border-color: rgb(var(--border-medium));
+    }
+
+    [data-layout='sheet'] .proto-link:hover {
+        @apply underline decoration-1 underline-offset-4;
+    }
+
+    /* C — Dark Ledger: compact heads, tight rows, quiet tint on hover. */
+    [data-layout='ledger'] .proto-heading {
+        @apply text-base italic;
+    }
+
+    [data-layout='ledger'] .proto-row:hover,
+    [data-layout='ledger'] .proto-link:hover {
+        background-color: rgb(var(--text-primary) / 0.04);
+    }
+
+    /* K — Refined Journal: upright heads on a solid rule; rows tint on hover. */
+    [data-layout='journal'] .proto-heading {
+        @apply text-base not-italic;
+    }
+
+    [data-layout='journal'] .proto-row:hover,
+    [data-layout='journal'] .proto-link:hover {
+        background-color: rgb(var(--text-primary) / 0.05);
+    }
+
+    /* AB — Split Category: italic heads; links go italic and lift in opacity. */
+    [data-layout='split'] .proto-heading {
+        @apply text-xl italic;
+    }
+
+    [data-layout='split'] .proto-link {
+        @apply opacity-80;
+    }
+
+    [data-layout='split'] .proto-link:hover {
+        @apply italic opacity-100;
+    }
+
+    /* M — Bento: upright heads, no rule (the tile edge is the separator). */
+    [data-layout='bento'] .proto-heading {
+        @apply border-b-0 pb-0 text-xl not-italic;
+    }
+
+    [data-layout='bento'] .proto-link:hover {
+        @apply underline decoration-1 underline-offset-2;
+    }
+
+    /* X — Catalog: large airy heads; links are serif and go italic on hover. */
+    [data-layout='catalog'] .proto-heading {
+        @apply mb-6 border-b-0 pb-0 text-2xl not-italic;
+        color: rgb(var(--text-primary) / 0.8);
+    }
+
+    [data-layout='catalog'] .proto-link:hover {
+        @apply italic;
+        color: rgb(var(--text-primary));
+    }
+}
+
 @layer components {
     .linear-card {
         @apply bg-surface-elevated border border-border-light rounded shadow-subtle transition-all;

@@ -208,36 +208,35 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
   ));
 
   if (!isEditing) {
+    // Prototype idiom: a directory list — icon + name on the left, the endpoint
+    // revealed as mono microtype on the right. Hover character comes from the
+    // active layout (underline / italic / row tint) via .proto-link.
     return (
-      <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-4">
+      <div className="relative w-full space-y-1.5">
         {applications.map(({ branch, leaf }) => (
           <a
             key={leaf.id}
             href={leaf.url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block w-full max-w-[320px] min-w-0 text-inherit no-underline"
+            className="proto-link group flex items-center justify-between gap-3 border-b border-border-light pb-1 text-inherit no-underline"
           >
-            <div className="flex min-h-[64px] items-center gap-2.5 rounded-sm px-1 py-2 transition-colors hover:bg-surface-elevated">
+            <span className="flex min-w-0 items-center gap-2">
               <SvgIcon
                 svg={leaf.icon}
                 fallback={DEFAULT_APPLICATION_ICON}
-                className="h-10 w-10 flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
+                className="h-4 w-4 flex-shrink-0 text-text-tertiary"
               />
-              <div className="min-w-0 flex-1">
-                <div className="inline-block max-w-full truncate border-b border-transparent text-sm font-medium leading-tight text-text-primary transition-colors group-hover:border-accent-green">
-                  {leaf.name}
-                </div>
-                <div className="mt-1 truncate font-mono text-xs leading-tight text-text-tertiary">
-                  {formatApplicationUrl(leaf.url)}
-                </div>
-                {tree.branches.length > 1 && (
-                  <div className="mt-2 truncate text-[10px] uppercase tracking-wider text-text-muted">
-                    {branch.name}
-                  </div>
-                )}
-              </div>
-            </div>
+              <span className="truncate text-sm text-text-primary">{leaf.name}</span>
+              {tree.branches.length > 1 && (
+                <span className="shrink-0 font-mono text-[9px] uppercase tracking-widest text-text-muted">
+                  {branch.name}
+                </span>
+              )}
+            </span>
+            <span className="shrink-0 font-mono text-[9px] uppercase tracking-widest text-text-muted transition-colors group-hover:text-text-secondary">
+              {formatApplicationUrl(leaf.url)}
+            </span>
           </a>
         ))}
       </div>

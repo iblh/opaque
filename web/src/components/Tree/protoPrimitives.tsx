@@ -25,10 +25,10 @@ export function ProtoHeading({
   meta?: React.ReactNode;
   className?: string;
 }) {
+  // Styling lives in the per-layout CSS (see globals.css) so each skeleton keeps
+  // its own typographic character without branching here.
   return (
-    <h2
-      className={`mb-[calc(var(--unit)*3)] flex items-baseline justify-between gap-3 border-b border-text-primary pb-1 font-serif text-base italic text-text-primary ${className}`}
-    >
+    <h2 className={`proto-heading ${className}`}>
       <span className="min-w-0 truncate">{children}</span>
       {meta != null && (
         <span className="shrink-0 font-mono text-[9px] uppercase not-italic tracking-widest text-text-muted">
@@ -36,6 +36,33 @@ export function ProtoHeading({
         </span>
       )}
     </h2>
+  );
+}
+
+/**
+ * A link that adopts the active layout's hover character — underline in the
+ * sheet/bento layouts, italic in catalog/split, a row tint in journal/ledger.
+ */
+export function ProtoLink({
+  children,
+  href,
+  className = '',
+  onClick,
+}: {
+  children: React.ReactNode;
+  href?: string;
+  className?: string;
+  onClick?: () => void;
+}) {
+  const Tag = href ? 'a' : 'span';
+  return (
+    <Tag
+      {...(href ? { href, target: '_blank', rel: 'noreferrer' } : {})}
+      onClick={onClick}
+      className={`proto-link cursor-pointer text-inherit no-underline ${className}`}
+    >
+      {children}
+    </Tag>
   );
 }
 
@@ -78,8 +105,8 @@ export function ProtoRow({
 }) {
   return (
     <div
-      className={`flex items-baseline justify-between gap-3 border-b border-border-light pb-1 font-mono text-[10px] ${
-        interactive ? 'cursor-pointer transition-colors hover:bg-text-primary/[0.04]' : ''
+      className={`proto-row flex items-baseline justify-between gap-3 pb-1 font-mono text-[10px] ${
+        interactive ? 'cursor-pointer' : ''
       } ${className}`}
     >
       {children}

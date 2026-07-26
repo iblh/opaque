@@ -409,20 +409,17 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
                   href={leaf.url || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block text-inherit no-underline"
+                  className="proto-link group block text-inherit no-underline"
                 >
-                  <div className="relative rounded-sm px-1 py-1.5 transition-colors hover:bg-surface-elevated">
+                  <div className="relative px-1 py-1.5">
                     <div className="flex items-center gap-2 text-left">
                       <SvgIcon
                         svg={leaf.icon}
                         fallback={DEFAULT_BOOKMARK_ICON}
-                        // Nudged up 2px: the title's line-box + hover underline
-                        // sit its glyph optically above box-center, so a plain
-                        // items-center leaves the icon looking low.
-                        className="relative top-[-2px] h-[18px] w-[18px] flex-shrink-0 text-text-secondary transition-colors group-hover:text-accent-green"
+                        className="h-[18px] w-[18px] flex-shrink-0 text-text-tertiary"
                       />
                       <div className="min-w-0 flex-1">
-                        <span className="inline-block max-w-full truncate border-b border-transparent text-xs font-normal leading-[18px] text-text-primary transition-colors group-hover:border-accent-green">
+                        <span className="inline-block max-w-full truncate text-xs font-normal leading-[18px] text-text-primary">
                           {leaf.name}
                         </span>
                       </div>
