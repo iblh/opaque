@@ -906,6 +906,18 @@ input:-webkit-autofill:active {
         @apply border-x border-b-[3px] border-x-border-light border-b-text-primary;
     }
 
+    /* The sheet is one continuous page: the masthead's vertical rules carry on
+       down through the content, so nothing may sit between them and no top
+       padding may break the line. Prototype A frames the whole document this
+       way — a gap here reads as two separate cards. */
+    [data-layout='sheet'] .proto-shell {
+        @apply px-0 pt-0;
+    }
+
+    [data-layout='sheet'] .proto-shell > * {
+        @apply mt-0;
+    }
+
     [data-layout='ledger'] .proto-masthead {
         @apply border-x-0 border-b-4;
     }

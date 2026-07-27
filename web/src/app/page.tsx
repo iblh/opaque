@@ -400,14 +400,10 @@ export default function HomePage() {
       />
       <div className="relative flex-1 overflow-x-hidden bg-[var(--page-bg)]">
         <div className="relative z-10">
-          <div id="dashboard" className="relative flex min-h-full w-full flex-col px-[calc(var(--unit)*6)] py-[calc(var(--unit)*8)] pb-[calc(var(--unit)*24)]">
-            <div className="animate-fade-in mx-auto w-full max-w-[var(--shell-width)]">
-              <p className="font-serif text-sm leading-none text-text-secondary">
-                {timeGreeting()}{displayName ? `, ${displayName}` : ''}
-                <span className="text-text-muted"> — {todayLabel()}</span>
-              </p>
-            </div>
-
+          {/* The sheet layout draws a continuous page: its masthead and content
+              share vertical rules, so the shell adds no top padding there and
+              lets the two meet. Other layouts keep their own breathing room. */}
+          <div id="dashboard" className="proto-shell relative flex min-h-full w-full flex-col px-[calc(var(--unit)*6)] py-[calc(var(--unit)*8)] pb-[calc(var(--unit)*24)]">
             {!isEditing && isDashboardEmpty ? (
               <DashboardOnboarding
                 displayName={displayName}
@@ -592,22 +588,6 @@ function hasRenderableTree(tree: Tree) {
   }
 
   return true
-}
-
-function timeGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 5) return 'Good night'
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function todayLabel() {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date())
 }
 
 function newId() {
