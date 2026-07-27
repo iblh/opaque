@@ -46,14 +46,20 @@ export function normalizeDashboard(
     byRoot.set(tree.root, normalizeTree(tree));
   });
 
-  const defaultTrees = DEFAULT_ROOTS.map((root) => byRoot.get(root) || { root, branches: [] });
-  const customTrees = [...byRoot.values()].filter((tree) => !DEFAULT_ROOTS.includes(tree.root));
+  // Forest order is meaningful: it carries the user's within-column arrangement
+  // (see reorderWithinRegion). Rebuilding it in DEFAULT_ROOTS order would throw
+  // that away on every load, so keep the stored sequence and only use
+  // DEFAULT_ROOTS to append roots that are genuinely missing.
+  const storedTrees = [...byRoot.values()];
+  const missingTrees = DEFAULT_ROOTS
+    .filter((root) => !byRoot.has(root))
+    .map((root) => ({ root, branches: [] as Tree['branches'] }));
 
   return {
     ...source,
     ...identity,
     id: stringifyObjectId((source as any)._id) || source.id,
-    forest: [...defaultTrees, ...customTrees],
+    forest: [...storedTrees, ...missingTrees],
   };
 }
 
