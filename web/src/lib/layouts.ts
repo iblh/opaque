@@ -31,6 +31,12 @@ export interface LayoutDefinition {
   label: string;
   /** One-line description of the shell, shown under the label. */
   hint: string;
+  /**
+   * The masthead wordmark. Each prototype names the product differently — the
+   * catalogue sets it in title case as a statement, the journal and the grid
+   * give it a full title — so this is content, not styling.
+   */
+  wordmark: string;
   /** Applied automatically when the user picks this layout. */
   defaultTheme: 'light' | 'dark' | 'system';
   defaultDensity: DensityId;
@@ -66,6 +72,7 @@ export interface LayoutDefinition {
 export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   sheet: {
     id: 'sheet',
+    wordmark: 'OPAQUE',
     label: 'Filed Sheet',
     hint: 'Centred document page, main column with a slim side rail.',
     defaultTheme: 'light',
@@ -86,6 +93,7 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   ledger: {
     id: 'ledger',
+    wordmark: 'OPAQUE',
     label: 'Dark Ledger',
     hint: 'Two dense columns; data-forward, tabular telemetry.',
     defaultTheme: 'dark',
@@ -103,6 +111,7 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   journal: {
     id: 'journal',
+    wordmark: 'The Opaque Archive.',
     label: 'Refined Journal',
     hint: 'Sticky index sidebar beside a wide reading column.',
     defaultTheme: 'light',
@@ -123,6 +132,7 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   bento: {
     id: 'bento',
+    wordmark: 'The Opaque Grid.',
     label: 'Bento Grid',
     hint: 'Hairline-separated tiles on an even four-column grid.',
     defaultTheme: 'light',
@@ -154,6 +164,7 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   catalog: {
     id: 'catalog',
+    wordmark: 'Opaque.',
     label: 'Catalog',
     hint: 'Three columns, category-grouped, wide canvas.',
     defaultTheme: 'dark',
@@ -201,15 +212,70 @@ export function regionFor(layout: LayoutId, root: string): RegionId {
  * Sort roots into the layout's authored reading order. Unlisted roots keep their
  * dashboard order and follow the listed ones, so a newly added module appears at
  * the end of its region rather than disappearing or jumping to the front.
+ *
+ * This is the *initial* composition only. Once the user reorders a column in edit
+ * mode the stored forest order carries their choice, and `reorderWithinRegion`
+ * writes the whole region back in view order — so passing `respectStored` keeps
+ * their arrangement instead of snapping back to the preset every render.
  */
-export function orderRoots<T extends { root: string }>(layout: LayoutId, trees: T[]): T[] {
+export function orderRoots<T extends { root: string }>(
+  layout: LayoutId,
+  trees: T[],
+  respectStored = false,
+): T[] {
   const order = LAYOUTS[layout].order;
-  if (!order) return trees;
+  if (!order || respectStored) return trees;
   const rank = new Map(order.map((root, index) => [root as string, index]));
   const fallback = order.length;
   return [...trees].sort(
     (a, b) => (rank.get(a.root) ?? fallback) - (rank.get(b.root) ?? fallback),
   );
+}
+
+/**
+ * Move a root one step up or down *within its own region*, returning a new
+ * forest. The layout owns which column a module lives in, so this deliberately
+ * cannot move anything across regions — it reorders the roots that share a
+ * region and splices them back into their original slots in the forest, leaving
+ * every other module untouched.
+ */
+export function reorderWithinRegion<T extends { root: string }>(
+  layout: LayoutId,
+  forest: T[],
+  root: string,
+  direction: -1 | 1,
+): T[] {
+  const region = regionFor(layout, root);
+  // Positions in the forest that hold this region's modules, in view order.
+  const slots: number[] = [];
+  forest.forEach((tree, index) => {
+    if (regionFor(layout, tree.root) === region) slots.push(index);
+  });
+
+  const current = slots.findIndex((index) => forest[index].root === root);
+  const target = current + direction;
+  if (current < 0 || target < 0 || target >= slots.length) return forest;
+
+  const next = [...forest];
+  // Swap the two modules between their slots; the slots themselves stay put, so
+  // modules from other regions keep their positions in the array.
+  next[slots[current]] = forest[slots[target]];
+  next[slots[target]] = forest[slots[current]];
+  return next;
+}
+
+/** Whether a root can still move in the given direction inside its region. */
+export function canMoveWithinRegion<T extends { root: string }>(
+  layout: LayoutId,
+  forest: T[],
+  root: string,
+  direction: -1 | 1,
+): boolean {
+  const region = regionFor(layout, root);
+  const siblings = forest.filter((tree) => regionFor(layout, tree.root) === region);
+  const index = siblings.findIndex((tree) => tree.root === root);
+  const target = index + direction;
+  return index >= 0 && target >= 0 && target < siblings.length;
 }
 
 /** The tile footprint for a root in a grid layout, if the layout declares one. */

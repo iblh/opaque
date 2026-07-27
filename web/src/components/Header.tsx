@@ -23,6 +23,8 @@ import {
 import NotificationsMenu from '@/components/NotificationsMenu';
 import type { AppNotification } from '@/lib/useNotifications';
 import SettingsDialog from '@/components/SettingsDialog';
+import { LAYOUTS, type LayoutId } from '@/lib/layouts';
+import { DEFAULT_APPEARANCE, readAppearance } from '@/lib/theme';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -66,6 +68,9 @@ export default function Header({
     // Locally reflect a display-name edit from Settings without waiting for a
     // dashboard refetch.
     const [nameOverride, setNameOverride] = useState<string | null>(null);
+    // The masthead wordmark is per-layout content (see LAYOUTS[x].wordmark), so
+    // the header follows the appearance preference the same way the page does.
+    const [layout, setLayout] = useState<LayoutId>(DEFAULT_APPEARANCE.layout);
     const avatarRef = useRef<HTMLDivElement>(null);
     const avatarButtonRef = useRef<HTMLButtonElement>(null);
     const displayName = nameOverride || dashboard?.name || dashboard?.username || dashboard?.email || 'User';
@@ -78,6 +83,13 @@ export default function Header({
         month: '2-digit',
         day: '2-digit',
     }).format(new Date()).replace(/\//g, '.');
+
+    useEffect(() => {
+        const sync = () => setLayout(readAppearance().layout);
+        sync();
+        window.addEventListener('opaque:appearance-change', sync);
+        return () => window.removeEventListener('opaque:appearance-change', sync);
+    }, []);
 
     useEffect(() => {
         if (!showAvatarDropdown) return;
@@ -141,7 +153,7 @@ export default function Header({
                         K/M, so the flex order is flipped per layout in CSS. */}
                     <div className="proto-mast-identity flex min-w-0 flex-col gap-1">
                         <div className="proto-wordmark font-serif text-4xl leading-none tracking-tight text-text-primary">
-                            OPAQUE
+                            {LAYOUTS[layout].wordmark}
                         </div>
                         <div className="proto-colophon font-mono text-[10px] uppercase tracking-widest text-text-muted">
                             <span className="proto-colophon-vol">Vol. 01</span>

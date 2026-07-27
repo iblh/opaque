@@ -9,6 +9,7 @@ import TreeModule from '@/components/Tree/TreeModule'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import PresetLayout from '@/components/PresetLayout'
+import { reorderWithinRegion } from '@/lib/layouts'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
@@ -272,6 +273,19 @@ export default function HomePage() {
     setIsDirty(true)
   }
 
+  // Reordering is confined to a single column: the layout owns which column a
+  // module lives in, so this only shifts it among its own column's neighbours.
+  const moveSection = (root: string, direction: -1 | 1) => {
+    setDraftDashboard((current) => {
+      if (!current) return current
+      return {
+        ...current,
+        forest: reorderWithinRegion(appearance.layout, current.forest, root, direction),
+      }
+    })
+    setIsDirty(true)
+  }
+
   const updateForest = (forest: Tree[]) => {
     setDraftDashboard((current) => (
       current ? { ...current, forest } : current
@@ -406,6 +420,8 @@ export default function HomePage() {
                   <PresetLayout
                     layout={appearance.layout}
                     forest={layoutForest}
+                    isEditing={isEditing}
+                    onMove={moveSection}
                     renderSection={(tree) => (
                       showSkeleton
                         ? <SectionBodySkeleton root={tree.root} />

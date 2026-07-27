@@ -1,7 +1,15 @@
 'use client';
 
-import { type ReactNode } from 'react';
-import { orderRoots, regionFor, spanFor, type LayoutId, type RegionId } from '@/lib/layouts';
+import { createContext, useContext, type ReactNode } from 'react';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import {
+  canMoveWithinRegion,
+  orderRoots,
+  regionFor,
+  spanFor,
+  type LayoutId,
+  type RegionId,
+} from '@/lib/layouts';
 import { getRootLabel } from '@/lib/modules';
 import { ProtoHeading } from '@/components/Tree/protoPrimitives';
 import { Tree } from '@/lib/types';
@@ -10,7 +18,22 @@ interface PresetLayoutProps {
   layout: LayoutId;
   forest: Tree[];
   renderSection: (tree: Tree) => ReactNode;
+  /** Edit mode shows the reorder controls. */
+  isEditing?: boolean;
+  /** Move a section one step within its own column. */
+  onMove?: (root: string, direction: -1 | 1) => void;
 }
+
+// Passed by context so the five skeletons stay declarative — they compose
+// <Section>, and the controls come along with it.
+interface ReorderContext {
+  layout: LayoutId;
+  forest: Tree[];
+  isEditing: boolean;
+  onMove?: (root: string, direction: -1 | 1) => void;
+}
+
+const ReorderCtx = createContext<ReorderContext | null>(null);
 
 /**
  * Places dashboard sections into the active preset skeleton.
@@ -21,36 +44,58 @@ interface PresetLayoutProps {
  * section root never breaks a layout, and switching layouts re-flows the same
  * content without touching the stored dashboard.
  */
-export default function PresetLayout({ layout, forest, renderSection }: PresetLayoutProps) {
+export default function PresetLayout({
+  layout,
+  forest,
+  renderSection,
+  isEditing = false,
+  onMove,
+}: PresetLayoutProps) {
   const buckets = groupByRegion(layout, forest);
+  const skeleton = (() => {
+    switch (layout) {
+      case 'ledger':
+        return <LedgerSkeleton buckets={buckets} renderSection={renderSection} />;
+      case 'journal':
+        return <JournalSkeleton buckets={buckets} renderSection={renderSection} />;
+      case 'bento':
+        return <BentoSkeleton buckets={buckets} renderSection={renderSection} />;
+      case 'catalog':
+        return <CatalogSkeleton buckets={buckets} renderSection={renderSection} />;
+      case 'sheet':
+      default:
+        return <SheetSkeleton buckets={buckets} renderSection={renderSection} />;
+    }
+  })();
 
-  switch (layout) {
-    case 'sheet':
-      return <SheetSkeleton buckets={buckets} renderSection={renderSection} />;
-    case 'ledger':
-      return <LedgerSkeleton buckets={buckets} renderSection={renderSection} />;
-    case 'journal':
-      return <JournalSkeleton buckets={buckets} renderSection={renderSection} />;
-    case 'bento':
-      return <BentoSkeleton buckets={buckets} renderSection={renderSection} />;
-    case 'catalog':
-      return <CatalogSkeleton buckets={buckets} renderSection={renderSection} />;
-    default:
-      return <SheetSkeleton buckets={buckets} renderSection={renderSection} />;
-  }
+  return (
+    <ReorderCtx.Provider value={{ layout, forest, isEditing, onMove }}>
+      {skeleton}
+    </ReorderCtx.Provider>
+  );
 }
 
 type RegionBuckets = Record<RegionId, Tree[]>;
 
 function groupByRegion(layout: LayoutId, forest: Tree[]): RegionBuckets {
   const buckets: RegionBuckets = { lead: [], main: [], aside: [], rail: [], full: [] };
-  // The preset owns composition, so sort into the layout's authored reading order
-  // before bucketing — otherwise a region's order would follow whatever sequence
-  // the stored dashboard happens to hold.
-  orderRoots(layout, forest).forEach((tree) => {
+  // The preset seeds composition, but once the user has reordered a column the
+  // stored forest carries their arrangement and must win — otherwise every
+  // render would snap their change back to the authored order.
+  orderRoots(layout, forest, hasCustomOrder(layout, forest)).forEach((tree) => {
     buckets[regionFor(layout, tree.root)].push(tree);
   });
   return buckets;
+}
+
+/**
+ * True once the stored forest disagrees with the preset about the order of any
+ * region. A fresh dashboard matches the preset, so it keeps being sorted; the
+ * first reorder flips this and the stored order takes over from then on.
+ */
+function hasCustomOrder(layout: LayoutId, forest: Tree[]): boolean {
+  const seeded = orderRoots(layout, forest);
+  return seeded.some((tree, index) => tree.root !== forest[index]?.root);
 }
 
 interface SkeletonProps {
@@ -68,9 +113,50 @@ function Section({
 }) {
   return (
     <section data-section-root={tree.root} className="min-w-0">
-      <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
+      <ProtoHeading meta={<ReorderControls root={tree.root} />}>
+        {getRootLabel(tree.root)}
+      </ProtoHeading>
       {renderSection(tree)}
     </section>
+  );
+}
+
+/**
+ * Move-up / move-down for one section. The layout decides which column a module
+ * belongs to, so these only shift it within that column — there is deliberately
+ * no affordance for moving a module to a different column.
+ */
+function ReorderControls({ root }: { root: string }) {
+  const ctx = useContext(ReorderCtx);
+  if (!ctx?.isEditing || !ctx.onMove) return null;
+
+  const { layout, forest, onMove } = ctx;
+  const canUp = canMoveWithinRegion(layout, forest, root, -1);
+  const canDown = canMoveWithinRegion(layout, forest, root, 1);
+  if (!canUp && !canDown) return null;
+
+  const label = getRootLabel(root);
+  return (
+    <span className="flex items-center gap-0.5">
+      <button
+        type="button"
+        onClick={() => onMove(root, -1)}
+        disabled={!canUp}
+        aria-label={`Move ${label} up in its column`}
+        className="opaque-icon-button h-5 w-5 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <IconChevronUp className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onMove(root, 1)}
+        disabled={!canDown}
+        aria-label={`Move ${label} down in its column`}
+        className="opaque-icon-button h-5 w-5 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <IconChevronDown className="h-3 w-3" />
+      </button>
+    </span>
   );
 }
 
@@ -171,7 +257,9 @@ function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
             data-tile={size}
             className={`flex min-w-0 flex-col bg-background p-[calc(var(--unit)*6)] ${span}`}
           >
-            <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
+            <ProtoHeading meta={<ReorderControls root={tree.root} />}>
+              {getRootLabel(tree.root)}
+            </ProtoHeading>
             {renderSection(tree)}
           </div>
           );
