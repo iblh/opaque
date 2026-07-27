@@ -913,11 +913,168 @@ input:-webkit-autofill:active {
     /* X sets the wordmark much larger, light and italic — it is the one layout
        whose masthead is a statement rather than a label. */
     [data-layout='catalog'] .proto-wordmark {
-        @apply text-5xl font-light italic md:text-7xl;
+        @apply text-5xl font-light italic md:mb-4 md:text-7xl;
     }
 
     [data-layout='catalog'] .proto-colophon {
         @apply text-[9px];
+    }
+
+    /* ---- Colophon ------------------------------------------------------
+       A and C read as a subtitle under the wordmark; K and M lift a dated
+       strapline above it; X keeps it beneath but drops to 9px. Only the parts
+       each prototype actually shows are rendered. */
+    .proto-colophon {
+        @apply flex flex-wrap items-center gap-x-3 gap-y-1;
+    }
+
+    .proto-colophon-vol,
+    .proto-colophon-rule,
+    .proto-colophon-date {
+        @apply hidden;
+    }
+
+    .proto-colophon-rule {
+        @apply h-px w-8;
+        background-color: rgb(var(--text-primary) / 0.2);
+    }
+
+    /* K: "Vol. 04 —— Sunday, July 26" above a serif title. */
+    [data-layout='journal'] .proto-mast-identity,
+    [data-layout='bento'] .proto-mast-identity {
+        @apply flex-col-reverse;
+    }
+
+    [data-layout='journal'] .proto-colophon,
+    [data-layout='bento'] .proto-colophon {
+        @apply mb-3 text-[9px];
+    }
+
+    [data-layout='journal'] .proto-colophon-vol,
+    [data-layout='journal'] .proto-colophon-rule,
+    [data-layout='journal'] .proto-colophon-date {
+        @apply inline-block;
+    }
+
+    [data-layout='journal'] .proto-colophon-desc {
+        @apply hidden;
+    }
+
+    /* M: "BENTO.SYS   07.26.2026" — a system tag beside the date, no rule. */
+    [data-layout='bento'] .proto-colophon-vol,
+    [data-layout='bento'] .proto-colophon-date {
+        @apply inline-block;
+    }
+
+    [data-layout='bento'] .proto-colophon-desc {
+        @apply hidden;
+    }
+
+    /* X: date and provenance on one line beneath the statement wordmark. */
+    [data-layout='catalog'] .proto-colophon-date {
+        @apply inline-block;
+    }
+
+    /* ---- Masthead tools -------------------------------------------------
+       C, K and X carry no search field; M boxes it instead of underlining it.
+       C and X also drop the date/status blocks — C shows only its edit control,
+       X shows a right-aligned status pair which the status block already is. */
+    [data-layout='ledger'] .proto-mast-search,
+    [data-layout='journal'] .proto-mast-search,
+    [data-layout='catalog'] .proto-mast-search {
+        @apply lg:hidden;
+    }
+
+    [data-layout='bento'] .proto-mast-search {
+        @apply border-b-0 pb-0;
+    }
+
+    [data-layout='bento'] .proto-mast-search input {
+        @apply border py-1 pl-7 text-[9px] uppercase tracking-widest;
+        border-color: rgb(var(--text-primary) / 0.2);
+    }
+
+    [data-layout='bento'] .proto-mast-search input:focus {
+        border-color: rgb(var(--text-primary) / 0.5);
+    }
+
+    [data-layout='ledger'] .proto-mast-date,
+    [data-layout='journal'] .proto-mast-date,
+    [data-layout='bento'] .proto-mast-date,
+    [data-layout='catalog'] .proto-mast-date {
+        @apply md:hidden;
+    }
+
+    /* C and M carry no status readout in the masthead at all. */
+    [data-layout='ledger'] .proto-mast-status,
+    [data-layout='bento'] .proto-mast-status {
+        @apply md:hidden;
+    }
+
+    /* X states health as plain right-aligned lines, not a labelled block. */
+    [data-layout='catalog'] .proto-mast-status-label {
+        @apply hidden;
+    }
+
+    /* K states system health inline as "SYS: NOMINAL" rather than as a
+       labelled block, so the label is folded into the value. */
+    [data-layout='journal'] .proto-mast-status-label {
+        @apply hidden;
+    }
+
+    [data-layout='journal'] .proto-mast-status {
+        @apply text-[9px];
+    }
+
+    /* ---- Edit control ---------------------------------------------------
+       Every prototype squares off this control and inverts to solid ink on
+       hover. Only the label differs: A frames it in brackets, C spells out
+       "EDIT LEDGER", K and M leave it bare. */
+    .proto-mast-edit {
+        @apply rounded-none border-border-medium bg-transparent;
+    }
+
+    .proto-mast-edit:hover:not(:disabled) {
+        background-color: rgb(var(--text-primary));
+        border-color: rgb(var(--text-primary));
+        color: rgb(var(--background));
+    }
+
+    .proto-mast-edit-label::before {
+        content: '[ ';
+    }
+
+    .proto-mast-edit-label::after {
+        content: ' ]';
+    }
+
+    [data-layout='ledger'] .proto-mast-edit {
+        @apply px-4;
+    }
+
+    [data-layout='ledger'] .proto-mast-edit-label::before {
+        content: '';
+    }
+
+    [data-layout='ledger'] .proto-mast-edit-label::after {
+        content: ' ledger';
+    }
+
+    [data-layout='journal'] .proto-mast-edit-label::before,
+    [data-layout='journal'] .proto-mast-edit-label::after,
+    [data-layout='bento'] .proto-mast-edit-label::before,
+    [data-layout='bento'] .proto-mast-edit-label::after,
+    [data-layout='catalog'] .proto-mast-edit-label::before,
+    [data-layout='catalog'] .proto-mast-edit-label::after {
+        content: '';
+    }
+
+    [data-layout='journal'] .proto-mast-edit {
+        @apply px-2 text-[9px];
+    }
+
+    [data-layout='bento'] .proto-mast-edit {
+        @apply px-3 text-[9px];
     }
 
     /* The application directory changes register per layout. K and M set it as a

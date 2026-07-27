@@ -137,17 +137,22 @@ export default function Header({
 
             {pathname === '/' && (
                 <nav className="proto-masthead mx-auto flex w-full max-w-[var(--shell-width)] items-end justify-between gap-8 px-8 py-6">
-                    <div className="min-w-0 space-y-1">
+                    {/* The colophon sits under the wordmark in A/C/X but above it in
+                        K/M, so the flex order is flipped per layout in CSS. */}
+                    <div className="proto-mast-identity flex min-w-0 flex-col gap-1">
                         <div className="proto-wordmark font-serif text-4xl leading-none tracking-tight text-text-primary">
                             OPAQUE
                         </div>
                         <div className="proto-colophon font-mono text-[10px] uppercase tracking-widest text-text-muted">
-                            Personal Archive Instrument · Vol. 01
+                            <span className="proto-colophon-vol">Vol. 01</span>
+                            <span className="proto-colophon-rule" aria-hidden="true" />
+                            <span className="proto-colophon-desc">Personal Archive Instrument</span>
+                            <span className="proto-colophon-date">{dashboardDate}</span>
                         </div>
                     </div>
 
-                    <div className="flex min-w-0 flex-1 items-end justify-end gap-6 font-mono text-[10px] uppercase tracking-widest">
-                        <form onSubmit={handleSearchSubmit} className="relative hidden border-b border-border-medium pb-1 lg:block">
+                    <div className="proto-mast-tools flex min-w-0 flex-1 items-end justify-end gap-6 font-mono text-[10px] uppercase tracking-widest">
+                        <form onSubmit={handleSearchSubmit} className="proto-mast-search relative hidden border-b border-border-medium pb-1 lg:block">
                             <IconSearch className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
                             <input
                                 id="search"
@@ -164,13 +169,13 @@ export default function Header({
                             </kbd>
                         </form>
 
-                        <div className="hidden text-right md:block">
+                        <div className="proto-mast-date hidden text-right md:block">
                             <div className="text-text-muted">Date Issued</div>
                             <div className="mt-1 text-text-primary">{dashboardDate}</div>
                         </div>
 
-                        <div className="hidden text-right md:block">
-                            <div className="text-text-muted">Sys Status</div>
+                        <div className="proto-mast-status hidden text-right md:block">
+                            <div className="proto-mast-status-label text-text-muted">Sys Status</div>
                             <div className={serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'mt-1 text-accent-green-dark' : 'mt-1 text-accent-red-dark'}>
                                 {serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'Nominal' : 'Degraded'}
                             </div>
@@ -193,11 +198,13 @@ export default function Header({
                             <button
                                 onClick={onEdit}
                                 disabled={!canEdit}
-                                className="opaque-button font-mono uppercase tracking-widest"
+                                className="proto-mast-edit opaque-button font-mono uppercase tracking-widest"
                                 aria-label="Edit dashboard"
                                 title={canEdit ? 'Edit dashboard' : 'Loading…'}
                             >
-                                {canEdit ? '[ edit ]' : <IconLoader2 className="animate-spin" />}
+                                {/* The bracket framing is prototype A's idiom; other
+                                    layouts supply their own affixes in CSS. */}
+                                {canEdit ? <span className="proto-mast-edit-label">edit</span> : <IconLoader2 className="animate-spin" />}
                             </button>
                         )}
 
