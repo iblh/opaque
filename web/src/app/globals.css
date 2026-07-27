@@ -823,19 +823,25 @@ input:-webkit-autofill:active {
         @apply border-b border-border-light transition-colors;
     }
 
-    /* A — Filed Sheet: larger italic heads, understated underline links. */
+    /* A — Filed Sheet: larger italic heads, understated underline links. The
+       prototype steps the side rail down a size so it reads as secondary. */
     [data-layout='sheet'] .proto-heading {
         @apply text-xl italic;
         border-color: rgb(var(--border-medium));
+    }
+
+    [data-layout='sheet'] aside .proto-heading {
+        @apply text-lg;
     }
 
     [data-layout='sheet'] .proto-link:hover {
         @apply underline decoration-1 underline-offset-4;
     }
 
-    /* C — Dark Ledger: compact heads, tight rows, quiet tint on hover. */
+    /* C — Dark Ledger: full-size upright serif heads (the prototype sets these
+       at text-xl with no italic), tight rows, quiet tint on hover. */
     [data-layout='ledger'] .proto-heading {
-        @apply text-base italic;
+        @apply text-xl not-italic;
     }
 
     [data-layout='ledger'] .proto-row:hover,
@@ -854,10 +860,17 @@ input:-webkit-autofill:active {
     }
 
     /* M — Bento: upright heads over a hairline; the tile edge does the dividing,
-       so the head keeps only a light rule to separate it from its own content. */
+       so the head keeps only a light rule to separate it from its own content.
+       The prototype runs two registers — a serif title on the wide tiles and a
+       mono instrument label on the single-column ones. */
     [data-layout='bento'] .proto-heading {
         @apply mb-6 text-xl not-italic;
         border-color: rgb(var(--border-light));
+    }
+
+    [data-layout='bento'] [data-tile='small'] .proto-heading {
+        @apply font-mono text-[9px] uppercase tracking-widest;
+        color: rgb(var(--text-primary) / 0.5);
     }
 
     [data-layout='bento'] .proto-link:hover {
@@ -912,8 +925,10 @@ input:-webkit-autofill:active {
 
     /* X sets the wordmark much larger, light and italic — it is the one layout
        whose masthead is a statement rather than a label. */
+    /* Prototype X asks for font-light, but Newsreader is only loaded at 400/500
+       there, so it renders at 400 — matching that rather than the literal class. */
     [data-layout='catalog'] .proto-wordmark {
-        @apply text-5xl font-light italic md:mb-4 md:text-7xl;
+        @apply text-5xl font-normal italic md:mb-4 md:text-7xl;
     }
 
     [data-layout='catalog'] .proto-colophon {
@@ -1092,8 +1107,9 @@ input:-webkit-autofill:active {
         @apply font-mono text-[10px];
     }
 
+    /* As with the wordmark: X writes font-light but only loads 400/500. */
     [data-layout='catalog'] .proto-directory-name {
-        @apply font-serif text-2xl font-light;
+        @apply font-serif text-2xl font-normal;
     }
 
     /* X reveals an entry's endpoint only on hover, keeping the column quiet.

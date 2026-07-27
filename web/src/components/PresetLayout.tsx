@@ -159,16 +159,23 @@ function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
       {/* A 1px gap over a hairline background makes the cells read as tiles
           separated by rules rather than as bordered cards. */}
       <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:grid-cols-4">
-        {tiles.map((tree) => (
+        {tiles.map((tree) => {
+          const span = spanFor('bento', tree.root);
+          // The prototype titles its wide tiles in serif but labels the narrow
+          // ones in mono microtype, so the tile's own width decides its register.
+          const size = span.includes('col-span-2') ? 'wide' : 'small';
+          return (
           <div
             key={tree.root}
             data-section-root={tree.root}
-            className={`flex min-w-0 flex-col bg-background p-[calc(var(--unit)*6)] ${spanFor('bento', tree.root)}`}
+            data-tile={size}
+            className={`flex min-w-0 flex-col bg-background p-[calc(var(--unit)*6)] ${span}`}
           >
             <ProtoHeading>{getRootLabel(tree.root)}</ProtoHeading>
             {renderSection(tree)}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -5,8 +5,13 @@ import ThemeWatcher from "@/components/ThemeWatcher";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
+// The prototypes load Newsreader at 400/500 only (italic at 400). Pinning the
+// same range keeps our rendering identical to theirs — left unbounded, next/font
+// serves the full 200-800 variable axis and a `font-light` head renders at a
+// genuine 300 where the prototype would clamp to 400.
 const serif = Newsreader({
   subsets: ["latin"],
+  weight: ["400", "500"],
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-serif",
