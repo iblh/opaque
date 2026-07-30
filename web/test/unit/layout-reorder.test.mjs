@@ -10,7 +10,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, '../..');
 
 const layouts = loadTypeScriptModule(path.join(webRoot, 'src/lib/layouts.ts'));
-const { LAYOUTS, canMoveWithinRegion, regionFor, reorderWithinRegion } = layouts;
+const {
+  LAYOUTS,
+  canMoveWithinRegion,
+  hasSavedOrder,
+  orderRoots,
+  regionFor,
+  reorderWithinRegion,
+} = layouts;
+
+// What a dashboard actually ships as: canonical root order, matching no layout's
+// authored composition. Presets have to seed the arrangement from this.
+const CANONICAL = [
+  'bookmarks', 'applications', 'servers', 'weather',
+  'calendar', 'markets', 'media', 'posts',
+];
 
 // The dashboard stores a flat forest; the layout decides which column each root
 // renders into. Reordering must therefore never change a root's region.
@@ -27,7 +41,9 @@ test('moving a section down swaps it with the next one in the same column', () =
   const forest = forestOf('weather', 'markets', 'applications', 'posts');
   const next = reorderWithinRegion('journal', forest, 'weather', 1);
 
-  const aside = next
+  // Assert on display order: the preset composes the column, and a saved
+  // position then overrides it — the raw array order is an implementation detail.
+  const aside = orderRoots('journal', next)
     .filter((tree) => regionFor('journal', tree.root) === 'aside')
     .map((tree) => tree.root);
   assert.equal(aside.join(','), 'markets,weather,applications');
@@ -55,13 +71,14 @@ test('a section skips over modules that belong to other columns', () => {
   // posts and servers are 'main' in the journal layout, with aside roots
   // interleaved between them in the stored forest.
   const forest = forestOf('media', 'weather', 'servers', 'markets', 'posts');
-  const next = reorderWithinRegion('journal', forest, 'posts', -1);
+  const next = orderRoots('journal', reorderWithinRegion('journal', forest, 'posts', -1));
 
+  // The journal composes main as media → servers → posts, so moving posts up
+  // puts it ahead of servers without disturbing the interleaved aside modules.
   const main = next
     .filter((tree) => regionFor('journal', tree.root) === 'main')
     .map((tree) => tree.root);
   assert.equal(main.join(','), 'media,posts,servers');
-  // The aside modules keep their own relative order and their slots.
   const aside = next
     .filter((tree) => regionFor('journal', tree.root) === 'aside')
     .map((tree) => tree.root);
@@ -90,6 +107,53 @@ test('a lone module in its column cannot move in either direction', () => {
   const forest = forestOf('weather', 'servers', 'markets');
   assert.equal(canMoveWithinRegion('ledger', forest, 'weather', -1), false);
   assert.equal(canMoveWithinRegion('ledger', forest, 'weather', 1), false);
+});
+
+// The regression the reviewer caught: composition was skipped whenever the
+// stored forest merely differed from the preset, which a canonical-order
+// dashboard always does — so four of five layouts never matched their prototype.
+test('a canonical-order dashboard is composed by the layout preset', () => {
+  const forest = CANONICAL.map((root) => ({ root }));
+  for (const [id, definition] of Object.entries(LAYOUTS)) {
+    if (!definition.order) continue;
+    const got = orderRoots(id, forest).map((tree) => tree.root);
+    const want = definition.order.filter((root) => CANONICAL.includes(root));
+    assert.equal(got.join(','), want.join(','), `${id} did not apply its authored order`);
+  }
+});
+
+test('a fresh dashboard reports no saved order', () => {
+  const forest = CANONICAL.map((root) => ({ root }));
+  for (const id of Object.keys(LAYOUTS)) {
+    assert.equal(hasSavedOrder(id, forest), false, `${id} saw a fresh forest as customised`);
+  }
+});
+
+test('reordering records an explicit position and survives re-sorting', () => {
+  const forest = CANONICAL.map((root) => ({ root }));
+  const moved = reorderWithinRegion('journal', forest, 'weather', 1);
+  assert.equal(hasSavedOrder('journal', moved), true);
+
+  // Re-running the display sort must keep the user's arrangement, not snap back.
+  const once = orderRoots('journal', moved).map((t) => t.root).join(',');
+  const twice = orderRoots('journal', orderRoots('journal', moved)).map((t) => t.root).join(',');
+  assert.equal(once, twice);
+
+  const aside = orderRoots('journal', moved)
+    .filter((tree) => regionFor('journal', tree.root) === 'aside')
+    .map((tree) => tree.root);
+  // weather started first in the journal aside; after moving down it trails markets.
+  assert.equal(aside.indexOf('weather') > aside.indexOf('markets'), true);
+});
+
+test('a saved order for one layout does not leak into another', () => {
+  const forest = CANONICAL.map((root) => ({ root }));
+  const moved = reorderWithinRegion('journal', forest, 'weather', 1);
+  assert.equal(hasSavedOrder('bento', moved), false);
+  // bento still composes from its own authored order.
+  const bento = orderRoots('bento', moved).map((tree) => tree.root);
+  const want = LAYOUTS.bento.order.filter((root) => CANONICAL.includes(root));
+  assert.equal(bento.join(','), want.join(','));
 });
 
 test('every layout declares a wordmark', () => {

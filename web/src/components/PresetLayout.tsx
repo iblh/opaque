@@ -79,23 +79,12 @@ type RegionBuckets = Record<RegionId, Tree[]>;
 
 function groupByRegion(layout: LayoutId, forest: Tree[]): RegionBuckets {
   const buckets: RegionBuckets = { lead: [], main: [], aside: [], rail: [], full: [] };
-  // The preset seeds composition, but once the user has reordered a column the
-  // stored forest carries their arrangement and must win — otherwise every
-  // render would snap their change back to the authored order.
-  orderRoots(layout, forest, hasCustomOrder(layout, forest)).forEach((tree) => {
+  // orderRoots handles precedence: a position the user explicitly saved for this
+  // layout wins, otherwise the layout's authored order seeds the composition.
+  orderRoots(layout, forest).forEach((tree) => {
     buckets[regionFor(layout, tree.root)].push(tree);
   });
   return buckets;
-}
-
-/**
- * True once the stored forest disagrees with the preset about the order of any
- * region. A fresh dashboard matches the preset, so it keeps being sorted; the
- * first reorder flips this and the stored order takes over from then on.
- */
-function hasCustomOrder(layout: LayoutId, forest: Tree[]): boolean {
-  const seeded = orderRoots(layout, forest);
-  return seeded.some((tree, index) => tree.root !== forest[index]?.root);
 }
 
 interface SkeletonProps {

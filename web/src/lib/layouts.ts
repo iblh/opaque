@@ -1,8 +1,14 @@
-// Preset layout skeletons — the six designer-authored page shells the user can
+// Preset layout skeletons — the designer-authored page shells the user can
 // choose between. Unlike the old drag-grid (where the user placed every module
 // by hand), a layout owns placement: each skeleton declares regions, and module
 // roots are assigned to a region by role. The dashboard data model still stores
 // the module list; the layout decides where each one goes.
+//
+// Five are implemented, from prototypes A / C / K / M / X. A sixth (AB,
+// "Split-Category Grid") was scoped but dropped: its skeleton was a sticky aside
+// beside a two-column directory grid, which is what the journal already does
+// once its main column wraps, and its element styling was identical to sheet's.
+// If it comes back it needs a distinguishing idea, not just another region map.
 
 export type LayoutId = 'sheet' | 'ledger' | 'journal' | 'bento' | 'catalog';
 
@@ -208,71 +214,94 @@ export function regionFor(layout: LayoutId, root: string): RegionId {
   return mapped ?? 'main';
 }
 
+/** A tree carrying the optional per-layout ordering the user has saved. */
+export interface OrderableTree {
+  root: string;
+  order?: Partial<Record<string, number>>;
+}
+
 /**
- * Sort roots into the layout's authored reading order. Unlisted roots keep their
- * dashboard order and follow the listed ones, so a newly added module appears at
- * the end of its region rather than disappearing or jumping to the front.
+ * Sort roots for display in the given layout.
  *
- * This is the *initial* composition only. Once the user reorders a column in edit
- * mode the stored forest order carries their choice, and `reorderWithinRegion`
- * writes the whole region back in view order — so passing `respectStored` keeps
- * their arrangement instead of snapping back to the preset every render.
+ * Precedence is: an explicit per-layout position the user saved, then the
+ * layout's authored order, then the stored dashboard order. Recording the user's
+ * choice explicitly matters — a stored forest that differs from the preset is
+ * indistinguishable from one merely saved in canonical root order, so inferring
+ * "already customised" from a mismatch would make every fresh dashboard skip its
+ * preset and never look like the prototype.
  */
-export function orderRoots<T extends { root: string }>(
-  layout: LayoutId,
-  trees: T[],
-  respectStored = false,
-): T[] {
-  const order = LAYOUTS[layout].order;
-  if (!order || respectStored) return trees;
-  const rank = new Map(order.map((root, index) => [root as string, index]));
-  const fallback = order.length;
-  return [...trees].sort(
-    (a, b) => (rank.get(a.root) ?? fallback) - (rank.get(b.root) ?? fallback),
-  );
+export function orderRoots<T extends OrderableTree>(layout: LayoutId, trees: T[]): T[] {
+  const authored = LAYOUTS[layout].order;
+  const rank = new Map((authored ?? []).map((root, index) => [root as string, index]));
+  const fallback = (authored ?? []).length;
+
+  const keyFor = (tree: T, index: number): [number, number, number] => {
+    const saved = tree.order?.[layout];
+    // Saved positions sort ahead of everything, in their own recorded sequence.
+    if (typeof saved === 'number') return [0, saved, index];
+    return [1, rank.get(tree.root) ?? fallback, index];
+  };
+
+  return [...trees]
+    .map((tree, index) => ({ tree, key: keyFor(tree, index) }))
+    .sort((a, b) => a.key[0] - b.key[0] || a.key[1] - b.key[1] || a.key[2] - b.key[2])
+    .map((entry) => entry.tree);
+}
+
+/** True once the user has saved an explicit arrangement for this layout. */
+export function hasSavedOrder<T extends OrderableTree>(layout: LayoutId, trees: T[]): boolean {
+  return trees.some((tree) => typeof tree.order?.[layout] === 'number');
 }
 
 /**
  * Move a root one step up or down *within its own region*, returning a new
  * forest. The layout owns which column a module lives in, so this deliberately
- * cannot move anything across regions — it reorders the roots that share a
- * region and splices them back into their original slots in the forest, leaving
- * every other module untouched.
+ * cannot move anything across regions.
+ *
+ * The result stamps an explicit per-layout position onto every tree, so the
+ * arrangement is recorded as deliberate rather than left to be re-derived from
+ * array order later.
  */
-export function reorderWithinRegion<T extends { root: string }>(
+export function reorderWithinRegion<T extends OrderableTree>(
   layout: LayoutId,
   forest: T[],
   root: string,
   direction: -1 | 1,
 ): T[] {
-  const region = regionFor(layout, root);
-  // Positions in the forest that hold this region's modules, in view order.
-  const slots: number[] = [];
-  forest.forEach((tree, index) => {
-    if (regionFor(layout, tree.root) === region) slots.push(index);
+  const view = orderRoots(layout, forest);
+  const siblings = view.filter((tree) => regionFor(layout, tree.root) === regionFor(layout, root));
+  const current = siblings.findIndex((tree) => tree.root === root);
+  const target = current + direction;
+  if (current < 0 || target < 0 || target >= siblings.length) return forest;
+
+  // Swap the pair within the region, then re-stamp the whole view so the saved
+  // positions describe one coherent sequence.
+  const swapped = new Map<string, string>([
+    [siblings[current].root, siblings[target].root],
+    [siblings[target].root, siblings[current].root],
+  ]);
+  const resolved = view.map((tree) => {
+    const other = swapped.get(tree.root);
+    return other ? view.find((candidate) => candidate.root === other)! : tree;
   });
 
-  const current = slots.findIndex((index) => forest[index].root === root);
-  const target = current + direction;
-  if (current < 0 || target < 0 || target >= slots.length) return forest;
-
-  const next = [...forest];
-  // Swap the two modules between their slots; the slots themselves stay put, so
-  // modules from other regions keep their positions in the array.
-  next[slots[current]] = forest[slots[target]];
-  next[slots[target]] = forest[slots[current]];
-  return next;
+  const position = new Map(resolved.map((tree, index) => [tree.root, index]));
+  return forest.map((tree) => ({
+    ...tree,
+    order: { ...tree.order, [layout]: position.get(tree.root) ?? 0 },
+  }));
 }
 
 /** Whether a root can still move in the given direction inside its region. */
-export function canMoveWithinRegion<T extends { root: string }>(
+export function canMoveWithinRegion<T extends OrderableTree>(
   layout: LayoutId,
   forest: T[],
   root: string,
   direction: -1 | 1,
 ): boolean {
   const region = regionFor(layout, root);
-  const siblings = forest.filter((tree) => regionFor(layout, tree.root) === region);
+  const siblings = orderRoots(layout, forest)
+    .filter((tree) => regionFor(layout, tree.root) === region);
   const index = siblings.findIndex((tree) => tree.root === root);
   const target = index + direction;
   return index >= 0 && target >= 0 && target < siblings.length;
