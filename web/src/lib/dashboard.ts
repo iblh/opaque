@@ -46,14 +46,20 @@ export function normalizeDashboard(
     byRoot.set(tree.root, normalizeTree(tree));
   });
 
-  const defaultTrees = DEFAULT_ROOTS.map((root) => byRoot.get(root) || { root, branches: [] });
-  const customTrees = [...byRoot.values()].filter((tree) => !DEFAULT_ROOTS.includes(tree.root));
+  // Forest order is meaningful: it carries the user's within-column arrangement
+  // (see reorderWithinRegion). Rebuilding it in DEFAULT_ROOTS order would throw
+  // that away on every load, so keep the stored sequence and only use
+  // DEFAULT_ROOTS to append roots that are genuinely missing.
+  const storedTrees = [...byRoot.values()];
+  const missingTrees = DEFAULT_ROOTS
+    .filter((root) => !byRoot.has(root))
+    .map((root) => ({ root, branches: [] as Tree['branches'] }));
 
   return {
     ...source,
     ...identity,
     id: stringifyObjectId((source as any)._id) || source.id,
-    forest: [...defaultTrees, ...customTrees],
+    forest: [...storedTrees, ...missingTrees],
   };
 }
 
@@ -166,13 +172,25 @@ export function cloneDashboard(dashboard: Dashboard): Dashboard {
 }
 
 function normalizeTree(tree: Tree): Tree {
+  // The per-layout ordering the user saved in edit mode. This rebuilds the tree
+  // field by field, so anything not carried here is dropped on save.
+  const order = normalizeOrder((tree as any).order);
   return {
     root: tree.root,
     layout: normalizeLayout((tree as any).layout),
+    ...(order ? { order } : {}),
     branches: Array.isArray(tree.branches)
       ? tree.branches.map((branch) => normalizeBranch(tree.root, branch)).filter(Boolean) as Branch[]
       : [],
   };
+}
+
+/** Keep only finite numeric positions, so bad persisted data can't skew sorting. */
+function normalizeOrder(order: unknown): Tree['order'] | undefined {
+  if (!order || typeof order !== 'object' || Array.isArray(order)) return undefined;
+  const entries = Object.entries(order as Record<string, unknown>)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value)) as [string, number][];
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function normalizeBranch(root: string, branch: Branch): Branch {

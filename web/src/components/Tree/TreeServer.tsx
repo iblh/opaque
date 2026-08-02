@@ -20,6 +20,23 @@ import { SERVER_ICON_PRESETS } from '@/lib/iconPresets';
 import IconField from '@/components/IconField';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
 import { Sparkline, SpecMetric, SpecRow, SpecRows, Stamp } from '@/components/Tree/specPrimitives';
+import {
+  COL_SPAN,
+  ProtoDot,
+  ProtoLedger,
+  ProtoLedgerRow,
+  type LedgerColumn,
+} from '@/components/Tree/protoPrimitives';
+
+// The prototypes' telemetry table: identity, the two load figures worth reading
+// at a glance, uptime, and a bare status dot.
+const SERVER_COLUMNS: LedgerColumn[] = [
+  { key: 'name', label: 'Identifier', span: 4 },
+  { key: 'cpu', label: 'CPU(%)', span: 2, align: 'right' },
+  { key: 'ram', label: 'RAM(%)', span: 2, align: 'right' },
+  { key: 'uptime', label: 'Uptime', span: 3, align: 'right' },
+  { key: 'status', label: 'ST', span: 1, align: 'right' },
+];
 
 interface ServerTree {
   root: string;
@@ -248,6 +265,41 @@ const TreeServer: React.FC<TreeServerProps> = ({
       </div>
     );
   };
+
+  // View mode renders every server as a row of one ledger table (the prototypes'
+  // telemetry idiom); edit mode keeps a per-server card so the forms have room.
+  if (!isEditing) {
+    return (
+      <div className="relative w-full">
+        <ProtoLedger columns={SERVER_COLUMNS}>
+          {tree.branches.map((server) => {
+            const stats = resolveStats(server.stats);
+            const online = stats.status === 'online' && !isStatsStale(stats);
+            return (
+              <ProtoLedgerRow key={server.id}>
+                <div className={`${COL_SPAN[4]} flex min-w-0 items-center gap-2`}>
+                  <SvgIcon svg={server.icon} fallback={DEFAULT_SERVER_ICON} className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
+                  <span className="truncate text-text-primary">{server.name}</span>
+                </div>
+                <div className={`${COL_SPAN[2]} text-right tabular-nums text-text-secondary`}>
+                  {stats.cpu.toFixed(0)}
+                </div>
+                <div className={`${COL_SPAN[2]} text-right tabular-nums text-text-secondary`}>
+                  {percent(stats.memory.used, stats.memory.total)}
+                </div>
+                <div className={`${COL_SPAN[3]} truncate text-right text-text-tertiary`}>
+                  {stats.uptime || '—'}
+                </div>
+                <div className={`${COL_SPAN[1]} flex justify-end`}>
+                  <ProtoDot ok={online} title={online ? 'Online' : 'Stale'} />
+                </div>
+              </ProtoLedgerRow>
+            );
+          })}
+        </ProtoLedger>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-3">

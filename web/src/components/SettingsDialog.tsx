@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -18,10 +19,18 @@ import {
 } from '@/lib/searchProviders';
 import {
   applyTheme,
-  readThemePreference,
-  setThemePreference,
+  readAppearance,
+  setAppearance,
+  type AppearancePreference,
   type ThemePreference,
 } from '@/lib/theme';
+import {
+  DENSITIES,
+  LAYOUTS,
+  LAYOUT_IDS,
+  type DensityId,
+  type LayoutId,
+} from '@/lib/layouts';
 import { ShortcutsList } from '@/components/shortcuts';
 import { useFocusTrap } from '@/lib/useFocusTrap';
 
@@ -55,7 +64,10 @@ export default function SettingsDialog({
   returnFocusRef,
 }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>('appearance');
+  const [mounted, setMounted] = useState(false);
   const panelRef = useFocusTrap<HTMLDivElement>(true, { returnFocusRef });
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -68,7 +80,13 @@ export default function SettingsDialog({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  // Portalled to the body: the dialog is rendered from inside the sticky header,
+  // whose backdrop-blur establishes a containing block for fixed positioning —
+  // so `inset-0` would resolve against the header's ~100px box instead of the
+  // viewport, and the centred panel would sit half off the top of the screen.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -80,7 +98,7 @@ export default function SettingsDialog({
       <div
         ref={panelRef}
         onClick={(event) => event.stopPropagation()}
-        className="relative flex h-[26rem] w-full max-w-2xl overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-floating"
+        className="relative flex h-[min(34rem,calc(100vh-4rem))] w-full max-w-3xl overflow-hidden rounded-sm border border-border-light bg-surface-elevated shadow-floating"
       >
         <button
           type="button"
@@ -130,7 +148,8 @@ export default function SettingsDialog({
           {tab === 'shortcuts' && <ShortcutsSection />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -145,37 +164,41 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: React.ReactN
 ];
 
 function AppearanceSection() {
-  const [preference, setPreference] = useState<ThemePreference>('system');
+  const [appearance, setLocalAppearance] = useState<AppearancePreference>(() => ({
+    theme: 'system',
+    layout: 'sheet',
+    density: 'normal',
+  }));
 
   useEffect(() => {
-    setPreference(readThemePreference());
+    setLocalAppearance(readAppearance());
   }, []);
 
   // Live OS-change following for 'system' is handled globally by ThemeWatcher
   // (mounted in the layout), so it works whether or not Settings is open.
 
-  const choose = (value: ThemePreference) => {
-    setPreference(value);
-    setThemePreference(value);
+  const choose = (patch: Partial<AppearancePreference>) => {
+    setLocalAppearance(setAppearance(patch));
   };
 
   return (
     <div>
       <SectionHeading>Appearance</SectionHeading>
+
       <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Theme</div>
       <div className="mt-2 grid grid-cols-3 gap-2">
         {THEME_OPTIONS.map((option) => (
           <button
             key={option.value}
             type="button"
-            onClick={() => choose(option.value)}
+            onClick={() => choose({ theme: option.value })}
             className={`flex flex-col items-center gap-2 rounded-sm border p-3 text-xs transition-colors ${
-              preference === option.value
+              appearance.theme === option.value
                 ? 'border-accent-green text-text-primary'
                 : 'border-border-light text-text-secondary hover:border-border-medium hover:text-text-primary'
             }`}
           >
-            <span className={preference === option.value ? 'text-accent-green' : 'text-text-tertiary'}>
+            <span className={appearance.theme === option.value ? 'text-accent-green' : 'text-text-tertiary'}>
               {option.icon}
             </span>
             {option.label}
@@ -185,6 +208,54 @@ function AppearanceSection() {
       <p className="mt-3 text-[11px] leading-relaxed text-text-tertiary">
         System follows your device&apos;s light or dark setting.
       </p>
+
+      <div className="mt-6 text-[10px] uppercase tracking-wider text-text-tertiary">Layout</div>
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {LAYOUT_IDS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => choose({ layout: id })}
+            className={`rounded-sm border p-3 text-left transition-colors ${
+              appearance.layout === id
+                ? 'border-accent-green'
+                : 'border-border-light hover:border-border-medium'
+            }`}
+          >
+            <div
+              className={`text-xs ${
+                appearance.layout === id ? 'text-text-primary' : 'text-text-secondary'
+              }`}
+            >
+              {LAYOUTS[id].label}
+            </div>
+            <div className="mt-1 text-[11px] leading-relaxed text-text-tertiary">
+              {LAYOUTS[id].hint}
+            </div>
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] leading-relaxed text-text-tertiary">
+        Choosing a layout also applies its intended theme and density; adjust either afterwards.
+      </p>
+
+      <div className="mt-6 text-[10px] uppercase tracking-wider text-text-tertiary">Density</div>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        {DENSITIES.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => choose({ density: option.id })}
+            className={`rounded-sm border p-3 text-xs transition-colors ${
+              appearance.density === option.id
+                ? 'border-accent-green text-text-primary'
+                : 'border-border-light text-text-secondary hover:border-border-medium hover:text-text-primary'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

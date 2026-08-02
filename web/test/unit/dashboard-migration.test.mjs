@@ -119,6 +119,35 @@ test('a "today" root with no layout still dissolves (no placement to preserve)',
   assert.equal(treeByRoot(result.forest, 'weather').branches.length, 1);
 });
 
+// Forest order carries the user's within-column arrangement, so normalizing must
+// not re-sort it. It used to rebuild the forest in DEFAULT_ROOTS order, which
+// silently discarded every reorder on load.
+test('normalizing preserves the stored forest order', () => {
+  const stored = ['posts', 'weather', 'bookmarks', 'servers'];
+  const result = normalizeDashboard({
+    id: 'dash-3',
+    forest: stored.map((root) => ({ root, branches: [] })),
+  });
+  const roots = result.forest.map((tree) => tree.root);
+  assert.equal(roots.slice(0, stored.length).join(','), stored.join(','));
+});
+
+test('roots missing from the stored forest are appended, not interleaved', () => {
+  const stored = ['posts', 'weather'];
+  const result = normalizeDashboard({
+    id: 'dash-4',
+    forest: stored.map((root) => ({ root, branches: [] })),
+  });
+  const roots = result.forest.map((tree) => tree.root);
+  assert.equal(roots[0], 'posts');
+  assert.equal(roots[1], 'weather');
+  // Everything else still exists, just after the stored ones.
+  assert.ok(roots.includes('bookmarks'));
+  assert.ok(roots.length > stored.length);
+  // And no root appears twice.
+  assert.equal(new Set(roots).size, roots.length);
+});
+
 // --- TypeScript module loader that resolves "@/..." imports recursively. ---
 function loadTypeScriptModule(filename, cache = new Map()) {
   const resolved = path.resolve(filename);

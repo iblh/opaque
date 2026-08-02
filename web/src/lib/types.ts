@@ -102,6 +102,16 @@ export interface Tree {
   root: DashboardRoot;
   branches: Branch[];
   layout?: TreeLayout;
+  /**
+   * Explicit within-column position, per layout preset, written only when the
+   * user reorders a column in edit mode.
+   *
+   * This has to be recorded rather than inferred: a stored forest that differs
+   * from a preset's authored order is indistinguishable from a dashboard simply
+   * saved in canonical root order, so comparing the two would make every fresh
+   * dashboard look "already customised" and silently skip the preset.
+   */
+  order?: Partial<Record<string, number>>;
 }
 
 export interface Dashboard {

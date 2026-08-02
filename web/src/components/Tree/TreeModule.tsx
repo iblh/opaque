@@ -54,6 +54,12 @@ import {
 } from '@/lib/drag';
 import SectionAddControl from '@/components/Tree/SectionAddControl';
 import {
+  ProtoDelta,
+  ProtoDot,
+  ProtoLabel,
+  ProtoRow,
+} from '@/components/Tree/protoPrimitives';
+import {
   MetaChip,
   MetaChipGroup,
   RegistrationMark,
@@ -1113,27 +1119,19 @@ function WeatherWidget({ module, state }: { module: ModuleBranch; state: ModuleD
         <ModuleBodyState state={state} skeleton="weather" />
       ) : (
         <>
-          {/* Station reading: a large measurement figure with a unit tick, the
-              condition as a caption, and station metadata aligned right. */}
+          {/* Prototype idiom: a large serif reading on the left, station
+              metadata as right-aligned mono microtype. */}
           <div className="flex items-start justify-between gap-3">
-            <div className="shrink-0">
-              <div className="flex items-start gap-0.5 text-text-primary">
-                <RollingNumber
-                  value={String(Math.round(data.temperature))}
-                  className="text-[2.5rem] font-light leading-none tracking-tight"
-                  ariaLabel={`${Math.round(data.temperature)} degrees ${unit}`}
-                />
-                <span className="mt-1 font-mono text-sm text-text-tertiary">°{unit}</span>
-              </div>
-              <div className="mt-2 truncate text-xs text-text-secondary" title={data.condition}>
-                {data.condition}
-              </div>
+            <div className="shrink-0 font-serif text-4xl leading-none text-text-primary">
+              {Math.round(data.temperature)}°
             </div>
-            <div className="min-w-0 flex-1 text-right font-mono text-[10px] leading-relaxed">
-              <div className="truncate text-text-secondary" title={data.location}>{data.location}</div>
-              <div className="mt-1 tabular-nums text-text-muted">
-                <span className="text-text-tertiary">RH</span> {Math.round(data.humidity)}%
+            <div className="min-w-0 flex-1 space-y-0.5 text-right font-mono text-[9px] uppercase tracking-widest text-text-muted">
+              <div className="truncate font-bold text-text-primary" title={data.location}>
+                {data.location}
               </div>
+              <div className="truncate" title={data.condition}>{data.condition}</div>
+              <div className="tabular-nums">HUM: {Math.round(data.humidity)}%</div>
+              <div className="tabular-nums">UNIT: °{unit}</div>
             </div>
           </div>
           <div className="mt-4 border-t border-border-light pt-1">
@@ -1178,54 +1176,22 @@ function MarketsWidget({ module, state }: { module: ModuleBranch; state: ModuleD
       {!data ? (
         <ModuleBodyState state={state} skeleton="markets" />
       ) : (
-        <div className="-mt-1 divide-y divide-border-light/70">
-          {data.quotes.map((quote) => {
-            const up = quote.changePercent >= 0;
-            const change = `${up ? '+' : ''}${quote.changePercent.toFixed(2)}%`;
-
-            return (
-              <div
-                key={quote.symbol}
-                className="group/inst relative grid grid-cols-[minmax(0,1fr)_56px_minmax(5rem,auto)] items-center gap-3 py-2.5"
-              >
-                {/* Mechanical hover: a left guide-rule slides in like a ruler
-                    cursor, and the symbol nudges off it. */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -left-2 top-1/2 h-0 w-px -translate-y-1/2 bg-text-primary transition-all duration-200 group-hover/inst:h-[calc(100%-10px)]"
-                />
-                <div className="min-w-0 transition-transform duration-200 group-hover/inst:translate-x-1">
-                  <div className="truncate font-mono text-xs font-medium uppercase leading-tight tracking-wide text-text-primary">
-                    {quote.symbol}
-                  </div>
-                  <div className="mt-1 truncate text-[10px] leading-tight text-text-tertiary">
-                    {quote.name}
-                  </div>
-                </div>
-                <Sparkline
-                  values={quote.sparkline}
-                  width={56}
-                  height={24}
-                  tone={up ? 'up' : 'down'}
-                  ariaLabel={`${quote.symbol} recent trend`}
-                />
-                <div className="min-w-0 text-right font-mono">
-                  {/* Delta as a stamped figure: a tick glyph + signed percent. */}
-                  <div className={`flex items-center justify-end gap-1 text-xs font-medium leading-tight ${up ? 'text-accent-green-dark' : 'text-accent-red-dark'}`}>
-                    <span aria-hidden className="text-[9px]">{up ? '▲' : '▼'}</span>
-                    <RollingNumber value={change} ariaLabel={`${quote.symbol} change ${change}`} />
-                  </div>
-                  <div className="mt-1 flex justify-end">
-                    <RollingNumber
-                      value={formatMarketPrice(quote.price, quote.currency)}
-                      className="text-[11px] leading-tight text-text-secondary"
-                      ariaLabel={`${quote.symbol} price ${formatMarketPrice(quote.price, quote.currency)}`}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        // Prototype idiom: one tight mono row per instrument — bold symbol,
+        // price, then the delta tinted by direction. No chrome around it.
+        <div className="space-y-2">
+          {data.quotes.map((quote) => (
+            <ProtoRow key={quote.symbol}>
+              <span className="truncate font-medium uppercase text-text-primary" title={quote.name}>
+                {quote.symbol}
+              </span>
+              <span className="flex shrink-0 gap-3 text-right">
+                <span className="tabular-nums text-text-secondary">
+                  {formatMarketPrice(quote.price, quote.currency)}
+                </span>
+                <ProtoDelta value={quote.changePercent} className="w-14 text-right" />
+              </span>
+            </ProtoRow>
+          ))}
         </div>
       )}
     </ModulePanel>
@@ -1259,22 +1225,24 @@ function MediaWidget({ module, state }: { module: ModuleBranch; state: ModuleDat
         <ModuleBodyState state={state} skeleton="media" />
       ) : (
         <>
-          {/* Provider header: the provider name (real — a Media root holds
-              several) + its version, with live session count / status stamped. */}
+          {/* Provider header: name + version on the left, a bare status dot on
+              the right — the prototypes state their status with colour, not a
+              lettered badge. */}
           <div className="flex items-center justify-between gap-3 border-b border-border-light pb-2">
             <div className="flex min-w-0 items-baseline gap-2">
-              <span className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-text-secondary">
-                {data.service}
-              </span>
+              <ProtoLabel className="truncate !text-text-secondary">{data.service}</ProtoLabel>
               {data.detail && (
-                <span className="shrink-0 font-mono text-[10px] tabular-nums tracking-wider text-text-muted">
+                <span className="shrink-0 font-mono text-[9px] tabular-nums tracking-widest text-text-muted">
                   {data.detail}
                 </span>
               )}
             </div>
-            <Stamp tone={streamCount > 0 ? 'live' : 'idle'}>
-              {streamCount > 0 ? `${streamCount} playing` : data.status}
-            </Stamp>
+            <span className="flex shrink-0 items-center gap-1.5">
+              <ProtoLabel>
+                {streamCount > 0 ? `${streamCount} playing` : data.status}
+              </ProtoLabel>
+              <ProtoDot ok={streamCount > 0} />
+            </span>
           </div>
 
           {overview && overview.insights.length > 0 && (

@@ -8,7 +8,8 @@ import TreeServer from '@/components/Tree/TreeServer'
 import TreeModule from '@/components/Tree/TreeModule'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import DashboardLayoutEditor from '@/components/DashboardLayoutEditor'
+import PresetLayout from '@/components/PresetLayout'
+import { reorderWithinRegion } from '@/lib/layouts'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
@@ -22,6 +23,8 @@ import {
   SectionBodySkeleton,
 } from '@/components/DashboardSkeleton'
 import { getLayoutRows } from '@/lib/dashboardLayout'
+import { readAppearance, type AppearancePreference } from '@/lib/theme'
+import { DEFAULT_APPEARANCE } from '@/lib/theme'
 import { cloneDashboard, normalizeDashboard } from '@/lib/dashboard'
 import { Branch, Dashboard, ModuleBranch, ServerStats, Tree } from '@/lib/types'
 import {
@@ -54,7 +57,19 @@ export default function HomePage() {
   // server state.
   const [isVerified, setIsVerified] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  // Which preset skeleton to render. Starts at the default so SSR and the first
+  // client render agree, then reconciles to the stored preference before paint.
+  const [appearance, setAppearance] = useState<AppearancePreference>(DEFAULT_APPEARANCE)
   const router = useRouter()
+
+  useIsomorphicLayoutEffect(() => {
+    setAppearance(readAppearance())
+    // Settings writes the preference then announces it, so the dashboard can
+    // re-render into the new skeleton without a reload.
+    const onChange = () => setAppearance(readAppearance())
+    window.addEventListener('opaque:appearance-change', onChange)
+    return () => window.removeEventListener('opaque:appearance-change', onChange)
+  }, [])
 
   // System notifications derived from live server status (online↔offline). Fed
   // the verified, stats-merged dashboard so events reflect real transitions.
@@ -258,6 +273,19 @@ export default function HomePage() {
     setIsDirty(true)
   }
 
+  // Reordering is confined to a single column: the layout owns which column a
+  // module lives in, so this only shifts it among its own column's neighbours.
+  const moveSection = (root: string, direction: -1 | 1) => {
+    setDraftDashboard((current) => {
+      if (!current) return current
+      return {
+        ...current,
+        forest: reorderWithinRegion(appearance.layout, current.forest, root, direction),
+      }
+    })
+    setIsDirty(true)
+  }
+
   const updateForest = (forest: Tree[]) => {
     setDraftDashboard((current) => (
       current ? { ...current, forest } : current
@@ -370,16 +398,12 @@ export default function HomePage() {
         onReset={resetEditing}
         onSave={saveDashboard}
       />
-      <div className="relative flex-1 overflow-x-hidden bg-background">
+      <div className="relative flex-1 overflow-x-hidden bg-[var(--page-bg)]">
         <div className="relative z-10">
-          <div id="dashboard" className="relative flex min-h-full flex-col py-16">
-            <div className="mx-6 animate-fade-in sm:mx-8 lg:mx-12 xl:mx-16 2xl:mx-24">
-              <p className="font-serif text-sm leading-none text-text-secondary">
-                {timeGreeting()}{displayName ? `, ${displayName}` : ''}
-                <span className="text-text-muted"> — {todayLabel()}</span>
-              </p>
-            </div>
-
+          {/* The sheet layout draws a continuous page: its masthead and content
+              share vertical rules, so the shell adds no top padding there and
+              lets the two meet. Other layouts keep their own breathing room. */}
+          <div id="dashboard" className="proto-shell relative flex min-h-full w-full flex-col px-[calc(var(--unit)*6)] py-[calc(var(--unit)*8)] pb-[calc(var(--unit)*24)]">
             {!isEditing && isDashboardEmpty ? (
               <DashboardOnboarding
                 displayName={displayName}
@@ -387,12 +411,13 @@ export default function HomePage() {
                 onOpenEditor={startEditing}
               />
             ) : (
-              <div className="mt-8 animate-fade-in-up">
+              <div className="mt-[calc(var(--unit)*8)] animate-fade-in-up">
                 {skeletonLayoutReady ? (
-                  <DashboardLayoutEditor
+                  <PresetLayout
+                    layout={appearance.layout}
                     forest={layoutForest}
                     isEditing={isEditing}
-                    onForestChange={updateForest}
+                    onMove={moveSection}
                     renderSection={(tree) => (
                       showSkeleton
                         ? <SectionBodySkeleton root={tree.root} />
@@ -563,22 +588,6 @@ function hasRenderableTree(tree: Tree) {
   }
 
   return true
-}
-
-function timeGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 5) return 'Good night'
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function todayLabel() {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date())
 }
 
 function newId() {
