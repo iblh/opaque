@@ -112,23 +112,20 @@ export default function LoginPage() {
                         </p>
                     </header>
 
+                    {/* A segmented control, not a tab set: both choices drive the
+                        same form rather than swapping panels, so the ARIA tab
+                        pattern (tabpanel, roving arrow keys) would promise
+                        navigation that isn't there. `aria-pressed` states the
+                        toggle honestly and needs no extra key handling. */}
                     <div
-                        role="tablist"
+                        role="group"
                         aria-label="Sign in or create an account"
                         className="mt-6 flex items-center gap-5 font-mono text-[10px] uppercase tracking-widest"
                     >
-                        <ModeTab
-                            active={isLogin}
-                            onClick={() => switchMode('login')}
-                            controls="auth-form"
-                        >
+                        <ModeTab active={isLogin} onClick={() => switchMode('login')}>
                             Sign in
                         </ModeTab>
-                        <ModeTab
-                            active={!isLogin}
-                            onClick={() => switchMode('register')}
-                            controls="auth-form"
-                        >
+                        <ModeTab active={!isLogin} onClick={() => switchMode('register')}>
                             Create account
                         </ModeTab>
                     </div>
@@ -146,6 +143,9 @@ export default function LoginPage() {
                                 label="Name"
                                 autoComplete="name"
                                 placeholder="Ada Lovelace"
+                                // A display name is prose — let the keyboard
+                                // capitalise it as it would any other name.
+                                isCredential={false}
                             />
                         )}
 
@@ -245,20 +245,16 @@ function describeStatus(status: number, isLogin: boolean): string {
 function ModeTab({
     active,
     onClick,
-    controls,
     children,
 }: {
     active: boolean;
     onClick: () => void;
-    controls: string;
     children: React.ReactNode;
 }) {
     return (
         <button
             type="button"
-            role="tab"
-            aria-selected={active}
-            aria-controls={controls}
+            aria-pressed={active}
             onClick={onClick}
             className={`border-b py-1 transition-colors ${
                 active
@@ -280,6 +276,12 @@ function AuthInput({
     autoComplete,
     hint,
     required,
+    /**
+     * Credential fields must not be "helped" by the keyboard: autocapitalising a
+     * username or autocorrecting it to a dictionary word silently breaks sign-in
+     * on phones, and it is invisible to the person typing.
+     */
+    isCredential = true,
 }: {
     id: string;
     name: string;
@@ -289,6 +291,7 @@ function AuthInput({
     autoComplete?: string;
     hint?: string;
     required?: boolean;
+    isCredential?: boolean;
 }) {
     return (
         <div>
@@ -305,6 +308,13 @@ function AuthInput({
                 required={required}
                 placeholder={placeholder}
                 autoComplete={autoComplete}
+                {...(isCredential
+                    ? {
+                          autoCorrect: 'off',
+                          autoCapitalize: 'off',
+                          spellCheck: false,
+                      }
+                    : {})}
                 aria-describedby={hint ? `${id}-hint` : undefined}
                 className="mt-1.5 h-10 w-full border-0 border-b border-border-medium bg-transparent px-0 text-sm text-text-primary outline-none transition-colors placeholder:text-text-faint focus:border-text-primary"
             />
