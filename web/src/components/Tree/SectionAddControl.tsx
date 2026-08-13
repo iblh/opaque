@@ -66,7 +66,7 @@ export default function SectionAddControl({
       <button
         type="button"
         onClick={handleClick}
-        className="flex h-6 w-6 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-muted transition-colors hover:border-border-medium hover:text-text-primary"
+        className="opaque-tap flex h-6 w-6 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-muted transition-colors hover:border-border-medium hover:text-text-primary"
         aria-label={label}
         aria-haspopup={options ? 'menu' : undefined}
         aria-expanded={options ? open : undefined}

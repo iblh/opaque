@@ -212,10 +212,12 @@ export default function LoginPage() {
                         </div>
                     )}
 
+                    {/* Say only what the product actually does. There is no owner
+                        role, admin tier, or registration policy behind this form,
+                        so it must not imply one — on a self-hosted tool a false
+                        security assurance is worse than none. */}
                     <p className="mt-8 font-mono text-[10px] leading-relaxed text-text-muted">
-                        {isLogin
-                            ? 'Your data stays on the machine you host this on.'
-                            : 'The first account you create owns this instance.'}
+                        Your data stays on the machine you host this on.
                     </p>
                 </section>
             </main>

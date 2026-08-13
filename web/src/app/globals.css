@@ -693,6 +693,26 @@ input:-webkit-autofill:active {
         @apply inline-flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-text-muted transition-colors hover:border-border-light hover:bg-surface-sunken hover:text-text-primary;
     }
 
+    /* For controls whose *drawn* size is deliberately small — a 24px add button
+       reads correctly beside a dense list — but whose hit area must still reach
+       the finger. The box keeps its painted size; only the touch surface grows,
+       so nothing in the layout shifts between pointer types. */
+    .opaque-tap {
+        position: relative;
+    }
+
+    @media (pointer: coarse) {
+        .opaque-tap::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: var(--opaque-header-control-size);
+            height: var(--opaque-header-control-size);
+            transform: translate(-50%, -50%);
+        }
+    }
+
     .opaque-input {
         @apply h-8 rounded-sm border border-border-light bg-surface-elevated px-2 text-xs text-text-primary transition-colors placeholder:text-text-muted focus:border-border-strong focus:ring-0;
     }

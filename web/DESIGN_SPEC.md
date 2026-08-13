@@ -106,6 +106,12 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
   pointer capability, never to viewport width: a narrow window on a laptop should stay dense.
 - New controls size themselves from that token (or `.opaque-icon-button`, which does). A hardcoded
   `h-6 w-6` is unreachable on a phone and will not scale.
+- Where a control's *drawn* size must stay small — a 24px add button beside a dense list — add
+  **`.opaque-tap`**, which grows only the hit area via a centred `::after` on coarse pointers. The
+  painted box is unchanged, so nothing shifts between pointer types.
+- Rollout is partial: header chrome, the section add control and dialog close buttons are covered.
+  The per-module controls inside `TreeModule` are not yet, and are tracked as known debt — do not
+  read the token's existence as proof that a given control is reachable.
 
 ### Destructive and unsaved state
 

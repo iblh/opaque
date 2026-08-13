@@ -10,6 +10,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import PresetLayout from '@/components/PresetLayout'
 import { reorderWithinRegion } from '@/lib/layouts'
+import { setUnsavedWork } from '@/lib/unsavedGuard'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
@@ -193,18 +194,28 @@ export default function HomePage() {
       : skeletonForest ?? []
   ), [visibleDashboard, isEditing, skeletonForest])
 
-  // The draft lives only in memory until it is saved, so closing the tab or
-  // following a link mid-edit would drop it silently. Browsers show their own
-  // wording here; registering the handler at all is what triggers the prompt,
-  // and it is only registered while there is genuinely something to lose.
+  // The draft lives only in memory until it is saved, so leaving mid-edit drops
+  // it. Two exits need covering and they need different mechanisms:
+  //   - leaving the document (tab close, reload) → beforeunload
+  //   - navigating inside the SPA (log out, search) → the shared guard, since a
+  //     router.push never fires beforeunload
+  // Both are armed only while there is genuinely something to lose.
   useEffect(() => {
-    if (!isEditing || !isDirty) return
+    const dirty = isEditing && isDirty
+    setUnsavedWork(dirty ? 'You have unsaved changes. Leave and discard them?' : null)
+    if (!dirty) return
+
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
+    return () => {
+      window.removeEventListener('beforeunload', warn)
+      // The page owns this flag; drop it if the editor unmounts mid-edit so a
+      // stale reason can never block navigation on some later screen.
+      setUnsavedWork(null)
+    }
   }, [isEditing, isDirty])
 
   const startEditing = useCallback(() => {
