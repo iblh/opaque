@@ -183,7 +183,7 @@ export default function DashboardOnboarding({
                   key={choice.kind}
                   type="button"
                   onClick={() => selectKind(choice.kind)}
-                  className={`group flex min-h-[7rem] flex-col justify-between border p-3 text-left transition-colors duration-200 ${
+                  className={`group flex min-h-[7rem] flex-col justify-between border p-3 text-left transition-colors ${
                     isActive
                       ? 'border-text-primary bg-surface-elevated text-text-primary'
                       : 'border-border-light bg-transparent text-text-secondary hover:border-border-medium hover:bg-surface-elevated'
@@ -371,7 +371,7 @@ function PreviewApplication({
         {sectionName || 'Applications'}
       </div>
       <div className="flex min-h-[64px] items-center gap-2.5">
-        <IconApps className="h-10 w-10 text-accent-blue" />
+        <IconApps className="h-10 w-10 text-text-tertiary" />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-text-primary">
             {itemName || 'First application'}

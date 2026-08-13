@@ -10,6 +10,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import PresetLayout from '@/components/PresetLayout'
 import { reorderWithinRegion } from '@/lib/layouts'
+import { setUnsavedWork } from '@/lib/unsavedGuard'
 import DashboardOnboarding, { OnboardingDraft } from '@/components/DashboardOnboarding'
 import ShortcutsOverlay from '@/components/ShortcutsOverlay'
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/lib/useKeyboardShortcuts'
@@ -193,6 +194,30 @@ export default function HomePage() {
       : skeletonForest ?? []
   ), [visibleDashboard, isEditing, skeletonForest])
 
+  // The draft lives only in memory until it is saved, so leaving mid-edit drops
+  // it. Two exits need covering and they need different mechanisms:
+  //   - leaving the document (tab close, reload) → beforeunload
+  //   - navigating inside the SPA (log out, search) → the shared guard, since a
+  //     router.push never fires beforeunload
+  // Both are armed only while there is genuinely something to lose.
+  useEffect(() => {
+    const dirty = isEditing && isDirty
+    setUnsavedWork(dirty ? 'You have unsaved changes. Leave and discard them?' : null)
+    if (!dirty) return
+
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => {
+      window.removeEventListener('beforeunload', warn)
+      // The page owns this flag; drop it if the editor unmounts mid-edit so a
+      // stale reason can never block navigation on some later screen.
+      setUnsavedWork(null)
+    }
+  }, [isEditing, isDirty])
+
   const startEditing = useCallback(() => {
     // Editing is only safe once the server copy is confirmed: editing an
     // unverified cached paint risks saving stale data over newer server state.
@@ -204,13 +229,16 @@ export default function HomePage() {
   }, [dashboard, isVerified])
 
   const resetEditing = useCallback(() => {
+    // Discarding is the one destructive action in the editor, so unsaved work is
+    // confirmed before it goes. An untouched draft leaves without ceremony.
+    if (isDirty && !window.confirm('Discard your unsaved changes?')) return
     if (dashboard) {
       setDraftDashboard(cloneDashboard(dashboard))
     }
     setIsEditing(false)
     setIsDirty(false)
     setSaveError('')
-  }, [dashboard])
+  }, [dashboard, isDirty])
 
   const saveDashboard = useCallback(async () => {
     // `isVerified` is the invariant that makes saving safe — never write a
@@ -232,10 +260,12 @@ export default function HomePage() {
         body: JSON.stringify({ dashboard: draftDashboard }),
       })
 
-      const result = await res.json()
+      // A proxy or crash can answer with HTML instead of JSON; parsing that
+      // would throw and get reported as a network error, hiding the real status.
+      const result = await res.json().catch(() => ({} as { error?: string; dashboard?: unknown }))
 
       if (!res.ok) {
-        setSaveError(result.error || 'Failed to save')
+        setSaveError(result.error || describeSaveFailure(res.status))
         return
       }
 
@@ -244,8 +274,8 @@ export default function HomePage() {
       setDraftDashboard(cloneDashboard(normalized))
       setIsEditing(false)
       setIsDirty(false)
-    } catch (err) {
-      setSaveError('Network error')
+    } catch {
+      setSaveError('Couldn’t reach the server — your changes are still here. Try saving again.')
     } finally {
       setIsSaving(false)
     }
@@ -588,6 +618,23 @@ function hasRenderableTree(tree: Tree) {
   }
 
   return true
+}
+
+/**
+ * Say what the user can do about a failed save. The draft is never dropped on
+ * failure, so every message here can safely imply the work is still in hand.
+ */
+function describeSaveFailure(status: number): string {
+  if (status === 401 || status === 403) {
+    return 'Your session expired. Sign in again in another tab, then save.'
+  }
+  if (status === 413) {
+    return 'This dashboard is too large to save. Try removing a few items.'
+  }
+  if (status >= 500) {
+    return 'The server couldn’t save that. Check its logs, then try again.'
+  }
+  return 'That didn’t save. Your changes are still here.'
 }
 
 function newId() {

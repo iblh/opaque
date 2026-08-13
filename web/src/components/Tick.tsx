@@ -33,16 +33,16 @@ export default function Tick({
         tabIndex={0}
         onClick={toggle}
         onKeyDown={(e) => e.key === ' ' && toggle()}
-        className="relative h-4 w-4 border border-black cursor-pointer transition-all duration-200 hover:border-[#5f7161]"
+        className="relative h-4 w-4 cursor-pointer border border-text-primary transition-colors hover:border-accent-green"
       >
         {isChecked && (
-          <div className="absolute inset-0.5 bg-black transition-all duration-200" />
+          <div className="absolute inset-0.5 bg-text-primary transition-colors" />
         )}
       </div>
-      
+
       <span
         onClick={toggle}
-        className="text-sm lowercase text-black cursor-pointer select-none"
+        className="cursor-pointer select-none text-sm lowercase text-text-primary"
       >
         {label}
       </span>

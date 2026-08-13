@@ -39,7 +39,7 @@ export default function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-primary"
+          className="opaque-tap absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-surface-sunken hover:text-text-primary"
         >
           <IconX className="h-3.5 w-3.5" />
         </button>

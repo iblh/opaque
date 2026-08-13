@@ -23,12 +23,14 @@ These are enforceable review criteria, not vibes.
 
 ### Type
 
-- `font-serif` (Sorts Mill Goudy, 400) — **titles only**: welcome line, section titles, panel/module
-  titles, group headers. Never for body, buttons, labels, or data.
-- `font-body` (Geist) — everything that is prose or UI copy. A technical grotesk, not the system
+- `font-serif` (Newsreader, **400/500 only**, italic at 400) — **titles only**: masthead wordmark,
+  section titles, panel/module titles, group headers. Never for body, buttons, labels, or data.
+  The weight range is pinned deliberately: left unbounded, `next/font` serves the full 200–800
+  variable axis and a `font-light` heading renders at a real 300 where the design assumes 400.
+- `font-sans` (Inter) — everything that is prose or UI copy. A technical grotesk, not the system
   sans — the dashboard must read with a consistent typographic voice across platforms.
-- `font-mono` (Geist Mono) — all data: numbers, timestamps, urls, types, meta lines, status words.
-  This is the workhorse of the archival motif; nearly every SpecHeader / ledger / stamp uses it.
+- `font-mono` (JetBrains Mono) — all data: numbers, timestamps, urls, types, meta lines, status
+  words. This is the workhorse of the archival motif; nearly every ledger / stamp uses it.
 - Numerals never jitter: `font-variant-numeric: tabular-nums` is set globally on `body`.
 - Labels above data use `text-[10px] uppercase tracking-wider text-text-tertiary`.
 - **Mono data is tightened**: a base `-0.02em` letter-spacing on `.font-mono` gives numbers/values a
@@ -96,6 +98,31 @@ Non-interactive things (section titles, labels, data rows that aren't links) nev
 
 - `:focus-visible` shows a 1px ink outline with 2px offset (defined globally). Never blue rings,
   never glows. Everything clickable must be reachable and visibly focused by keyboard.
+
+### Touch
+
+- Control size is a token (`--opaque-header-control-size`), not a literal. It reads 24px for a mouse
+  and **44px under `@media (pointer: coarse)`** — the accessible minimum for a finger. Key this to
+  pointer capability, never to viewport width: a narrow window on a laptop should stay dense.
+- New controls size themselves from that token (or `.opaque-icon-button`, which does). A hardcoded
+  `h-6 w-6` is unreachable on a phone and will not scale.
+- Where a control's *drawn* size must stay small — a 24px add button beside a dense list — add
+  **`.opaque-tap`**, which grows only the hit area via a centred `::after` on coarse pointers. The
+  painted box is unchanged, so nothing shifts between pointer types.
+- Rollout is partial: header chrome, the section add control and dialog close buttons are covered.
+  The per-module controls inside `TreeModule` are not yet, and are tracked as known debt — do not
+  read the token's existence as proof that a given control is reachable.
+
+### Destructive and unsaved state
+
+- The editor's draft lives in memory until saved, so **anything that can drop it must say so first**:
+  discard confirms when dirty, and a `beforeunload` guard is registered *only* while
+  `isEditing && isDirty` — never permanently, which would nag on every ordinary navigation.
+- **Errors tell the user what to do and whether their work survived.** "Network error" is a
+  non-answer; "Couldn't reach the server — your changes are still here" is the voice. Map status
+  codes to specific, calm sentences rather than echoing a raw failure.
+- Parse error responses defensively (`res.json().catch(...)`): a proxy answering HTML must not be
+  reported as a network failure, which hides the real status.
 
 ### Voice
 
@@ -174,14 +201,23 @@ line); **error** is an inspection note (`NO READING ✕` over a faint rust rule)
 Interaction is mechanical, not web-app: hover slides a guide-rule / reveals registration ticks like a
 ruler cursor — not a flat background tint.
 
-**The page is a filed sheet.** The dashboard is wrapped in a document shell so the whole thing reads
-as one archived record, not floating modules:
-- A **masthead** above the greeting — `OPAQUE` wordmark + `personal archive` on the left, mono
-  datestamp fields on the right (`SHEET 01/01 · DATE <ISO> · TZ <offset>`), on a hairline rule.
-  Date/TZ are computed client-side (avoid SSR locale mismatch).
-- Faint **registration / crop corners** on the content frame (`DocumentFrame`) — the page edges.
-- A **footer colophon** mirroring the masthead: `DOC · SCALE 1:1 · PAGE 01/01 · © OPAQUE`, on the
-  same page margins.
+**The page is a filed sheet.** The dashboard reads as one archived record rather than floating
+modules. The masthead *is* the page header — wordmark plus a mono colophon, on a rule whose weight
+belongs to the active layout. There is no separate greeting line between the masthead and the
+content: in the `sheet` layout the masthead's vertical rules continue straight down through the
+modules, so anything inserted between them breaks the frame into two stacked cards.
+
+Pseudo-metadata was removed and must not come back: no invented `SHEET 01/01` / `SCALE 1:1` /
+`PAGE 01/01` fields, no decorative crop corners. A datestamp is legitimate because the date is real;
+a page number on a single-page app is decoration wearing an instrument's clothes.
+
+**Layout is a preset, not a canvas.** Five authored shells (`sheet` / `ledger` / `journal` / `bento`
+/ `catalog`, from prototypes A / C / K / M / X) own placement: each declares which region every
+module root belongs to, and the user picks a shell rather than dragging modules. Editing therefore
+reorders a module only *within its own column* — cross-column dragging has no meaning when the
+layout owns composition. Per-layout typography lives in `globals.css` keyed on `data-layout`, so
+components emit stable hooks (`.proto-heading`, `.proto-link`, `.proto-masthead`) and never branch
+on layout in the React tree.
 
 **Live numbers are mechanical readouts.** Values that change on poll use `RollingNumber` — each digit
 is a 0–9 reel that rolls to the new value like a counter/instrument (markets price + delta, weather

@@ -24,6 +24,7 @@ import NotificationsMenu from '@/components/NotificationsMenu';
 import type { AppNotification } from '@/lib/useNotifications';
 import SettingsDialog from '@/components/SettingsDialog';
 import { LAYOUTS, type LayoutId } from '@/lib/layouts';
+import { confirmDiscardUnsaved } from '@/lib/unsavedGuard';
 import { DEFAULT_APPEARANCE, readAppearance } from '@/lib/theme';
 
 interface HeaderProps {
@@ -124,6 +125,9 @@ export default function Header({
     }, []);
 
     const handleLogout = async () => {
+        // Confirm *before* ending the session: logging out first and asking
+        // second would leave the draft unreachable even if the user backs out.
+        if (!confirmDiscardUnsaved()) return;
         await fetch('/api/user/logout', { method: 'POST' });
         router.push('/login');
     };
