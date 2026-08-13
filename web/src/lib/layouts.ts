@@ -162,7 +162,7 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
       media: 'md:col-span-2',
       markets: 'md:col-span-1',
       posts: 'md:col-span-2 md:row-span-2',
-      servers: 'md:col-span-1',
+      servers: 'md:col-span-1 md:row-span-2',
       applications: 'md:col-span-1',
       calendar: 'md:col-span-2',
       bookmarks: 'md:col-span-2',

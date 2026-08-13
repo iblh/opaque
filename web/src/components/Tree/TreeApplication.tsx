@@ -247,10 +247,8 @@ const TreeApplication: React.FC<TreeApplicationProps> = ({
 
   return (
     <div className="relative flex w-full max-w-[90rem] flex-1 flex-col gap-4">
-      <div className="pointer-events-none absolute -top-8 right-0 z-10">
-        <div className="pointer-events-auto">
-          <SectionAddControl label="Add shelf" onAdd={addShelf} />
-        </div>
+      <div className="mb-[calc(var(--unit)*3)] flex justify-end">
+        <SectionAddControl label="Add shelf" onAdd={addShelf} />
       </div>
       {tree.branches.map((branch) => (
         <section

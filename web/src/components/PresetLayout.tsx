@@ -233,7 +233,7 @@ function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
     <div className="mx-auto w-full max-w-7xl">
       {/* A 1px gap over a hairline background makes the cells read as tiles
           separated by rules rather than as bordered cards. */}
-      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:auto-rows-[minmax(16rem,auto)] md:grid-cols-4">
         {tiles.map((tree) => {
           const span = spanFor('bento', tree.root);
           // The prototype titles its wide tiles in serif but labels the narrow

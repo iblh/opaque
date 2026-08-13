@@ -686,6 +686,31 @@ input:-webkit-autofill:active {
         height: var(--opaque-header-icon-size);
     }
 
+    .opaque-edit-bar {
+        height: var(--opaque-header-control-size);
+        @apply inline-flex items-center gap-px border border-border-light bg-surface-elevated p-px;
+    }
+
+    .opaque-edit-button,
+    .opaque-edit-button-primary {
+        height: calc(var(--opaque-header-control-size) - 4px);
+        @apply inline-flex items-center justify-center gap-1 rounded-sm px-2 font-mono text-[10px] uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-45;
+    }
+
+    .opaque-edit-button {
+        @apply text-text-secondary hover:bg-surface-sunken hover:text-text-primary;
+    }
+
+    .opaque-edit-button-primary {
+        @apply bg-text-primary text-background hover:bg-ink-800 disabled:bg-surface-sunken disabled:text-text-muted;
+    }
+
+    .opaque-edit-button svg,
+    .opaque-edit-button-primary svg {
+        width: var(--opaque-header-icon-size);
+        height: var(--opaque-header-icon-size);
+    }
+
     /* Sized from the shared control token so it grows with touch input too. */
     .opaque-icon-button {
         min-width: var(--opaque-header-control-size);

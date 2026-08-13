@@ -66,13 +66,14 @@ export default function SectionAddControl({
       <button
         type="button"
         onClick={handleClick}
-        className="opaque-tap flex h-6 w-6 items-center justify-center rounded-sm border border-border-light bg-surface-elevated text-text-muted transition-colors hover:border-border-medium hover:text-text-primary"
+        className="opaque-tap inline-flex h-6 items-center gap-1 rounded-sm border border-border-light bg-surface-elevated px-2 font-mono text-[9px] uppercase tracking-widest text-text-muted transition-colors hover:border-border-medium hover:bg-surface-sunken hover:text-text-primary"
         aria-label={label}
         aria-haspopup={options ? 'menu' : undefined}
         aria-expanded={options ? open : undefined}
         title={label}
       >
         <IconPlus className="h-3.5 w-3.5" />
+        <span>{label.replace(/^Add\s+/i, 'add ')}</span>
       </button>
 
       {open && options && options.length > 0 && (

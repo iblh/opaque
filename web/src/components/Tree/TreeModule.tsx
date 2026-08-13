@@ -354,17 +354,15 @@ const TreeModule: React.FC<TreeModuleProps> = ({
     && allowedTypes.length > 0
     && (!isSingleModuleRoot(tree.root) || tree.branches.length === 0);
   const addControl = showAddControl ? (
-    <div className="pointer-events-none absolute -top-8 right-0 z-10">
-      <div className="pointer-events-auto">
-        <SectionAddControl
-          label="Add module"
-          options={allowedTypes.map((moduleType) => ({
-            value: moduleType,
-            label: MODULE_LABELS[moduleType],
-          }))}
-          onSelect={(value) => addModule(value as KnownModuleType)}
-        />
-      </div>
+    <div className="mb-[calc(var(--unit)*3)] flex justify-end">
+      <SectionAddControl
+        label="Add module"
+        options={allowedTypes.map((moduleType) => ({
+          value: moduleType,
+          label: MODULE_LABELS[moduleType],
+        }))}
+        onSelect={(value) => addModule(value as KnownModuleType)}
+      />
     </div>
   ) : null;
 

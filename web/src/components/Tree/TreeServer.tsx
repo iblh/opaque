@@ -302,14 +302,13 @@ const TreeServer: React.FC<TreeServerProps> = ({
   }
 
   return (
-    <div className="relative flex w-full max-w-[90rem] flex-1 flex-wrap items-start gap-3">
+    <div className="relative w-full max-w-[90rem] flex-1">
       {isEditing && (
-        <div className="pointer-events-none absolute -top-8 right-0 z-10">
-          <div className="pointer-events-auto">
-            <SectionAddControl label="Add server" onAdd={addServer} />
-          </div>
+        <div className="mb-[calc(var(--unit)*3)] flex justify-end">
+          <SectionAddControl label="Add server" onAdd={addServer} />
         </div>
       )}
+      <div className="flex flex-wrap items-start gap-3">
       {tree.branches.map((server) => {
         const stats = resolveStats(server.stats);
         const memoryPercent = percent(stats.memory.used, stats.memory.total);
@@ -515,7 +514,7 @@ const TreeServer: React.FC<TreeServerProps> = ({
           </div>
         );
       })}
-
+      </div>
     </div>
   );
 };

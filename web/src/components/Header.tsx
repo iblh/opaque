@@ -198,12 +198,6 @@ export default function Header({
                         </div>
 
                         <div className="flex items-center gap-2 tracking-normal">
-                        {isEditing && (
-                            <div className="hidden items-center gap-2 text-xs text-text-tertiary sm:flex">
-                                <span className="h-1.5 w-1.5 rounded-full bg-accent-green" />
-                                <span>{isDirty ? 'Editing' : 'No changes'}</span>
-                            </div>
-                        )}
                         {saveError && (
                             <div className="hidden max-w-48 truncate text-xs text-accent-red-dark md:block">
                                 {saveError}
@@ -225,36 +219,40 @@ export default function Header({
                         )}
 
                         {isEditing && (
-                            <div className="flex items-center gap-2">
+                            <div className="opaque-edit-bar">
+                                <div className="hidden items-center gap-1.5 px-1.5 font-mono text-[9px] uppercase tracking-widest text-text-tertiary sm:flex">
+                                    <span className={isDirty ? 'h-1.5 w-1.5 rounded-full bg-accent-green' : 'h-1.5 w-1.5 rounded-full bg-text-muted'} />
+                                    <span>{isDirty ? 'draft open' : 'no changes'}</span>
+                                </div>
                                 {isDirty ? (
                                     <>
                                         <button
                                             onClick={onReset}
-                                            className="opaque-button"
+                                            className="opaque-edit-button"
                                         >
                                             <IconRefresh />
-                                            Discard
+                                            discard
                                         </button>
                                         <button
                                             onClick={onSave}
                                             disabled={isSaving}
-                                            className="opaque-button-primary"
+                                            className="opaque-edit-button-primary"
                                         >
                                             {isSaving ? (
                                                 <IconLoader2 className="animate-spin" />
                                             ) : (
                                                 <IconDeviceFloppy />
                                             )}
-                                            Save
+                                            save
                                         </button>
                                     </>
                                 ) : (
                                     <button
                                         onClick={onReset}
-                                        className="opaque-button"
+                                        className="opaque-edit-button-primary"
                                     >
                                         <IconCheck />
-                                        Done
+                                        done
                                     </button>
                                 )}
                             </div>

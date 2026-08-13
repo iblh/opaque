@@ -189,15 +189,14 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
   };
 
   return (
-    <div className="relative grid w-full max-w-[90rem] flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] items-start gap-4">
+    <div className="relative w-full max-w-[90rem] flex-1">
       {isEditing && (
-        <div className="pointer-events-none absolute -top-8 right-0 z-10">
-          <div className="pointer-events-auto">
-            <SectionAddControl label="Add group" onAdd={addBranch} />
-          </div>
+        <div className="mb-[calc(var(--unit)*3)] flex justify-end">
+          <SectionAddControl label="Add group" onAdd={addBranch} />
         </div>
       )}
-      {tree.branches.map((branch, branchIndex) => (
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] items-start gap-4">
+        {tree.branches.map((branch, branchIndex) => (
         <div
           key={branch.id}
           data-drag-preview
@@ -441,8 +440,8 @@ const TreeBookmark: React.FC<TreeBookmarkProps> = ({
             )}
           </div>
         </div>
-      ))}
-
+        ))}
+      </div>
     </div>
   );
 };
