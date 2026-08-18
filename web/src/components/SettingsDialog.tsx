@@ -236,7 +236,7 @@ function AppearanceSection() {
         ))}
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-text-tertiary">
-        Choosing a layout also applies its intended theme and density; adjust either afterwards.
+        Layout changes composition only. Theme and density stay as you set them.
       </p>
 
       <div className="mt-6 text-[10px] uppercase tracking-wider text-text-tertiary">Density</div>

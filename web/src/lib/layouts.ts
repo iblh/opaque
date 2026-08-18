@@ -38,15 +38,6 @@ export interface LayoutDefinition {
   /** One-line description of the shell, shown under the label. */
   hint: string;
   /**
-   * The masthead wordmark. Each prototype names the product differently — the
-   * catalogue sets it in title case as a statement, the journal and the grid
-   * give it a full title — so this is content, not styling.
-   */
-  wordmark: string;
-  /** Applied automatically when the user picks this layout. */
-  defaultTheme: 'light' | 'dark' | 'system';
-  defaultDensity: DensityId;
-  /**
    * Which region each section root renders into. Roots absent from the map fall
    * back to 'main', so adding a new root never breaks a layout.
    */
@@ -78,11 +69,8 @@ export interface LayoutDefinition {
 export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   sheet: {
     id: 'sheet',
-    wordmark: 'OPAQUE',
     label: 'Filed Sheet',
     hint: 'Centred document page, main column with a slim side rail.',
-    defaultTheme: 'light',
-    defaultDensity: 'normal',
     // Prototype A: servers then posts fill the wide column; the narrow rail opens
     // with weather, then the app registry and the bookmark index.
     regions: {
@@ -99,11 +87,8 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   ledger: {
     id: 'ledger',
-    wordmark: 'OPAQUE',
     label: 'Dark Ledger',
     hint: 'Two dense columns; data-forward, tabular telemetry.',
-    defaultTheme: 'dark',
-    defaultDensity: 'compact',
     regions: {
       weather: 'lead',
       servers: 'main',
@@ -117,11 +102,8 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   journal: {
     id: 'journal',
-    wordmark: 'The Opaque Archive.',
     label: 'Refined Journal',
     hint: 'Sticky index sidebar beside a wide reading column.',
-    defaultTheme: 'light',
-    defaultDensity: 'normal',
     // Prototype K: the sticky left column runs Atmosphere → Markets → Directory;
     // media, telemetry and the reading log fill the wide right column.
     regions: {
@@ -138,11 +120,8 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
   },
   bento: {
     id: 'bento',
-    wordmark: 'The Opaque Grid.',
     label: 'Bento Grid',
     hint: 'Hairline-separated tiles on an even four-column grid.',
-    defaultTheme: 'light',
-    defaultDensity: 'compact',
     // One grid, so every tile lives in 'main'; composition comes from the spans.
     regions: {
       weather: 'main',
@@ -154,27 +133,24 @@ export const LAYOUTS: Record<LayoutId, LayoutDefinition> = {
       bookmarks: 'main',
       calendar: 'main',
     },
-    // Prototype M's arrangement: a tall weather tile anchors the left edge, media
-    // runs wide beside it, and the reading log takes the big lower-right block.
+    // Content-driven rows avoid forcing short widgets to inherit the height of
+    // unpredictable feeds. The reading log gets a full-width editorial row.
     order: ['weather', 'media', 'markets', 'posts', 'servers', 'applications', 'calendar', 'bookmarks'],
     spans: {
-      weather: 'md:col-span-1 md:row-span-2',
+      weather: 'md:col-span-1',
       media: 'md:col-span-2',
       markets: 'md:col-span-1',
-      posts: 'md:col-span-2 md:row-span-2',
-      servers: 'md:col-span-1 md:row-span-2',
-      applications: 'md:col-span-1',
+      posts: 'md:col-span-4',
+      servers: 'md:col-span-2',
+      applications: 'md:col-span-2',
       calendar: 'md:col-span-2',
       bookmarks: 'md:col-span-2',
     },
   },
   catalog: {
     id: 'catalog',
-    wordmark: 'Opaque.',
     label: 'Catalog',
     hint: 'Three columns, category-grouped, wide canvas.',
-    defaultTheme: 'dark',
-    defaultDensity: 'normal',
     // Prototype X: a narrow instrument rail (atmosphere, telemetry) beside two
     // equally wide catalogue columns — applications on the left, the log right.
     regions: {

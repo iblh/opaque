@@ -207,6 +207,10 @@ belongs to the active layout. There is no separate greeting line between the mas
 content: in the `sheet` layout the masthead's vertical rules continue straight down through the
 modules, so anything inserted between them breaks the frame into two stacked cards.
 
+**OPAQUE is the product name in every layout.** Layout presets may change composition and type
+treatment, but never rename the product. Layout, colour theme, and density are independent
+preferences; changing one must not silently change either of the others.
+
 Pseudo-metadata was removed and must not come back: no invented `SHEET 01/01` / `SCALE 1:1` /
 `PAGE 01/01` fields, no decorative crop corners. A datestamp is legitimate because the date is real;
 a page number on a single-page app is decoration wearing an instrument's clothes.

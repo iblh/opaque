@@ -156,11 +156,19 @@ test('a saved order for one layout does not leak into another', () => {
   assert.equal(bento.join(','), want.join(','));
 });
 
-test('every layout declares a wordmark', () => {
+test('layout definitions own composition, not product identity or appearance', () => {
   for (const [id, definition] of Object.entries(LAYOUTS)) {
-    assert.equal(typeof definition.wordmark, 'string', `${id} is missing a wordmark`);
-    assert.ok(definition.wordmark.length > 0, `${id} has an empty wordmark`);
+    assert.equal('wordmark' in definition, false, `${id} overrides the product name`);
+    assert.equal('defaultTheme' in definition, false, `${id} overrides the colour theme`);
+    assert.equal('defaultDensity' in definition, false, `${id} overrides the density`);
   }
+});
+
+test('bento footprints do not force fixed-height rows', () => {
+  for (const [root, span] of Object.entries(LAYOUTS.bento.spans)) {
+    assert.equal(span.includes('row-span'), false, `${root} forces a bento row height`);
+  }
+  assert.equal(LAYOUTS.bento.spans.posts.includes('md:col-span-4'), true);
 });
 
 test('regions are stable regardless of stored forest order', () => {

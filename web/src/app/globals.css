@@ -38,10 +38,10 @@
         --accent-blue-subtle: rgba(94, 106, 210, 0.08);
         --accent-blue-hover: rgba(94, 106, 210, 0.15);
         --text-primary: 26 26 26;
-        --text-secondary: rgba(26, 26, 26, 0.75);
-        --text-tertiary: rgba(26, 26, 26, 0.55);
-        --text-muted: rgba(26, 26, 26, 0.40);
-        --text-faint: rgba(26, 26, 26, 0.28);
+        --text-secondary: rgba(26, 26, 26, 0.82);
+        --text-tertiary: rgba(26, 26, 26, 0.68);
+        --text-muted: rgba(26, 26, 26, 0.62);
+        --text-faint: rgba(26, 26, 26, 0.54);
         --background: 244 243 238;
         --surface: rgba(250, 250, 250, 0.8);
         --surface-elevated: 249 248 246;
@@ -83,10 +83,10 @@
         --accent-blue-subtle: rgba(139, 149, 230, 0.14);
         --accent-blue-hover: rgba(139, 149, 230, 0.22);
         --text-primary: 232 230 225;
-        --text-secondary: rgba(232, 230, 225, 0.74);
-        --text-tertiary: rgba(232, 230, 225, 0.52);
-        --text-muted: rgba(232, 230, 225, 0.38);
-        --text-faint: rgba(232, 230, 225, 0.26);
+        --text-secondary: rgba(232, 230, 225, 0.82);
+        --text-tertiary: rgba(232, 230, 225, 0.68);
+        --text-muted: rgba(232, 230, 225, 0.58);
+        --text-faint: rgba(232, 230, 225, 0.50);
         --background: 27 28 30;
         --surface: rgba(34, 35, 38, 0.8);
         --surface-elevated: 17 17 17;
@@ -394,6 +394,15 @@ input:-webkit-autofill:active {
         @apply underline decoration-1 underline-offset-2;
     }
 
+    /* A full-width posts tile should use the width it is given. Two source
+       panels sit side by side on wide screens; narrower canvases keep the
+       established single reading column. */
+    @media (min-width: 1024px) {
+        [data-layout='bento'] [data-module-grid='posts'] {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
     /* X — Catalog: large airy heads, no rule, generous space beneath. Links are
        set in serif and lean into italic on hover rather than underlining. */
     [data-layout='catalog'] .proto-heading {
@@ -520,15 +529,8 @@ input:-webkit-autofill:active {
     }
 
     /* ---- Masthead tools -------------------------------------------------
-       C, K and X carry no search field; M boxes it instead of underlining it.
-       C and X also drop the date/status blocks — C shows only its edit control,
-       X shows a right-aligned status pair which the status block already is. */
-    [data-layout='ledger'] .proto-mast-search,
-    [data-layout='journal'] .proto-mast-search,
-    [data-layout='catalog'] .proto-mast-search {
-        @apply lg:hidden;
-    }
-
+       Search remains available in every layout; M boxes it instead of
+       underlining it. Date and status are reduced where the shell is denser. */
     [data-layout='bento'] .proto-mast-search {
         @apply border-b-0 pb-0;
     }
@@ -576,6 +578,8 @@ input:-webkit-autofill:active {
        "EDIT LEDGER", K and M leave it bare. */
     .proto-mast-edit {
         @apply rounded-none border-border-medium bg-transparent;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .proto-mast-edit:hover:not(:disabled) {

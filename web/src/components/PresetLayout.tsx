@@ -223,22 +223,20 @@ function JournalSkeleton({ buckets, renderSection }: SkeletonProps) {
 // M — Bento Grid: hairline-separated tiles on a four-column grid.
 //
 // Footprints are authored per module (see LAYOUTS.bento.spans) rather than
-// derived from position: the weather tile is tall, the reading log takes the big
-// block, telemetry and the directory stay small. Deriving spans from the index
-// made the grid re-compose whenever a module was added or reordered, which is
-// what made it feel arbitrary.
+// derived from position. Rows follow their content instead of using fixed row
+// spans, so unpredictable feeds cannot create large empty blocks elsewhere.
 function BentoSkeleton({ buckets, renderSection }: SkeletonProps) {
   const tiles = [...buckets.lead, ...buckets.main, ...buckets.aside, ...buckets.rail, ...buckets.full];
   return (
     <div className="mx-auto w-full max-w-7xl">
       {/* A 1px gap over a hairline background makes the cells read as tiles
           separated by rules rather than as bordered cards. */}
-      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:auto-rows-[minmax(16rem,auto)] md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-px border border-border-light bg-border-light md:grid-flow-row-dense md:grid-cols-4">
         {tiles.map((tree) => {
           const span = spanFor('bento', tree.root);
           // The prototype titles its wide tiles in serif but labels the narrow
           // ones in mono microtype, so the tile's own width decides its register.
-          const size = span.includes('col-span-2') ? 'wide' : 'small';
+          const size = span.includes('col-span-1') ? 'small' : 'wide';
           return (
           <div
             key={tree.root}

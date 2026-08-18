@@ -393,7 +393,7 @@ const TreeModule: React.FC<TreeModuleProps> = ({
   return (
     <div className="relative">
       {addControl}
-      <div className={gridClassName}>
+      <div className={gridClassName} data-module-grid={tree.root}>
         {renderItems.map((item) => {
           if (item.kind === 'post-stack') {
             // The stack's representative id for drag/merge intent (its first member).

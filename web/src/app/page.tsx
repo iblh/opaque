@@ -336,9 +336,7 @@ export default function HomePage() {
   }
 
   const focusSearch = useCallback(() => {
-    const input = document.getElementById('search') as HTMLInputElement | null
-    input?.focus()
-    input?.select()
+    window.dispatchEvent(new CustomEvent('opaque:search-request'))
   }, [])
 
   // Core keyboard layer. Handlers stay silent while typing in a field (the hook

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+    IconArrowRight,
     IconCheck,
     IconDeviceFloppy,
     IconLoader2,
@@ -12,6 +13,7 @@ import {
     IconSearch,
     IconServer,
     IconSettings,
+    IconX,
 } from '@tabler/icons-react';
 import { Dashboard, ServerBranch } from '@/lib/types';
 import {
@@ -23,9 +25,7 @@ import {
 import NotificationsMenu from '@/components/NotificationsMenu';
 import type { AppNotification } from '@/lib/useNotifications';
 import SettingsDialog from '@/components/SettingsDialog';
-import { LAYOUTS, type LayoutId } from '@/lib/layouts';
 import { confirmDiscardUnsaved } from '@/lib/unsavedGuard';
-import { DEFAULT_APPEARANCE, readAppearance } from '@/lib/theme';
 
 interface HeaderProps {
     dashboard?: Dashboard | null;
@@ -64,16 +64,17 @@ export default function Header({
     const router = useRouter();
     const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchProviderId, setSearchProviderId] = useState<SearchProviderId>(DEFAULT_SEARCH_PROVIDER_ID);
     // Locally reflect a display-name edit from Settings without waiting for a
     // dashboard refetch.
     const [nameOverride, setNameOverride] = useState<string | null>(null);
-    // The masthead wordmark is per-layout content (see LAYOUTS[x].wordmark), so
-    // the header follows the appearance preference the same way the page does.
-    const [layout, setLayout] = useState<LayoutId>(DEFAULT_APPEARANCE.layout);
     const avatarRef = useRef<HTMLDivElement>(null);
     const avatarButtonRef = useRef<HTMLButtonElement>(null);
+    const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
+    const desktopSearchRef = useRef<HTMLInputElement>(null);
+    const mobileSearchRef = useRef<HTMLInputElement>(null);
     const displayName = nameOverride || dashboard?.name || dashboard?.username || dashboard?.email || 'User';
     const accountLabel = dashboard?.email || dashboard?.username || 'Local workspace';
     const avatarInitial = displayName.charAt(0).toUpperCase();
@@ -86,11 +87,36 @@ export default function Header({
     }).format(new Date()).replace(/\//g, '.');
 
     useEffect(() => {
-        const sync = () => setLayout(readAppearance().layout);
-        sync();
-        window.addEventListener('opaque:appearance-change', sync);
-        return () => window.removeEventListener('opaque:appearance-change', sync);
+        const handleSearchRequest = () => {
+            if (desktopSearchRef.current?.offsetParent) {
+                desktopSearchRef.current.focus();
+                desktopSearchRef.current.select();
+                return;
+            }
+            setShowMobileSearch(true);
+        };
+
+        window.addEventListener('opaque:search-request', handleSearchRequest);
+        return () => window.removeEventListener('opaque:search-request', handleSearchRequest);
     }, []);
+
+    useEffect(() => {
+        if (!showMobileSearch) return;
+
+        const frame = window.requestAnimationFrame(() => mobileSearchRef.current?.focus());
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setShowMobileSearch(false);
+            window.requestAnimationFrame(() => mobileSearchButtonRef.current?.focus());
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.cancelAnimationFrame(frame);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [showMobileSearch]);
 
     useEffect(() => {
         if (!showAvatarDropdown) return;
@@ -152,12 +178,12 @@ export default function Header({
             )}
 
             {pathname === '/' && (
-                <nav className="proto-masthead mx-auto flex w-full max-w-[var(--shell-width)] items-end justify-between gap-8 px-8 py-6">
+                <nav className="proto-masthead mx-auto flex w-full max-w-[var(--shell-width)] flex-wrap items-end justify-between gap-x-4 gap-y-3 px-4 py-4 sm:px-8 sm:py-6">
                     {/* The colophon sits under the wordmark in A/C/X but above it in
                         K/M, so the flex order is flipped per layout in CSS. */}
                     <div className="proto-mast-identity flex min-w-0 flex-col gap-1">
                         <div className="proto-wordmark font-serif text-4xl leading-none tracking-tight text-text-primary">
-                            {LAYOUTS[layout].wordmark}
+                            OPAQUE
                         </div>
                         <div className="proto-colophon font-mono text-[10px] uppercase tracking-widest text-text-muted">
                             <span className="proto-colophon-vol">Vol. 01</span>
@@ -171,7 +197,9 @@ export default function Header({
                         <form onSubmit={handleSearchSubmit} className="proto-mast-search relative hidden border-b border-border-medium pb-1 lg:block">
                             <IconSearch className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
                             <input
+                                ref={desktopSearchRef}
                                 id="search"
+                                data-dashboard-search
                                 type="text"
                                 value={searchQuery}
                                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -190,18 +218,34 @@ export default function Header({
                             <div className="mt-1 text-text-primary">{dashboardDate}</div>
                         </div>
 
-                        <div className="proto-mast-status hidden text-right md:block">
-                            <div className="proto-mast-status-label text-text-muted">Sys Status</div>
-                            <div className={serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'mt-1 text-accent-green-dark' : 'mt-1 text-accent-red-dark'}>
-                                {serverSummary.total === 0 || serverSummary.online === serverSummary.total ? 'Nominal' : 'Degraded'}
+                        {serverSummary.total > 0 && (
+                            <div className="proto-mast-status hidden text-right md:block">
+                                <div className="proto-mast-status-label text-text-muted">Sys Status</div>
+                                <div className={serverSummary.online === serverSummary.total ? 'mt-1 text-accent-green-dark' : 'mt-1 text-accent-red-dark'}>
+                                    {serverSummary.online === serverSummary.total ? 'Nominal' : 'Degraded'}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="flex items-center gap-2 tracking-normal">
                         {saveError && (
                             <div className="hidden max-w-48 truncate text-xs text-accent-red-dark md:block">
                                 {saveError}
                             </div>
+                        )}
+
+                        {!isEditing && (
+                            <button
+                                ref={mobileSearchButtonRef}
+                                type="button"
+                                onClick={() => setShowMobileSearch((value) => !value)}
+                                className="opaque-toolbar-icon lg:hidden"
+                                aria-label="Search"
+                                aria-expanded={showMobileSearch}
+                                title="Search"
+                            >
+                                <IconSearch />
+                            </button>
                         )}
 
                         {!isEditing && (
@@ -258,13 +302,15 @@ export default function Header({
                             </div>
                         )}
 
-                        <div
-                            className="opaque-toolbar-counter"
-                            title="Online servers"
-                        >
-                            <IconServer />
-                            {serverSummary.online}/{serverSummary.total}
-                        </div>
+                        {serverSummary.total > 0 && (
+                            <div
+                                className="opaque-toolbar-counter"
+                                title="Online servers"
+                            >
+                                <IconServer />
+                                {serverSummary.online}/{serverSummary.total}
+                            </div>
+                        )}
 
                         <NotificationsMenu
                             notifications={notifications}
@@ -289,17 +335,25 @@ export default function Header({
                                             <div className="text-xs font-medium leading-relaxed">
                                                 Server dashboard
                                             </div>
-                                            <div className="mt-2.5 h-0.5 rounded-full bg-background/30">
-                                                <div
-                                                    className="h-full rounded-full bg-accent-green"
-                                                    style={{
-                                                        width: `${serverSummary.total ? (serverSummary.online / serverSummary.total) * 100 : 0}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="mt-2.5 font-mono text-xs">
-                                                {serverSummary.online} / {serverSummary.total} servers online
-                                            </div>
+                                            {serverSummary.total > 0 ? (
+                                                <>
+                                                    <div className="mt-2.5 h-0.5 rounded-full bg-background/30">
+                                                        <div
+                                                            className="h-full rounded-full bg-accent-green"
+                                                            style={{
+                                                                width: `${(serverSummary.online / serverSummary.total) * 100}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="mt-2.5 font-mono text-xs">
+                                                        {serverSummary.online} / {serverSummary.total} servers online
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="mt-2.5 font-mono text-xs text-background/75">
+                                                    No servers configured
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="opaque-menu-profile cursor-default">
@@ -350,6 +404,50 @@ export default function Header({
                         </div>
                     </div>
                     </div>
+
+                    {showMobileSearch && (
+                        <form
+                            onSubmit={handleSearchSubmit}
+                            className="order-last flex w-full items-center gap-2 border-b border-border-medium pb-2 lg:hidden"
+                            data-overlay
+                        >
+                            <IconSearch className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+                            <input
+                                ref={mobileSearchRef}
+                                id="search-mobile"
+                                data-dashboard-search
+                                type="search"
+                                value={searchQuery}
+                                onChange={(event) => setSearchQuery(event.target.value)}
+                                placeholder={searchProvider.placeholder}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck={false}
+                                className="h-10 min-w-0 flex-1 bg-transparent font-mono text-sm text-text-primary outline-none placeholder:text-text-faint"
+                            />
+                            <button
+                                type="submit"
+                                className="opaque-toolbar-icon"
+                                aria-label={`Search with ${searchProvider.label}`}
+                                title={`Search with ${searchProvider.label}`}
+                            >
+                                <IconArrowRight />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowMobileSearch(false);
+                                    window.requestAnimationFrame(() => mobileSearchButtonRef.current?.focus());
+                                }}
+                                className="opaque-toolbar-icon"
+                                aria-label="Close search"
+                                title="Close search"
+                            >
+                                <IconX />
+                            </button>
+                        </form>
+                    )}
                 </nav>
             )}
 

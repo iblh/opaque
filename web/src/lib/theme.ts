@@ -1,5 +1,4 @@
 import {
-  LAYOUTS,
   LAYOUT_IDS,
   isDensityId,
   isLayoutId,
@@ -119,11 +118,6 @@ export function applyTheme(preference: ThemePreference): void {
 
 export function setAppearance(patch: Partial<AppearancePreference>): AppearancePreference {
   const next: AppearancePreference = { ...readAppearance(), ...patch };
-
-  // Picking a layout adopts that layout's intended colour mode and density,
-  // unless the caller set them explicitly in the same change.
-  if (patch.layout && !patch.theme) next.theme = LAYOUTS[patch.layout].defaultTheme;
-  if (patch.layout && !patch.density) next.density = LAYOUTS[patch.layout].defaultDensity;
 
   try {
     window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(next));
