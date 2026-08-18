@@ -25,18 +25,21 @@ export interface TreeLayout {
   widthPct: number;
 }
 
-export type KnownModuleType =
-  | 'weather'
-  | 'calendar'
-  | 'markets'
-  | 'plex'
-  | 'jellyfin'
-  | 'emby'
-  | 'radarr'
-  | 'sonarr'
-  | 'rss'
-  | 'reddit'
-  | 'hacker-news';
+export const KNOWN_MODULE_TYPES = [
+  'weather',
+  'calendar',
+  'markets',
+  'plex',
+  'jellyfin',
+  'emby',
+  'radarr',
+  'sonarr',
+  'rss',
+  'reddit',
+  'hacker-news',
+] as const;
+
+export type KnownModuleType = typeof KNOWN_MODULE_TYPES[number];
 
 export type ModuleType = KnownModuleType | (string & {});
 
@@ -117,6 +120,8 @@ export interface Tree {
 export interface Dashboard {
   id?: string;
   _id?: string;
+  schemaVersion: number;
+  revision: number;
   forest: Tree[];
   email?: string;
   username?: string;

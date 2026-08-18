@@ -105,6 +105,8 @@ export const dashboards = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    schemaVersion: integer('schema_version').notNull().default(1),
+    revision: integer('revision').notNull().default(1),
     forest: jsonb('forest').$type<Tree[]>().notNull(),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),

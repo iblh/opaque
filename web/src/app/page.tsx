@@ -629,6 +629,9 @@ function describeSaveFailure(status: number): string {
   if (status === 413) {
     return 'This dashboard is too large to save. Try removing a few items.'
   }
+  if (status === 409) {
+    return 'This dashboard changed in another tab. Your draft is still here; reload before saving again.'
+  }
   if (status >= 500) {
     return 'The server couldn’t save that. Check its logs, then try again.'
   }

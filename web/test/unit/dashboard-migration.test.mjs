@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, '../..');
 
 const dashboard = loadTypeScriptModule(path.join(webRoot, 'src/lib/dashboard.ts'));
-const { normalizeDashboard } = dashboard;
+const { createEmptyDashboard, normalizeDashboard } = dashboard;
 
 // A legacy dashboard whose dissolved "today" root sat in a shared row beside
 // "bookmarks". Upgrading must keep weather/calendar/markets in that same row,
@@ -146,6 +146,60 @@ test('roots missing from the stored forest are appended, not interleaved', () =>
   assert.ok(roots.length > stored.length);
   // And no root appears twice.
   assert.equal(new Set(roots).size, roots.length);
+});
+
+test('legacy calendar feed fields are removed from the current document', () => {
+  const result = normalizeDashboard({
+    forest: [{
+      root: 'calendar',
+      branches: [{
+        id: 'calendar-1',
+        name: 'Calendar',
+        moduleType: 'calendar',
+        config: { url: 'https://calendar.invalid/private.ics', days: 7 },
+      }],
+    }],
+  });
+
+  const [calendar] = treeByRoot(result.forest, 'calendar').branches;
+  assert.equal(Object.keys(calendar.config).length, 0);
+});
+
+test('dashboard metadata is initialized and future versions are rejected', () => {
+  const created = createEmptyDashboard();
+  assert.equal(created.schemaVersion, 1);
+  assert.equal(created.revision, 1);
+
+  assert.throws(
+    () => normalizeDashboard({ schemaVersion: 2, revision: 1, forest: [] }),
+    /newer than this build supports/,
+  );
+});
+
+test('live server metrics are not persisted in the dashboard document', () => {
+  const result = normalizeDashboard({
+    forest: [{
+      root: 'servers',
+      branches: [{
+        id: 'server-1',
+        name: 'Home server',
+        url: 'https://server.invalid',
+        icon: '',
+        stats: {
+          status: 'online',
+          uptime: '1 day',
+          cpu: 12,
+          memory: { used: 1, total: 2 },
+          disk: { used: 1, total: 2 },
+          network: { in: 1, out: 2 },
+          temperature: 40,
+        },
+      }],
+    }],
+  });
+
+  const [server] = treeByRoot(result.forest, 'servers').branches;
+  assert.equal('stats' in server, false);
 });
 
 // --- TypeScript module loader that resolves "@/..." imports recursively. ---

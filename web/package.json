@@ -6,12 +6,16 @@
     "dev": "NODE_OPTIONS=--no-experimental-webstorage next dev",
     "build": "NODE_OPTIONS=--no-experimental-webstorage next build",
     "start": "NODE_OPTIONS=--no-experimental-webstorage next start",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "test:unit": "node --test test/unit/*.test.mjs",
     "test:contract": "node --test test/contract/*.test.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test:unit && npm run build",
     "db:ensure": "node scripts/ensure-database.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:upgrade": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/upgrade-dashboard-data.ts",
+    "db:validate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/validate-dashboard-data.ts",
     "metrics:retention": "node scripts/metrics-retention.mjs",
     "mock:server-agent": "node scripts/mock-server-agent.mjs"
   },
@@ -29,7 +33,8 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.0.0",
-    "simple-icons": "^16.21.0"
+    "simple-icons": "^16.21.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -43,6 +48,7 @@
     "eslint-config-next": "15.3.4",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

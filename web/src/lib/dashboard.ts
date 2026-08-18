@@ -15,6 +15,10 @@ import {
   sanitizeSvg,
 } from '@/lib/svg';
 import { DASHBOARD_ROOTS, isModuleRoot, SINGLE_MODULE_ROOTS } from '@/lib/modules';
+import {
+  CURRENT_DASHBOARD_SCHEMA_VERSION,
+  normalizeDashboardVersion,
+} from '@/lib/dashboardVersion';
 
 export const DEFAULT_ROOTS: DashboardRoot[] = [...DASHBOARD_ROOTS];
 export const LAYOUT_PRESETS: LayoutPreset[] = ['100', '50/50', '33/33/33', '20/60/20'];
@@ -22,6 +26,8 @@ export const LAYOUT_PRESETS: LayoutPreset[] = ['100', '50/50', '33/33/33', '20/6
 export function createEmptyDashboard(identity: DashboardIdentity = {}): Dashboard {
   return {
     ...identity,
+    schemaVersion: CURRENT_DASHBOARD_SCHEMA_VERSION,
+    revision: 1,
     forest: DEFAULT_ROOTS.map((root) => ({ root, branches: [] })),
   };
 }
@@ -31,6 +37,10 @@ export function normalizeDashboard(
   identity: DashboardIdentity = {},
 ): Dashboard {
   const source = dashboard || {};
+  const schemaVersion = normalizeDashboardVersion(source.schemaVersion);
+  const revision = Number.isInteger(source.revision) && Number(source.revision) > 0
+    ? Number(source.revision)
+    : 1;
   const fallbackBranches = Array.isArray((source as any).branches)
     ? [{ root: 'bookmarks', branches: (source as any).branches }]
     : [];
@@ -59,6 +69,8 @@ export function normalizeDashboard(
     ...source,
     ...identity,
     id: stringifyObjectId((source as any)._id) || source.id,
+    schemaVersion,
+    revision,
     forest: [...storedTrees, ...missingTrees],
   };
 }
@@ -201,8 +213,11 @@ function normalizeBranch(root: string, branch: Branch): Branch {
   } as Branch;
 
   if (root === 'servers') {
+    // Live metrics come from the dedicated metrics tables and must not be copied
+    // back into the user-authored Dashboard document during a save.
+    const { stats: _stats, ...serverBase } = base as any;
     return {
-      ...base,
+      ...serverBase,
       url: (base as any).url || '',
       icon: sanitizeSvg((base as any).icon, DEFAULT_SERVER_ICON),
     } as Branch;
@@ -216,13 +231,15 @@ function normalizeBranch(root: string, branch: Branch): Branch {
   }
 
   if (isModuleRoot(root)) {
+    const moduleType = typeof (base as any).moduleType === 'string'
+      ? (base as any).moduleType
+      : 'unknown';
+    const config = isPlainObject((base as any).config) ? (base as any).config : {};
     return {
       ...base,
-      moduleType: typeof (base as any).moduleType === 'string'
-        ? (base as any).moduleType
-        : 'unknown',
+      moduleType,
       enabled: (base as any).enabled !== false,
-      config: isPlainObject((base as any).config) ? (base as any).config : {},
+      config: migrateModuleConfig(moduleType, config),
     } as Branch;
   }
 
@@ -230,6 +247,14 @@ function normalizeBranch(root: string, branch: Branch): Branch {
     ...base,
     leaves: normalizeLeaves((base as any).leaves, DEFAULT_BOOKMARK_ICON),
   } as Branch;
+}
+
+function migrateModuleConfig(moduleType: string, config: Record<string, unknown>) {
+  // Older calendar modules accepted remote feed fields. The current calendar is
+  // intentionally a local month grid, so those unused values must not survive
+  // as apparently supported configuration in a v1 document.
+  if (moduleType === 'calendar') return {};
+  return config;
 }
 
 const LEGACY_PRESET_WIDTHS: Record<LayoutPreset, number[]> = {

@@ -18,6 +18,7 @@ docker compose up -d postgres
 npm install
 npm run db:ensure
 npm run db:migrate
+npm run db:upgrade
 npm run dev
 ```
 
@@ -200,11 +201,14 @@ journalctl -u opaque-agent.service -f
 ```bash
 npm run dev
 npm run build
+npm run check
 npm run start
 npm run lint
 npm run test:contract
 npm run db:ensure
 npm run db:migrate
+npm run db:upgrade
+npm run db:validate
 npm run metrics:retention
 npm run mock:server-agent
 ```

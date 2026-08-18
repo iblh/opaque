@@ -21,5 +21,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 EXPOSE 3000
 CMD ["npm", "run", "start"]

@@ -13,6 +13,13 @@ import {
 } from '@/lib/dashboard';
 import { Dashboard, ServerBranch, Tree } from '@/lib/types';
 
+export class DashboardConflictError extends Error {
+  constructor() {
+    super('Dashboard changed since this draft was opened.');
+    this.name = 'DashboardConflictError';
+  }
+}
+
 export async function getOrCreateDashboardForUser(userId: string) {
   const user = await getUser(userId);
   if (!user) return null;
@@ -64,24 +71,39 @@ export async function saveDashboardForUser(userId: string, input: Dashboard) {
       .where(eq(dashboards.userId, userId))
       .limit(1);
 
-    const [dashboardRow] = existing
-      ? await tx
-          .update(dashboards)
-          .set({
-            forest: normalized.forest,
-            updatedAt: now,
-          })
-          .where(eq(dashboards.id, existing.id))
-          .returning()
-      : await tx
-          .insert(dashboards)
-          .values({
-            userId,
-            forest: normalized.forest,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
+    let dashboardRow: typeof dashboards.$inferSelect;
+
+    if (existing) {
+      const [updated] = await tx
+        .update(dashboards)
+        .set({
+          schemaVersion: normalized.schemaVersion,
+          revision: input.revision + 1,
+          forest: normalized.forest,
+          updatedAt: now,
+        })
+        .where(and(
+          eq(dashboards.id, existing.id),
+          eq(dashboards.revision, input.revision),
+        ))
+        .returning();
+
+      if (!updated) throw new DashboardConflictError();
+      dashboardRow = updated;
+    } else {
+      const [created] = await tx
+        .insert(dashboards)
+        .values({
+          userId,
+          schemaVersion: normalized.schemaVersion,
+          revision: 1,
+          forest: normalized.forest,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+      dashboardRow = created;
+    }
 
     await syncServerProjection(tx, dashboardRow.id, normalized.forest, now);
 
@@ -176,6 +198,8 @@ function rowToDashboard(
     normalizeDashboard(
       {
         id: row.id,
+        schemaVersion: row.schemaVersion,
+        revision: row.revision,
         forest: row.forest,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,

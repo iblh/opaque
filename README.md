@@ -68,6 +68,7 @@ Install dependencies and run migrations:
 npm install
 npm run db:ensure
 npm run db:migrate
+npm run db:upgrade
 npm run dev
 ```
 
@@ -253,8 +254,11 @@ Run from `web/`:
 npm run dev
 npm run build
 npm run lint
+npm run check
 npm run db:ensure
 npm run db:migrate
+npm run db:upgrade
+npm run db:validate
 npm run metrics:retention
 ```
 
